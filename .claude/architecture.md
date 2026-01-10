@@ -69,6 +69,35 @@ src/
 
 ---
 
+## Authentication Flow
+
+### Staff Signup (@themison.com)
+
+**Client-side only** (PKCE requirement):
+
+````typescript
+// Component → Hook → Service (browser) → Supabase
+authService.signup() → supabase.auth.signUp({
+  emailRedirectTo: '/auth/callback'
+})
+
+Flow:
+1. Browser: signUp() → PKCE verifier stored in cookies automatically
+2. Email: User clicks link with code
+3. Server: /auth/callback → exchangeCodeForSession(code)
+4. Redirect: @themison.com → /console, others → /
+
+Key files:
+- services/authService.ts - Client-side signup
+- app/auth/callback/route.ts - Server-side session establishment
+- lib/supabase/client.ts - Browser client (@supabase/ssr)
+- lib/supabase/server.ts - Server client (@supabase/ssr)
+- lib/supabase/admin.ts - Admin operations (bypasses RLS)
+
+Important: Never call signUp() server-side - PKCE requires browser context.
+
+---
+
 ## Prohibitions
 
 ### 1. Component calls service directly
@@ -77,9 +106,9 @@ WRONG:
 
 ```typescript
 function TaskList() {
-  const tasks = await taskService.getAll();
+const tasks = await taskService.getAll();
 }
-```
+````
 
 RIGHT:
 
