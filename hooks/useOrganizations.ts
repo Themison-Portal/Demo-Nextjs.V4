@@ -1,9 +1,10 @@
 /**
  * Organizations Hook
  * Connects organization service to React components
+ * Uses TanStack Query for caching and automatic refetching
  */
 
-import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
   createOrganization,
@@ -11,57 +12,53 @@ import {
   type CreateOrganizationInput,
 } from '@/services/organizations';
 
+const ORGANIZATIONS_QUERY_KEY = ['organizations'];
+
 export function useOrganizations() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  /**
-   * Fetch all organizations
-   */
-  const fetchOrganizations = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // Query all organizations
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ORGANIZATIONS_QUERY_KEY,
+    queryFn: async () => {
       const response = await getOrganizations();
-      setOrganizations(response.organizations);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch organizations';
-      setError(errorMessage);
-      console.error('Error fetching organizations:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      return response.organizations;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
 
-  /**
-   * Create new organization
-   */
-  const create = async (input: CreateOrganizationInput): Promise<Organization | null> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const newOrg = await createOrganization(input);
+  // Create organization mutation
+  const createMutation = useMutation({
+    mutationFn: (input: CreateOrganizationInput) => createOrganization(input),
+    onSuccess: () => {
+      // Invalidate and refetch organizations list
+      queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
+    },
+  });
 
-      // Add to local state
-      setOrganizations((prev) => [newOrg, ...prev]);
-
-      return newOrg;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create organization';
-      setError(errorMessage);
-      console.error('Error creating organization:', err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+  // Calculate stats from organizations
+  const stats = {
+    total: data?.length || 0,
+    active: data?.filter((org) => !org.deleted_at).length || 0,
+    inactive: data?.filter((org) => org.deleted_at).length || 0,
+    totalUsers: data?.reduce((sum, org) => sum + (org.member_count || 0), 0) || 0,
+    totalTrials: data?.reduce((sum, org) => sum + (org.trial_count || 0), 0) || 0,
+    activeTrials: data?.reduce((sum, org) => sum + (org.active_trial_count || 0), 0) || 0,
   };
 
   return {
-    organizations,
+    organizations: data || [],
+    recentOrganizations: data?.slice(0, 3) || [],
+    stats,
     isLoading,
-    error,
-    fetchOrganizations,
-    createOrganization: create,
+    error: error as Error | null,
+    refetch,
+    createOrganization: createMutation.mutateAsync,
+    isCreating: createMutation.isPending,
   };
 }

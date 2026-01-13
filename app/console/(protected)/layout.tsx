@@ -6,6 +6,7 @@
 
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/getUser";
+import { Shell } from "@/components/console/shell/Shell";
 
 export default async function ConsoleProtectedLayout({
   children,
@@ -20,6 +21,6 @@ export default async function ConsoleProtectedLayout({
     redirect("/console/signin");
   }
 
-  // User is authenticated staff → render children
-  return <>{children}</>;
+  // User is authenticated staff → render with sidebar layout
+  return <Shell>{children}</Shell>;
 }
