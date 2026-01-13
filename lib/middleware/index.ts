@@ -4,6 +4,7 @@
  */
 
 export { withAuth } from "./withAuth";
+export { withStaffPermission } from "./withStaffPermission";
 export { withOrgPermission } from "./withOrgPermission";
 export { withTrialPermission } from "./withTrialPermission";
 export { withCriticalPermission } from "./withCriticalPermission";
