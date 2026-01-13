@@ -10,7 +10,7 @@ import { withStaffPermission } from '@/lib/middleware';
 
 /**
  * GET /api/organizations
- * List all organizations (with mock data appended for development)
+ * List all organizations
  */
 export const GET = withStaffPermission(async (req, ctx, user) => {
   const supabase = await createClient();
@@ -30,55 +30,9 @@ export const GET = withStaffPermission(async (req, ctx, user) => {
     );
   }
 
-  // Mock data for development (appended to real data)
-  const mockOrganizations = [
-    {
-      id: 'mock-1',
-      name: 'Mayo Clinic Research',
-      slug: 'mayo-clinic-research',
-      support_enabled: false,
-      settings: {},
-      created_at: new Date('2026-01-10').toISOString(),
-      updated_at: new Date('2026-01-10').toISOString(),
-      deleted_at: null,
-      member_count: 24,
-      trial_count: 8,
-      active_trial_count: 8,
-    },
-    {
-      id: 'mock-2',
-      name: 'Cleveland Clinic Trials',
-      slug: 'cleveland-clinic-trials',
-      support_enabled: true,
-      settings: {},
-      created_at: new Date('2026-01-09').toISOString(),
-      updated_at: new Date('2026-01-09').toISOString(),
-      deleted_at: null,
-      member_count: 18,
-      trial_count: 5,
-      active_trial_count: 5,
-    },
-    {
-      id: 'mock-3',
-      name: 'Johns Hopkins Research',
-      slug: 'johns-hopkins-research',
-      support_enabled: false,
-      settings: {},
-      created_at: new Date('2026-01-08').toISOString(),
-      updated_at: new Date('2026-01-08').toISOString(),
-      deleted_at: null,
-      member_count: 31,
-      trial_count: 12,
-      active_trial_count: 12,
-    },
-  ];
-
-  // Combine real + mock data
-  const allOrganizations = [...(organizations || []), ...mockOrganizations];
-
   return Response.json({
-    organizations: allOrganizations,
-    total: allOrganizations.length,
+    organizations: organizations || [],
+    total: organizations?.length || 0,
   });
 });
 
