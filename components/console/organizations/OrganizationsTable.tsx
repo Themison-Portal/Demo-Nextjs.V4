@@ -6,11 +6,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
+
 import { StatsGrid } from "../shared/StatsGrid";
 import { CreateOrgModal } from "./CreateOrgModal";
 import { useOrganizations } from "@/hooks/useOrganizations";
 import { Button } from "@/components/ui/button";
 import type { CreateOrganizationInput } from "@/services/organizations";
+import Link from "next/link";
 
 type FilterStatus = "all" | "active" | "inactive";
 
@@ -280,9 +282,12 @@ export function OrganizationsTable() {
                         {new Date(org.created_at).toLocaleDateString()}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium ">
-                        <button className="p-1 px-2 rounded-md text-blue-600 hover:text-blue-800 font-semibold border border-transparent  hover:border-blue-600 cursor-pointer">
+                        <Link
+                          href={`/console/organizations/${org.id}`}
+                          className="p-1 px-2 rounded-md text-blue-600 hover:text-blue-800 font-semibold border border-transparent  hover:border-blue-600 cursor-pointer"
+                        >
                           View
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   ))}

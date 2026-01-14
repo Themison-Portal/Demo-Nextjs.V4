@@ -20,8 +20,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         userFirstName={user?.firstName}
       />
 
-      {/* Page content */}
-      {children}
+      {/* Page content with scroll */}
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
     </div>
   );
 }

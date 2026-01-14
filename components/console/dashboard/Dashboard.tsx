@@ -6,15 +6,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { StatsGrid } from "../shared/StatsGrid";
 import { OrganizationList } from "../organizations/OrganizationList";
 import { CreateOrgModal } from "../organizations/CreateOrgModal";
 import { useOrganizations } from "@/hooks/useOrganizations";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function Dashboard() {
-  const router = useRouter();
   const {
     recentOrganizations,
     stats,
@@ -69,13 +68,8 @@ export function Dashboard() {
               </h2>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/console/organizations")}
-                disabled={isLoading}
-              >
-                View all
+              <Button variant="outline" size="sm" disabled={isLoading}>
+                <Link href="/console/organizations">View all</Link>
               </Button>
               <Button
                 size="sm"

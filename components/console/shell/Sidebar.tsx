@@ -100,7 +100,7 @@ export function Sidebar({ userEmail, userRole, userFirstName }: SidebarProps) {
         />
 
         <SidebarItem
-          href="/console/settings"
+          href="/console"
           icon={
             <svg
               className="h-5 w-5"
