@@ -125,7 +125,8 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
     },
   });
 
-  // TODO: Implementar lógica de envío de email de invitación
+  // TODO: Implementar servicio de envío de emails de invitación
+  // - Este servicio debe ser compartido con POST /api/organizations (crear org)
   // - Enviar email a `email` con link de invitación
   // - Link debe redirigir a /app/signup con token de invitación
   console.log('[API] TODO: Send invitation email to:', email);

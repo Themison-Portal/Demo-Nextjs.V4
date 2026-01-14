@@ -30,6 +30,44 @@ export const GET = withStaffPermission(async (req, ctx, user) => {
     );
   }
 
+  // Fetch member counts for each organization
+  if (organizations && organizations.length > 0) {
+    const orgIds = organizations.map(org => org.id);
+
+    // Count members (non-deleted)
+    const { data: memberCounts } = await supabase
+      .from('organization_members')
+      .select('org_id')
+      .in('org_id', orgIds)
+      .is('deleted_at', null);
+
+    // Count pending invitations
+    const { data: invitationCounts } = await supabase
+      .from('invitations')
+      .select('org_id')
+      .in('org_id', orgIds)
+      .eq('status', 'pending');
+
+    // Build count maps
+    const memberCountMap = new Map<string, number>();
+    const invitationCountMap = new Map<string, number>();
+
+    memberCounts?.forEach(m => {
+      memberCountMap.set(m.org_id, (memberCountMap.get(m.org_id) || 0) + 1);
+    });
+
+    invitationCounts?.forEach(i => {
+      invitationCountMap.set(i.org_id, (invitationCountMap.get(i.org_id) || 0) + 1);
+    });
+
+    // Add counts to organizations
+    organizations.forEach(org => {
+      const memberCount = memberCountMap.get(org.id) || 0;
+      const invitationCount = invitationCountMap.get(org.id) || 0;
+      org.member_count = memberCount + invitationCount;
+    });
+  }
+
   return Response.json({
     organizations: organizations || [],
     total: organizations?.length || 0,
@@ -107,14 +145,31 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
     );
   }
 
-  // TODO: Send invitation emails to owners
-  // This will be implemented when we have email service
-  // For now, just log the emails that would be sent
-  console.log('[API] Invitation emails to send:', {
-    primary: primary_owner_email,
-    additional: additional_owner_emails,
-    organization: organization.name,
-  });
+  // Create invitations for primary and additional owners
+  const allOwnerEmails = [primary_owner_email, ...additional_owner_emails];
+  const invitations = allOwnerEmails.map(email => ({
+    email,
+    org_id: organization.id,
+    org_role: 'superadmin',
+    invited_by: user.id,
+    status: 'pending',
+  }));
+
+  const { error: invitationsError } = await supabase
+    .from('invitations')
+    .insert(invitations);
+
+  if (invitationsError) {
+    console.error('[API] Error creating invitations:', invitationsError);
+    // Don't fail the whole request, org is already created
+    // But log it so we know something went wrong
+  }
+
+  // TODO: Implementar servicio de envío de emails de invitación
+  // - Usar el mismo servicio que POST /api/organizations/[id]/members
+  // - Enviar email a cada owner con link de invitación
+  // - Link debe redirigir a /app/signup con token de invitación
+  console.log('[API] TODO: Send invitation emails to:', allOwnerEmails);
 
   return Response.json(organization, { status: 201 });
 });

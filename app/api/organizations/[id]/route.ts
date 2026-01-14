@@ -44,7 +44,8 @@ export const GET = withStaffPermission(async (req, ctx, user) => {
       deleted_at,
       user:users (
         email,
-        full_name,
+        first_name,
+        last_name,
         avatar_url
       )
     `)
@@ -60,9 +61,26 @@ export const GET = withStaffPermission(async (req, ctx, user) => {
     );
   }
 
+  // Fetch pending invitations
+  const { data: invitations, error: invitationsError } = await supabase
+    .from('invitations')
+    .select('*')
+    .eq('org_id', id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (invitationsError) {
+    console.error('[API] Error fetching invitations:', invitationsError);
+    return Response.json(
+      { error: 'Failed to fetch invitations' },
+      { status: 500 }
+    );
+  }
+
   return Response.json({
     ...organization,
     members: members || [],
+    invitations: invitations || [],
   });
 });
 
