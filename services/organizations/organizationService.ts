@@ -7,6 +7,9 @@ import type {
   Organization,
   CreateOrganizationInput,
   OrganizationListResponse,
+  OrganizationDetails,
+  UpdateOrganizationInput,
+  AddMemberInput,
 } from './types';
 
 /**
@@ -74,4 +77,88 @@ export async function toggleSupportMode(
   }
 
   return response.json();
+}
+
+/**
+ * Get organization by ID with members (staff only)
+ */
+export async function getOrganizationById(
+  id: string
+): Promise<OrganizationDetails> {
+  const response = await fetch(`/api/organizations/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch organization');
+  }
+
+  return response.json();
+}
+
+/**
+ * Update organization (name, support_enabled) (staff only)
+ */
+export async function updateOrganization(
+  id: string,
+  input: UpdateOrganizationInput
+): Promise<Organization> {
+  const response = await fetch(`/api/organizations/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update organization');
+  }
+
+  return response.json();
+}
+
+/**
+ * Invite member to organization (staff only)
+ * Creates invitation - member will be added when they accept and complete signup
+ */
+export async function inviteMemberToOrganization(
+  orgId: string,
+  input: AddMemberInput
+): Promise<void> {
+  const response = await fetch(`/api/organizations/${orgId}/members`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to invite member');
+  }
+}
+
+/**
+ * Remove member from organization (staff only)
+ */
+export async function removeOrganizationMember(
+  orgId: string,
+  userId: string
+): Promise<void> {
+  const response = await fetch(`/api/organizations/${orgId}/members/${userId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to remove member');
+  }
 }
