@@ -40,13 +40,26 @@ export interface OrganizationMember {
   deleted_at?: string | null;
   user: {
     email: string;
-    full_name?: string;
+    first_name?: string;
+    last_name?: string;
     avatar_url?: string;
   };
 }
 
+export interface Invitation {
+  id: string;
+  email: string;
+  org_id: string;
+  org_role: 'superadmin' | 'admin' | 'editor' | 'reader';
+  status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  invited_by: string | null;
+  expires_at: string;
+  created_at: string;
+}
+
 export interface OrganizationDetails extends Organization {
   members: OrganizationMember[];
+  invitations: Invitation[];
 }
 
 export interface UpdateOrganizationInput {
