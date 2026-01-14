@@ -35,3 +35,18 @@ export interface User {
   lastName?: string;
   isStaff: boolean;
 }
+
+export interface ValidateInvitationResponse {
+  valid: boolean;
+  invitation?: {
+    email: string;
+    org_role: 'superadmin' | 'admin' | 'editor' | 'reader';
+    organization: {
+      id: string;
+      name: string;
+      slug: string | null;
+    };
+  };
+  error?: string;
+  details?: string;
+}

@@ -155,9 +155,10 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
     status: 'pending',
   }));
 
-  const { error: invitationsError } = await supabase
+  const { data: createdInvitations, error: invitationsError } = await supabase
     .from('invitations')
-    .insert(invitations);
+    .insert(invitations)
+    .select('id, email, token');
 
   if (invitationsError) {
     console.error('[API] Error creating invitations:', invitationsError);
@@ -168,8 +169,14 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
   // TODO: Implementar servicio de envío de emails de invitación
   // - Usar el mismo servicio que POST /api/organizations/[id]/members
   // - Enviar email a cada owner con link de invitación
-  // - Link debe redirigir a /app/signup con token de invitación
+  // - Link debe redirigir a /signup?token={token}
   console.log('[API] TODO: Send invitation emails to:', allOwnerEmails);
+
+  if (createdInvitations) {
+    createdInvitations.forEach(inv => {
+      console.log(`[API] Invitation link for ${inv.email}: /signup?token=${inv.token}`);
+    });
+  }
 
   return Response.json(organization, { status: 201 });
 });
