@@ -28,7 +28,7 @@ export default function SignupPage() {
   const handleSubmit = (data: any) => {
     setSubmittedEmail(data.email);
     // Signup with role: 'member' for clinic users
-    signup({ ...data, role: 'member' });
+    signup({ ...data, role: "member" });
   };
 
   // No token provided
@@ -63,9 +63,7 @@ export default function SignupPage() {
   // Invalid token
   if (validationError || !validationData?.valid) {
     const errorMessage =
-      validationError?.message ||
-      validationData?.error ||
-      "Invalid invitation";
+      validationError?.message || validationData?.error || "Invalid invitation";
 
     return (
       <AuthCard title="Invalid Invitation" description={errorMessage}>
@@ -123,6 +121,7 @@ export default function SignupPage() {
         }
         requireThemisonEmail={false}
         prefilledEmail={invitation.email}
+        invitationOrgName={invitation.organization.name}
         readonlyEmail={true}
       />
     </AuthCard>

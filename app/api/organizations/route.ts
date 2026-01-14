@@ -7,6 +7,8 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { withStaffPermission } from '@/lib/middleware';
+import { sendInvitationEmail } from '@/lib/email/sendInvitationEmail';
+import { getInvitationUrl } from '@/lib/constants';
 
 /**
  * GET /api/organizations
@@ -166,16 +168,21 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
     // But log it so we know something went wrong
   }
 
-  // TODO: Implementar servicio de envío de emails de invitación
-  // - Usar el mismo servicio que POST /api/organizations/[id]/members
-  // - Enviar email a cada owner con link de invitación
-  // - Link debe redirigir a /signup?token={token}
-  console.log('[API] TODO: Send invitation emails to:', allOwnerEmails);
-
+  // Send invitation emails
   if (createdInvitations) {
-    createdInvitations.forEach(inv => {
-      console.log(`[API] Invitation link for ${inv.email}: /signup?token=${inv.token}`);
-    });
+    // Send emails in parallel with Promise.all
+    await Promise.all(
+      createdInvitations.map(async (inv) => {
+        const invitationUrl = getInvitationUrl(inv.token);
+        console.log(`[API] Invitation link for ${inv.email}: ${invitationUrl}`);
+
+        await sendInvitationEmail({
+          to: inv.email,
+          organizationName: organization.name,
+          invitationUrl,
+        });
+      })
+    );
   }
 
   return Response.json(organization, { status: 201 });

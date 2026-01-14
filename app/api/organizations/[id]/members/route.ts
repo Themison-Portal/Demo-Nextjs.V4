@@ -6,6 +6,8 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { withStaffPermission } from '@/lib/middleware';
+import { sendInvitationEmail } from '@/lib/email/sendInvitationEmail';
+import { getInvitationUrl } from '@/lib/constants';
 
 /**
  * POST /api/organizations/[id]/members
@@ -125,12 +127,15 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
     },
   });
 
-  // TODO: Implementar servicio de envío de emails de invitación
-  // - Este servicio debe ser compartido con POST /api/organizations (crear org)
-  // - Enviar email a `email` con link de invitación
-  // - Link debe redirigir a /signup?token={invitation.token}
-  console.log('[API] TODO: Send invitation email to:', email);
-  console.log('[API] Invitation link: /signup?token=', invitation.token);
+  // Send invitation email
+  const invitationUrl = getInvitationUrl(invitation.token);
+  console.log(`[API] Invitation link for ${email}: ${invitationUrl}`);
+
+  await sendInvitationEmail({
+    to: email,
+    organizationName: org.name,
+    invitationUrl,
+  });
 
   return Response.json(
     {

@@ -20,6 +20,7 @@ interface AuthFormProps {
   requireThemisonEmail?: boolean; // Default: true (for staff signup)
   prefilledEmail?: string; // For invitation-based signup
   readonlyEmail?: boolean; // For invitation-based signup
+  invitationOrgName?: string; // For invitation-based signup
 }
 
 interface SignupFormData {
@@ -42,6 +43,7 @@ export function AuthForm({
   requireThemisonEmail = true, // Default to true for staff signup
   prefilledEmail = "",
   readonlyEmail = false,
+  invitationOrgName,
 }: AuthFormProps) {
   const [formData, setFormData] = useState<SignupFormData>({
     email: prefilledEmail,
@@ -56,7 +58,10 @@ export function AuthForm({
     e.preventDefault();
 
     // Validate @themison.com email only if required
-    if (requireThemisonEmail && !formData.email.toLowerCase().endsWith("@themison.com")) {
+    if (
+      requireThemisonEmail &&
+      !formData.email.toLowerCase().endsWith("@themison.com")
+    ) {
       setEmailError("Only @themison.com emails are allowed");
       return;
     }
@@ -131,11 +136,11 @@ export function AuthForm({
           onChange={handleChange}
           disabled={isPending || readonlyEmail}
           readOnly={readonlyEmail}
-          placeholder={requireThemisonEmail ? "john@themison.com" : "your@email.com"}
+          placeholder={
+            requireThemisonEmail ? "john@themison.com" : "your@email.com"
+          }
         />
-        {emailError && (
-          <p className="text-sm text-destructive">{emailError}</p>
-        )}
+        {emailError && <p className="text-sm text-destructive">{emailError}</p>}
       </div>
 
       <div className="space-y-2">
@@ -153,11 +158,7 @@ export function AuthForm({
         />
       </div>
 
-      {error && (
-        <div className="text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <div className="text-sm text-destructive">{error}</div>}
 
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending
@@ -165,7 +166,9 @@ export function AuthForm({
             ? "Creating account..."
             : "Signing in..."
           : mode === "signup"
-          ? "Create Staff Account"
+          ? requireThemisonEmail
+            ? "Create Staff Account"
+            : `Join to ${invitationOrgName}`
           : "Sign In"}
       </Button>
 
@@ -173,14 +176,20 @@ export function AuthForm({
         {mode === "signup" ? (
           <>
             Already have an account?{" "}
-            <Link href="/console/signin" className="text-primary hover:underline">
+            <Link
+              href="/console/signin"
+              className="text-primary hover:underline"
+            >
               Sign in
             </Link>
           </>
         ) : (
           <>
             Don't have an account?{" "}
-            <Link href="/console/signup" className="text-primary hover:underline">
+            <Link
+              href="/console/signup"
+              className="text-primary hover:underline"
+            >
               Sign up
             </Link>
           </>
