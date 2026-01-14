@@ -8,6 +8,7 @@ export interface SignupData {
   password: string;
   firstName: string;
   lastName: string;
+  role?: 'staff' | 'member'; // Optional: defaults to 'staff' for @themison.com users
 }
 
 export interface SignupResponse {

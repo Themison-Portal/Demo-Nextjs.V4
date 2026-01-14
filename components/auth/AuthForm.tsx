@@ -17,6 +17,9 @@ interface AuthFormProps {
   onSubmit: (data: SignupFormData | SigninFormData) => void;
   isPending: boolean;
   error?: string | null;
+  requireThemisonEmail?: boolean; // Default: true (for staff signup)
+  prefilledEmail?: string; // For invitation-based signup
+  readonlyEmail?: boolean; // For invitation-based signup
 }
 
 interface SignupFormData {
@@ -31,9 +34,17 @@ interface SigninFormData {
   password: string;
 }
 
-export function AuthForm({ mode, onSubmit, isPending, error }: AuthFormProps) {
+export function AuthForm({
+  mode,
+  onSubmit,
+  isPending,
+  error,
+  requireThemisonEmail = true, // Default to true for staff signup
+  prefilledEmail = "",
+  readonlyEmail = false,
+}: AuthFormProps) {
   const [formData, setFormData] = useState<SignupFormData>({
-    email: "",
+    email: prefilledEmail,
     password: "",
     firstName: "",
     lastName: "",
@@ -44,8 +55,8 @@ export function AuthForm({ mode, onSubmit, isPending, error }: AuthFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate @themison.com email
-    if (!formData.email.toLowerCase().endsWith("@themison.com")) {
+    // Validate @themison.com email only if required
+    if (requireThemisonEmail && !formData.email.toLowerCase().endsWith("@themison.com")) {
       setEmailError("Only @themison.com emails are allowed");
       return;
     }
@@ -118,8 +129,9 @@ export function AuthForm({ mode, onSubmit, isPending, error }: AuthFormProps) {
           required
           value={formData.email}
           onChange={handleChange}
-          disabled={isPending}
-          placeholder="john@themison.com"
+          disabled={isPending || readonlyEmail}
+          readOnly={readonlyEmail}
+          placeholder={requireThemisonEmail ? "john@themison.com" : "your@email.com"}
         />
         {emailError && (
           <p className="text-sm text-destructive">{emailError}</p>

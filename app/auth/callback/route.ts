@@ -39,9 +39,31 @@ export async function GET(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     const email = user?.email ?? "";
+    const userId = user?.id;
 
-    // Redirect based on email domain
-    const redirectTo = email.endsWith("@themison.com") ? "/console" : "/";
+    // Determine redirect destination
+    let redirectTo: string;
+
+    if (email.endsWith("@themison.com")) {
+      // Staff: redirect to console
+      redirectTo = "/console";
+    } else {
+      // Clinic user: redirect to their organization app
+      // Get user's organization from organization_members
+      const { data: membership } = await supabase
+        .from("organization_members")
+        .select("org_id")
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .single();
+
+      if (membership?.org_id) {
+        redirectTo = `/app/${membership.org_id}/dashboard`;
+      } else {
+        // Fallback: user has no organization yet (shouldn't happen in normal flow)
+        redirectTo = "/error?message=No+organization+found";
+      }
+    }
 
     return NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
   } catch (error) {

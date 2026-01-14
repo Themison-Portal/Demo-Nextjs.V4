@@ -10,10 +10,14 @@ import type { SignupData, SignupResponse, SigninData, SigninResponse, User } fro
 export const authService = {
   /**
    * Signup (client-side PKCE flow)
-   * Only for @themison.com staff members
+   * Supports both staff (@themison.com) and clinic users
+   * @param data - Signup data including optional role (defaults to 'staff')
    */
   async signup(data: SignupData): Promise<SignupResponse> {
     const supabase = createClient();
+
+    // Determine role: use provided role or default to 'staff' for @themison.com
+    const userRole = data.role || 'staff';
 
     // SignUp client-side (PKCE flow requires browser)
     const { data: authData, error } = await supabase.auth.signUp({
@@ -23,7 +27,7 @@ export const authService = {
         data: {
           first_name: data.firstName,
           last_name: data.lastName,
-          role: "staff", // Staff role for @themison.com users
+          role: userRole,
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
