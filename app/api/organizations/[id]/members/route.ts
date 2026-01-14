@@ -128,8 +128,9 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
   // TODO: Implementar servicio de envío de emails de invitación
   // - Este servicio debe ser compartido con POST /api/organizations (crear org)
   // - Enviar email a `email` con link de invitación
-  // - Link debe redirigir a /app/signup con token de invitación
+  // - Link debe redirigir a /signup?token={invitation.token}
   console.log('[API] TODO: Send invitation email to:', email);
+  console.log('[API] Invitation link: /signup?token=', invitation.token);
 
   return Response.json(
     {
@@ -139,6 +140,7 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
         email: invitation.email,
         org_role: invitation.org_role,
         status: invitation.status,
+        token: invitation.token, // Token for invitation link
       }
     },
     { status: 201 }

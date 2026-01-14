@@ -53,6 +53,7 @@ export interface Invitation {
   org_role: 'superadmin' | 'admin' | 'editor' | 'reader';
   status: 'pending' | 'accepted' | 'expired' | 'revoked';
   invited_by: string | null;
+  token: string; // Secure token for invitation links
   expires_at: string;
   created_at: string;
 }
