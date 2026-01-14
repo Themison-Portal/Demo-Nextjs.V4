@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useSignin } from "@/hooks/useSignin";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { AuthForm } from "@/components/auth/AuthForm";
+import { ROUTES } from "@/lib/routes";
 
 export default function SigninPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function SigninPage() {
     signin(data, {
       onSuccess: () => {
         // Redirect to console dashboard on success
-        router.push("/console");
+        router.push(ROUTES.CONSOLE.HOME);
       },
     });
   };

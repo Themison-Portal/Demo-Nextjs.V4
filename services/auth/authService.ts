@@ -6,6 +6,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import type { SignupData, SignupResponse, SigninData, SigninResponse, User, ValidateInvitationResponse } from "./types";
+import { ROUTES } from "@/lib/routes";
 
 export const authService = {
   /**
@@ -29,7 +30,7 @@ export const authService = {
           last_name: data.lastName,
           role: userRole,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}${ROUTES.AUTH.CALLBACK}`,
       },
     });
 

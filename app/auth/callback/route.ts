@@ -6,6 +6,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { ROUTES } from "@/lib/routes";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     if (!code) {
       console.error("No code provided in callback");
       return NextResponse.redirect(
-        new URL("/error?message=No+auth+code", requestUrl.origin)
+        new URL(ROUTES.PUBLIC.ERROR_WITH_MESSAGE("No auth code"), requestUrl.origin)
       );
     }
 
@@ -27,10 +28,7 @@ export async function GET(req: NextRequest) {
     if (error) {
       console.error("Auth callback error:", error);
       return NextResponse.redirect(
-        new URL(
-          `/error?message=${encodeURIComponent(error.message)}`,
-          requestUrl.origin
-        )
+        new URL(ROUTES.PUBLIC.ERROR_WITH_MESSAGE(error.message), requestUrl.origin)
       );
     }
 
@@ -46,7 +44,7 @@ export async function GET(req: NextRequest) {
 
     if (email.endsWith("@themison.com")) {
       // Staff: redirect to console
-      redirectTo = "/console";
+      redirectTo = ROUTES.CONSOLE.HOME;
     } else {
       // Clinic user: redirect to their organization app
       // Get user's organization from organization_members
@@ -58,10 +56,10 @@ export async function GET(req: NextRequest) {
         .single();
 
       if (membership?.org_id) {
-        redirectTo = `/app/${membership.org_id}/dashboard`;
+        redirectTo = ROUTES.APP.DASHBOARD(membership.org_id);
       } else {
         // Fallback: user has no organization yet (shouldn't happen in normal flow)
-        redirectTo = "/error?message=No+organization+found";
+        redirectTo = ROUTES.PUBLIC.ERROR_WITH_MESSAGE("No organization found");
       }
     }
 

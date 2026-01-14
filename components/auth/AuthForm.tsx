@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ROUTES } from "@/lib/routes";
 
 type AuthMode = "signup" | "signin";
 
@@ -177,7 +178,7 @@ export function AuthForm({
           <>
             Already have an account?{" "}
             <Link
-              href="/console/signin"
+              href={ROUTES.CONSOLE.SIGNIN}
               className="text-primary hover:underline"
             >
               Sign in
@@ -187,7 +188,7 @@ export function AuthForm({
           <>
             Don't have an account?{" "}
             <Link
-              href="/console/signup"
+              href={ROUTES.CONSOLE.SIGNUP}
               className="text-primary hover:underline"
             >
               Sign up

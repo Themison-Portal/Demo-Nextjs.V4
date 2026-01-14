@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Users } from "lucide-react";
+import { ROUTES } from "@/lib/routes";
 
 export function HeroSection() {
   return (
@@ -77,7 +78,7 @@ export function HeroSection() {
                   organization management.
                 </p>
                 <Link
-                  href="/console/signin"
+                  href={ROUTES.CONSOLE.SIGNIN}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-900 rounded-md hover:bg-blue-800 hover:text-white transition-colors font-medium border border-gray-300"
                 >
                   Staff Console

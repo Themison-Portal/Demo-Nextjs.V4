@@ -7,6 +7,7 @@
 
 import { Organization } from "@/services/organizations";
 import Link from "next/link";
+import { ROUTES } from "@/lib/routes";
 
 interface OrganizationListProps {
   organizations: Organization[];
@@ -43,7 +44,7 @@ export function OrganizationList({ organizations }: OrganizationListProps) {
     <div className="space-y-3">
       {organizations.map((org) => (
         <Link
-          href={`/console/organizations/${org.id}`}
+          href={ROUTES.CONSOLE.ORGANIZATION(org.id)}
           key={org.id}
           className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 transition-all hover:shadow-md"
         >

@@ -3,6 +3,8 @@
  * Centralized configuration for environment variables and business logic constants
  */
 
+import { ROUTES } from "./routes";
+
 // ============================================================================
 // App URLs
 // ============================================================================
@@ -50,7 +52,7 @@ export const EMAIL_CONFIG = {
  * @returns Full URL to signup page with token
  */
 export const getInvitationUrl = (token: string): string =>
-  `${APP_BASE_URL}/signup?token=${token}`;
+  `${APP_BASE_URL}${ROUTES.PUBLIC.SIGNUP}?token=${token}`;
 
 /**
  * Check if running in development mode

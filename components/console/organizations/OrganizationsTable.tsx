@@ -13,6 +13,7 @@ import { useOrganizations } from "@/hooks/useOrganizations";
 import { Button } from "@/components/ui/button";
 import type { CreateOrganizationInput } from "@/services/organizations";
 import Link from "next/link";
+import { ROUTES } from "@/lib/routes";
 
 type FilterStatus = "all" | "active" | "inactive";
 
@@ -283,7 +284,7 @@ export function OrganizationsTable() {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium ">
                         <Link
-                          href={`/console/organizations/${org.id}`}
+                          href={ROUTES.CONSOLE.ORGANIZATION(org.id)}
                           className="p-1 px-2 rounded-md text-blue-600 hover:text-blue-800 font-semibold border border-transparent  hover:border-blue-600 cursor-pointer"
                         >
                           View

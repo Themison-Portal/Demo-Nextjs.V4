@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ROUTES } from "@/lib/routes";
 
 interface SidebarItemProps {
   href: string;
@@ -58,7 +59,7 @@ export function Sidebar({ userEmail, userRole, userFirstName }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
         <SidebarItem
-          href="/console"
+          href={ROUTES.CONSOLE.HOME}
           icon={
             <svg
               className="h-5 w-5"
@@ -75,11 +76,11 @@ export function Sidebar({ userEmail, userRole, userFirstName }: SidebarProps) {
             </svg>
           }
           label="Dashboard"
-          active={pathname === "/console"}
+          active={pathname === ROUTES.CONSOLE.HOME}
         />
 
         <SidebarItem
-          href="/console/organizations"
+          href={ROUTES.CONSOLE.ORGANIZATIONS}
           icon={
             <svg
               className="h-5 w-5"
@@ -96,11 +97,11 @@ export function Sidebar({ userEmail, userRole, userFirstName }: SidebarProps) {
             </svg>
           }
           label="Organizations"
-          active={pathname === "/console/organizations"}
+          active={pathname === ROUTES.CONSOLE.ORGANIZATIONS}
         />
 
         <SidebarItem
-          href="/console"
+          href={ROUTES.CONSOLE.HOME}
           icon={
             <svg
               className="h-5 w-5"
@@ -123,7 +124,7 @@ export function Sidebar({ userEmail, userRole, userFirstName }: SidebarProps) {
             </svg>
           }
           label="Settings"
-          active={pathname === "/console/settings"}
+          // active={pathname === ROUTES.CONSOLE.HOME }
         />
       </nav>
 

@@ -12,6 +12,7 @@ import { CreateOrgModal } from "../organizations/CreateOrgModal";
 import { useOrganizations } from "@/hooks/useOrganizations";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ROUTES } from "@/lib/routes";
 
 export function Dashboard() {
   const {
@@ -69,7 +70,7 @@ export function Dashboard() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={isLoading}>
-                <Link href="/console/organizations">View all</Link>
+                <Link href={ROUTES.CONSOLE.ORGANIZATIONS}>View all</Link>
               </Button>
               <Button
                 size="sm"

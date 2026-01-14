@@ -1,6 +1,9 @@
 /**
  * Dashboard Page - Organization App
  * Main dashboard for clinic users
+ *
+ * Note: This fetch is cached by Next.js Request Memoization
+ * The layout already fetched this org data, so this is a cache hit (0 DB queries)
  */
 
 import { getUser } from "@/lib/auth/getUser";
@@ -15,6 +18,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const { orgId } = await params;
 
   // Get organization name
+  // ✅ This fetch is cached from layout - no additional DB query
   const supabase = await createClient();
   const { data: org } = await supabase
     .from("organizations")

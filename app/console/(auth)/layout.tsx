@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/getUser";
+import { ROUTES } from "@/lib/routes";
 
 export default async function AuthLayout({
   children,
@@ -10,7 +11,7 @@ export default async function AuthLayout({
 
   // Ya autenticado como staff → redirigir a console
   if (user?.isStaff) {
-    redirect("/console");
+    redirect(ROUTES.CONSOLE.HOME);
   }
 
   return <>{children}</>;

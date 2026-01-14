@@ -4,8 +4,7 @@
  * Redirects to signin if user is not authenticated or not staff
  */
 
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/getUser";
+import { requireStaff } from "@/lib/auth/guards";
 import { Shell } from "@/components/console/shell/Shell";
 
 export default async function ConsoleProtectedLayout({
@@ -13,13 +12,8 @@ export default async function ConsoleProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Validate JWT and get user (server-side)
-  const user = await getUser();
-
-  // Redirect if not authenticated or not staff
-  if (!user || !user.isStaff) {
-    redirect("/console/signin");
-  }
+  // Validate staff authentication (auto-redirects if invalid)
+  await requireStaff();
 
   // User is authenticated staff → render with sidebar layout
   return <Shell>{children}</Shell>;
