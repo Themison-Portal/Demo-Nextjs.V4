@@ -41,21 +41,20 @@ export function HeroSection() {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
-                    Built for
+                    You already have an account?
                   </p>
                   <h2 className="text-3xl font-bold text-gray-900">
-                    Clinical Trial Sites
+                    Clinical Trials Management
                   </h2>
                   <p className="text-gray-600">
-                    Access the main App to manage your clinical trials
-                    efficiently.
+                    Access the App to manage your clinical trials efficiently.
                   </p>
                 </div>
                 <Link
-                  href="#beta"
+                  href={""}
                   className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-black text-white rounded-md hover:bg-blue-800 transition-all font-semibold group"
                 >
-                  Request Access
+                  SIGN IN
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <p className="text-xs text-center text-gray-500">
@@ -70,18 +69,17 @@ export function HeroSection() {
                 <div className="flex items-center gap-3">
                   <Users className="w-5 h-5 text-gray-600" />
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Themison Members
+                    Join the private beta
                   </h3>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Exclusive access for the Themison team. Internal console for
-                  organization management.
+                  Contact us to request access to the private beta
                 </p>
                 <Link
-                  href={ROUTES.CONSOLE.SIGNIN}
+                  href="https://www.themison.com/contact"
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-900 rounded-md hover:bg-blue-800 hover:text-white transition-colors font-medium border border-gray-300"
                 >
-                  Staff Console
+                  Request a Demo
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -90,10 +88,10 @@ export function HeroSection() {
             {/* Beta Access CTA */}
             <div className="text-center pt-4">
               <Link
-                href="#beta"
-                className="inline-flex items-center gap-2 text-white hover:text-cyan-400 transition-colors font-medium"
+                href={ROUTES.CONSOLE.SIGNIN}
+                className="inline-flex items-center gap-2 text-white hover:text-black transition-colors font-medium"
               >
-                Join the Private Beta
+                Access to Themison Staff Console
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
+
 import {
   ArrowLeft,
   Building,
@@ -21,7 +23,11 @@ import {
   Mail,
   Trash2,
   UserPlus,
+  Link as LinkIcon,
+  Share,
 } from "lucide-react";
+import { APP_BASE_URL } from "@/lib/constants";
+import Link from "next/link";
 
 interface OrganizationDetailsProps {
   id: string;
@@ -188,9 +194,9 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
       )}
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="flex items-start  justify-between w-full gap-6 flex-col lg:flex-row">
         {/* Details Card */}
-        <div className="rounded-md border border-gray-200 bg-white p-6">
+        <div className="rounded-md border border-gray-200 bg-white p-6 h-auto w-full">
           <h2 className="mb-2 flex items-center gap-2 text-lg font-bold text-gray-900">
             <Building className="h-5 w-5" />
             Organization Details
@@ -220,15 +226,29 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
             </div>
 
             {/* Slug (read-only) */}
-            <div>
-              <Label className="mb-2">Slug</Label>
-              <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
-                <Hash className="h-4 w-4" />
-                {organization.slug || "N/A"}
+            <div className="h-full w-full">
+              <Label className="mb-2">URL</Label>
+              <div className="flex items-center gap-3 h-full w-auto justify-between">
+                <div className=" overflow-hidden flex w-full h-full items-center justify-between  rounded-md border border-gray-200 bg-gray-50 px-3 py-2  text-gray-600 text-xs">
+                  {/* <div>
+                    <LinkIcon className="h-4 w-4" />
+                  </div> */}
+
+                  <p className=" truncate ">
+                    {`${APP_BASE_URL}/${id}/dashboard` || "N/A"}
+                  </p>
+                </div>
+                <div className="flex items-center border border-blue-500 rounded-md bg-blue-50 hover:bg-blue-100 ">
+                  <Link
+                    href={`${APP_BASE_URL}/${id}/dashboard`}
+                    target="_blank"
+                    className="text-blue-600 hover:text-blue-500 "
+                  >
+                    <Share className="h-auto w-4 m-2" />
+                  </Link>
+                </div>
               </div>
             </div>
-
-            {/* Created At */}
 
             {/* Status */}
             <div>
@@ -248,28 +268,28 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
 
             {/* Support Mode Toggle */}
             <div className="mb-4">
-              <Label
-                htmlFor="support-enabled"
-                className="flex items-center gap-2"
-              >
-                <input
-                  id="support-enabled"
-                  type="checkbox"
-                  checked={supportEnabled}
-                  onChange={(e) => handleSupportToggle(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-gray-600 focus:ring-gray-400"
-                />
-                Support Mode Enabled
-              </Label>
-              <p className="mt-1 text-xs text-gray-500">
-                Allow Themison staff to access this organization
-              </p>
+              <div className="flex items-center justify-start gap-4 p-2 border border-gray-200 rounded-md">
+                <div className="w-auto">
+                  <Switch
+                    id="support-enabled"
+                    checked={supportEnabled}
+                    onCheckedChange={handleSupportToggle}
+                  />
+                </div>
+                <div className="space-y-0.5">
+                  <Label htmlFor="support-enabled">{`Support Mode ${
+                    supportEnabled ? "Enabled" : "Disabled"
+                  }`}</Label>
+                  <p className="text-xs text-gray-500">
+                    Allow Themison staff to access this organization
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Members Card */}
         </div>
-        <div className="rounded-md border border-gray-200 bg-white p-6">
+        {/* Members Card */}
+        <div className="rounded-md border border-gray-200 bg-white p-6 w-full">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
               <Users className="h-5 w-5" />
