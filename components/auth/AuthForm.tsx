@@ -184,7 +184,7 @@ export function AuthForm({
               Sign in
             </Link>
           </>
-        ) : (
+        ) : mode !== "signin" ? (
           <>
             Don't have an account?{" "}
             <Link
@@ -194,6 +194,8 @@ export function AuthForm({
               Sign up
             </Link>
           </>
+        ) : (
+          ""
         )}
       </div>
     </form>
