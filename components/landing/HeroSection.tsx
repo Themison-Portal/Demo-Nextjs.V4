@@ -51,7 +51,7 @@ export function HeroSection() {
                   </p>
                 </div>
                 <Link
-                  href={""}
+                  href={ROUTES.PUBLIC.SIGNIN}
                   className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-md hover:bg-blue-800 transition-all font-semibold group"
                 >
                   SIGN IN
