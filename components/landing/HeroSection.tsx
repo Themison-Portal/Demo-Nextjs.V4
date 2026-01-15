@@ -40,7 +40,7 @@ export function HeroSection() {
             <div className="bg-white/95 backdrop-blur-sm rounded-md p-8 shadow-2xl border border-gray-200">
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                  <p className="text-sm font-semibold text-blue-500 uppercase tracking-wide">
                     You already have an account?
                   </p>
                   <h2 className="text-3xl font-bold text-gray-900">
@@ -52,7 +52,7 @@ export function HeroSection() {
                 </div>
                 <Link
                   href={""}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-black text-white rounded-md hover:bg-blue-800 transition-all font-semibold group"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-md hover:bg-blue-800 transition-all font-semibold group"
                 >
                   SIGN IN
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -77,7 +77,7 @@ export function HeroSection() {
                 </p>
                 <Link
                   href="https://www.themison.com/contact"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-900 rounded-md hover:bg-blue-800 hover:text-white transition-colors font-medium border border-gray-300"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-blue-600 rounded-md hover:bg-blue-800 hover:text-white transition-colors font-bold border-2 border-blue-600 hover:border-blue-800"
                 >
                   Request a Demo
                   <ArrowRight className="w-4 h-4" />
@@ -89,7 +89,7 @@ export function HeroSection() {
             <div className="text-center pt-4">
               <Link
                 href={ROUTES.CONSOLE.SIGNIN}
-                className="inline-flex items-center gap-2 text-white hover:text-black transition-colors font-medium"
+                className="inline-flex items-center gap-2 text-white hover:text-blue-500 transition-colors font-medium"
               >
                 Access to Themison Staff Console
                 <ArrowRight className="w-4 h-4" />
