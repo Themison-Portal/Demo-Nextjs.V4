@@ -4,10 +4,4 @@
  */
 
 export { authService } from "./authService";
-export type {
-  SignupData,
-  SignupResponse,
-  SigninData,
-  SigninResponse,
-  User,
-} from "./types";
+export type { SignupData, SignupResponse, SigninData, SigninResponse, User } from "./types";

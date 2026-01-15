@@ -8,6 +8,7 @@
 
 import { getUser } from "@/lib/auth/getUser";
 import { createClient } from "@/lib/supabase/server";
+import { SignoutButton } from "@/components/auth/SignoutButton";
 
 interface DashboardPageProps {
   params: Promise<{ orgId: string }>;
@@ -31,17 +32,14 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">
-          Welcome, {firstName}!
-        </h1>
-        {org && (
-          <p className="text-xl text-muted-foreground">
-            {org.name}
-          </p>
-        )}
+        <h1 className="text-4xl font-bold">Welcome, {firstName}!</h1>
+        {org && <p className="text-xl text-muted-foreground">{org.name}</p>}
         <p className="text-lg text-muted-foreground">
           Dashboard under development
         </p>
+        <div className="pt-4">
+          <SignoutButton />
+        </div>
       </div>
     </div>
   );

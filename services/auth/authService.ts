@@ -5,7 +5,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
-import type { SignupData, SignupResponse, SigninData, SigninResponse, User, ValidateInvitationResponse } from "./types";
+import type { SignupData, SignupResponse, SigninData, SigninResponse, User } from "./types";
 import { ROUTES } from "@/lib/routes";
 
 export const authService = {
@@ -105,21 +105,5 @@ export const authService = {
       lastName: user.user_metadata?.last_name,
       isStaff: user.user_metadata?.role === "staff",
     };
-  },
-
-  /**
-   * Validate invitation token
-   * Returns invitation details if valid
-   */
-  async validateInvitation(token: string): Promise<ValidateInvitationResponse> {
-    const response = await fetch(`/api/invitations/validate?token=${encodeURIComponent(token)}`);
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to validate invitation");
-    }
-
-    return result;
   },
 };

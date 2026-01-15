@@ -54,6 +54,9 @@ export const PUBLIC_ROUTES = {
   /** Landing page */
   HOME: "/",
 
+  /** Client signin */
+  SIGNIN: "/signin",
+
   /** Client signup (with invitation token) */
   SIGNUP: "/signup",
 
