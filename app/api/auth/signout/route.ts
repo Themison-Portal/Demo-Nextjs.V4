@@ -3,9 +3,9 @@
  * POST: Sign out user and redirect to signin
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { ROUTES } from '@/lib/routes';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { ROUTES } from "@/lib/routes";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +15,10 @@ export async function POST(request: NextRequest) {
     await supabase.auth.signOut();
 
     // Redirect to console signin
+    // if coming from app -> redirect to /signin
     return NextResponse.redirect(new URL(ROUTES.CONSOLE.SIGNIN, request.url));
   } catch (error) {
-    console.error('Error signing out:', error);
+    console.error("Error signing out:", error);
     return NextResponse.redirect(new URL(ROUTES.CONSOLE.SIGNIN, request.url));
   }
 }

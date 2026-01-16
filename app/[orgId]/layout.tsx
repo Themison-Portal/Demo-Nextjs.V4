@@ -11,6 +11,8 @@
  */
 
 import { requireOrgAccess } from "@/lib/auth/guards";
+import { getUser } from "@/lib/auth/getUser";
+import { AppMain } from "@/components/app/shared/AppMain";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -24,5 +26,17 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
   // Fetch is cached - pages can re-fetch without performance penalty
   await requireOrgAccess(orgId);
 
-  return <div className="min-h-screen bg-background">{children}</div>;
+  // Get user info for sidebar
+  const user = await getUser();
+  const firstName = user?.firstName || user?.email.split("@")[0];
+
+  return (
+    <AppMain
+      orgId={orgId}
+      userEmail={user?.email}
+      userFirstName={firstName}
+    >
+      {children}
+    </AppMain>
+  );
 }

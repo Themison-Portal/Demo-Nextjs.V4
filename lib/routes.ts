@@ -39,6 +39,9 @@ export const APP_ROUTES = {
   /** Client trials */
   TRIALS: (orgId: string) => `/${orgId}/trials`,
 
+  /** Trial detail page */
+  TRIAL: (orgId: string, trialId: string) => `/${orgId}/trials/${trialId}`,
+
   /** Client patients */
   PATIENTS: (orgId: string) => `/${orgId}/patients`,
 
