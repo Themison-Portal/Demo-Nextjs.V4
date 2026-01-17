@@ -56,6 +56,7 @@ export function withOrgPermission(handler: AuthHandler) {
       .select("org_role, status")
       .eq("user_id", user.id)
       .eq("org_id", orgId)
+      .is("deleted_at", null)
       .single();
 
     if (!member) {

@@ -19,7 +19,10 @@ import { AuthHandler, RouteContext, responses } from "./types";
  * });
  */
 export function withAuth(handler: AuthHandler) {
-  return async (req: NextRequest, ctx: RouteContext): Promise<Response> => {
+  return async (
+    req: NextRequest,
+    ctx: { params: Promise<Record<string, string>> }
+  ): Promise<Response> => {
     // Validate JWT and get user
     const user = await getUser();
 
@@ -27,7 +30,10 @@ export function withAuth(handler: AuthHandler) {
       return responses.unauthorized();
     }
 
-    // User authenticated → call handler
-    return handler(req, ctx, user);
+    // Resolve params Promise (Next.js 15+)
+    const params = await ctx.params;
+
+    // User authenticated → call handler with resolved params
+    return handler(req, { params }, user);
   };
 }
