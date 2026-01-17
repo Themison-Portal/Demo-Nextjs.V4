@@ -16,6 +16,7 @@ import {
   Users,
   LogOut,
   User,
+  Building2,
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -80,11 +81,18 @@ export function AppSidebar({
           active={pathname?.startsWith(ROUTES.APP.TRIALS(orgId))}
         />
 
-        <SidebarItem
+        {/* <SidebarItem
           href={ROUTES.APP.PATIENTS(orgId)}
           label="Patients"
           icon={<Users className="h-4 w-4" />}
           active={pathname?.startsWith(ROUTES.APP.PATIENTS(orgId))}
+        /> */}
+
+        <SidebarItem
+          href={ROUTES.APP.ORGANIZATION(orgId)}
+          label="Organization"
+          icon={<Building2 className="h-4 w-4" />}
+          active={pathname?.startsWith(ROUTES.APP.ORGANIZATION(orgId))}
         />
       </nav>
 

@@ -45,6 +45,13 @@ export const APP_ROUTES = {
   /** Client patients */
   PATIENTS: (orgId: string) => `/${orgId}/patients`,
 
+  /** Organization management */
+  ORGANIZATION: (orgId: string) => `/${orgId}/organization`,
+
+  /** Organization tab (overview, members, settings) */
+  ORGANIZATION_TAB: (orgId: string, tab: string) =>
+    `/${orgId}/organization/${tab}`,
+
   /** Client settings */
   SETTINGS: (orgId: string) => `/${orgId}/settings`,
 } as const;
