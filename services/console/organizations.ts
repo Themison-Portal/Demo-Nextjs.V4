@@ -1,6 +1,8 @@
 /**
- * Organization Service
- * Backend calls for organization operations
+ * Console - Organization Service
+ * Backend calls for organization operations from Console
+ * Uses /api/console/organizations/... endpoints
+ * Staff only - no support_enabled restrictions
  */
 
 import type {
@@ -10,20 +12,20 @@ import type {
   OrganizationDetails,
   UpdateOrganizationInput,
   AddMemberInput,
-} from './types';
+} from '../organizations/types';
 
 /**
  * Fetch all organizations (staff only)
  */
 export async function getOrganizations(): Promise<OrganizationListResponse> {
-  const response = await fetch('/api/organizations', {
+  const response = await fetch('/api/console/organizations', {
     method: 'GET',
     credentials: 'include',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch organizations');
+    throw new Error(error.error || 'Failed to fetch organizations');
   }
 
   return response.json();
@@ -35,7 +37,7 @@ export async function getOrganizations(): Promise<OrganizationListResponse> {
 export async function createOrganization(
   input: CreateOrganizationInput
 ): Promise<Organization> {
-  const response = await fetch('/api/organizations', {
+  const response = await fetch('/api/console/organizations', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -46,34 +48,7 @@ export async function createOrganization(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to create organization');
-  }
-
-  return response.json();
-}
-
-/**
- * Toggle support mode for organization (staff only)
- */
-export async function toggleSupportMode(
-  orgId: string,
-  enabled: boolean
-): Promise<Organization> {
-  const response = await fetch(
-    `/api/organizations/${orgId}/support`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ support_enabled: enabled }),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to toggle support mode');
+    throw new Error(error.error || 'Failed to create organization');
   }
 
   return response.json();
@@ -85,14 +60,14 @@ export async function toggleSupportMode(
 export async function getOrganizationById(
   id: string
 ): Promise<OrganizationDetails> {
-  const response = await fetch(`/api/organizations/${id}`, {
+  const response = await fetch(`/api/console/organizations/${id}`, {
     method: 'GET',
     credentials: 'include',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch organization');
+    throw new Error(error.error || 'Failed to fetch organization');
   }
 
   return response.json();
@@ -105,7 +80,7 @@ export async function updateOrganization(
   id: string,
   input: UpdateOrganizationInput
 ): Promise<Organization> {
-  const response = await fetch(`/api/organizations/${id}`, {
+  const response = await fetch(`/api/console/organizations/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -116,7 +91,7 @@ export async function updateOrganization(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to update organization');
+    throw new Error(error.error || 'Failed to update organization');
   }
 
   return response.json();
@@ -124,13 +99,12 @@ export async function updateOrganization(
 
 /**
  * Invite member to organization (staff only)
- * Creates invitation - member will be added when they accept and complete signup
  */
 export async function inviteMemberToOrganization(
   orgId: string,
   input: AddMemberInput
 ): Promise<void> {
-  const response = await fetch(`/api/organizations/${orgId}/members`, {
+  const response = await fetch(`/api/console/organizations/${orgId}/members`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -141,7 +115,7 @@ export async function inviteMemberToOrganization(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to invite member');
+    throw new Error(error.error || 'Failed to invite member');
   }
 }
 
@@ -152,13 +126,16 @@ export async function removeOrganizationMember(
   orgId: string,
   userId: string
 ): Promise<void> {
-  const response = await fetch(`/api/organizations/${orgId}/members/${userId}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
+  const response = await fetch(
+    `/api/console/organizations/${orgId}/members/${userId}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+    }
+  );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to remove member');
+    throw new Error(error.error || 'Failed to remove member');
   }
 }

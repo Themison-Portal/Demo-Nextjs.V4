@@ -1,5 +1,5 @@
 /**
- * Organization Details API Route
+ * Console - Organization Details API Route
  * GET: Get organization by ID with members (staff only)
  * PATCH: Update organization (name, support_enabled) (staff only)
  */
@@ -9,18 +9,19 @@ import { createClient } from "@/lib/supabase/server";
 import { withStaffPermission } from "@/lib/api/middleware";
 
 /**
- * GET /api/organizations/[id]
+ * GET /api/console/organizations/[orgId]
  * Get organization details with members
+ * Staff only - no support_enabled restriction
  */
 export const GET = withStaffPermission(async (req, ctx, user) => {
-  const { id } = await ctx.params;
+  const { orgId } = ctx.params;
   const supabase = await createClient();
 
   // Fetch organization
   const { data: organization, error: orgError } = await supabase
     .from("organizations")
     .select("*")
-    .eq("id", id)
+    .eq("id", orgId)
     .is("deleted_at", null)
     .single();
 
@@ -48,7 +49,7 @@ export const GET = withStaffPermission(async (req, ctx, user) => {
       )
     `
     )
-    .eq("org_id", id)
+    .eq("org_id", orgId)
     .is("deleted_at", null)
     .order("joined_at", { ascending: true });
 
@@ -64,7 +65,7 @@ export const GET = withStaffPermission(async (req, ctx, user) => {
   const { data: invitations, error: invitationsError } = await supabase
     .from("invitations")
     .select("*")
-    .eq("org_id", id)
+    .eq("org_id", orgId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
@@ -84,12 +85,13 @@ export const GET = withStaffPermission(async (req, ctx, user) => {
 });
 
 /**
- * PATCH /api/organizations/[id]
+ * PATCH /api/console/organizations/[orgId]
  * Update organization (name, support_enabled)
+ * Staff only
  */
 export const PATCH = withStaffPermission(
   async (req: NextRequest, ctx, user) => {
-    const { id } = await ctx.params;
+    const { orgId } = ctx.params;
     const body = await req.json();
     const { name, support_enabled } = body;
 
@@ -104,7 +106,7 @@ export const PATCH = withStaffPermission(
     const { data: currentOrg, error: fetchError } = await supabase
       .from("organizations")
       .select("*")
-      .eq("id", id)
+      .eq("id", orgId)
       .is("deleted_at", null)
       .single();
 
@@ -132,7 +134,7 @@ export const PATCH = withStaffPermission(
     const { data: updatedOrg, error: updateError } = await supabase
       .from("organizations")
       .update(updates)
-      .eq("id", id)
+      .eq("id", orgId)
       .select()
       .single();
 
@@ -160,9 +162,9 @@ export const PATCH = withStaffPermission(
       await supabase.from("audit_logs").insert({
         action: "organization.update",
         user_id: user.id,
-        org_id: id,
+        org_id: orgId,
         resource_type: "organization",
-        resource_id: id,
+        resource_id: orgId,
         before: {
           ...Object.fromEntries(changedFields.map((f) => [f, currentOrg[f]])),
         },

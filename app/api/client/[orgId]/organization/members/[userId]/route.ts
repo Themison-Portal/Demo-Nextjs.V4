@@ -1,17 +1,18 @@
 /**
- * Organization Member API Route
- * DELETE: Remove member from organization (staff only)
+ * Client - Organization Member API Route
+ * DELETE: Remove member from organization (org admin or staff with support)
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { withStaffPermission } from "@/lib/api/middleware";
+import { withOrgPermission } from "@/lib/api/middleware";
 
 /**
- * DELETE /api/organizations/[id]/members/[userId]
+ * DELETE /api/client/[orgId]/organization/members/[userId]
  * Remove member from organization (soft delete)
+ * Allows: superadmin, admin of org, or staff with support_enabled
  */
-export const DELETE = withStaffPermission(async (req, ctx, user) => {
-  const { id: orgId, userId } = await ctx.params;
+export const DELETE = withOrgPermission(async (req, ctx, user) => {
+  const { orgId, userId } = ctx.params;
   const supabase = await createClient();
 
   // Verify organization exists
@@ -90,7 +91,7 @@ export const DELETE = withStaffPermission(async (req, ctx, user) => {
       org_id: orgId,
       user_id: userId,
       org_role: member.org_role,
-      email: member.user?.email,
+      email: (member.user as unknown as { email: string } | null)?.email,
     },
   });
 

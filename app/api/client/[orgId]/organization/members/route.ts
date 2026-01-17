@@ -1,20 +1,21 @@
 /**
- * Organization Members API Route
- * POST: Invite member to organization (staff only)
+ * Client - Organization Members API Route
+ * POST: Invite member to organization (org admin or staff with support)
  */
 
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { withStaffPermission } from "@/lib/api/middleware";
+import { withOrgPermission } from "@/lib/api/middleware";
 import { sendInvitationEmail } from "@/lib/email/sendInvitationEmail";
 import { getInvitationUrl } from "@/lib/constants";
 
 /**
- * POST /api/organizations/[id]/members
+ * POST /api/client/[orgId]/organization/members
  * Create invitation for new member
+ * Allows: superadmin, admin of org, or staff with support_enabled
  */
-export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
-  const { id: orgId } = await ctx.params;
+export const POST = withOrgPermission(async (req: NextRequest, ctx, user) => {
+  const { orgId } = ctx.params;
   const body = await req.json();
   const { email, org_role } = body;
 
@@ -145,7 +146,7 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
         email: invitation.email,
         org_role: invitation.org_role,
         status: invitation.status,
-        token: invitation.token, // Token for invitation link
+        token: invitation.token,
       },
     },
     { status: 201 }

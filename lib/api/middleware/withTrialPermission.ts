@@ -68,6 +68,7 @@ export function withTrialPermission(handler: AuthHandler) {
       .select("org_role, status")
       .eq("user_id", user.id)
       .eq("org_id", trial.org_id)
+      .is("deleted_at", null)
       .single();
 
     if (member && member.status === "active") {
