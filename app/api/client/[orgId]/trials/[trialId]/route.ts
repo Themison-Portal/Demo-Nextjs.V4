@@ -5,14 +5,15 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { withOrgPermission } from "@/lib/api/middleware";
+import { withTrialMember, responses } from "@/lib/api/middleware";
+import { getTrialPermissions } from "@/lib/permissions/constants";
 
 /**
  * GET /api/client/[orgId]/trials/[trialId]
  * Get trial details with team members, visit schedules, and stats
- * Allows: superadmin, admin of org, or staff with support_enabled
+ * Allows: org admin OR trial team member
  */
-export const GET = withOrgPermission(async (req, ctx, user) => {
+export const GET = withTrialMember(async (req, ctx, user) => {
   const { orgId, trialId } = ctx.params;
   const supabase = await createClient();
 
@@ -31,7 +32,7 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
   }
 
   // Fetch team members with user data
-  const { data: teamMembers, error: teamError } = await supabase
+  const { data: allMembers, error: teamError } = await supabase
     .from("trial_team_members")
     .select(`
       id,
@@ -41,6 +42,7 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
       assigned_at,
       assigned_by,
       organization_members:org_member_id (
+        deleted_at,
         user:user_id (
           id,
           email,
@@ -50,6 +52,11 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
       )
     `)
     .eq("trial_id", trialId);
+
+  // Filter out members whose org membership was deleted (user removed from org)
+  const teamMembers = (allMembers || []).filter(
+    (member: any) => member.organization_members?.deleted_at === null
+  );
 
   if (teamError) {
     console.error("[API] Error fetching team members:", teamError);
@@ -131,9 +138,25 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
 /**
  * PATCH /api/client/[orgId]/trials/[trialId]
  * Update trial fields
- * Allows: superadmin, admin of org, or staff with support_enabled
+ * Allows: org admin OR trial member with edit permission (PI, CRC, editor)
  */
-export const PATCH = withOrgPermission(async (req, ctx, user) => {
+export const PATCH = withTrialMember(async (req, ctx, user) => {
+  // Debug logging
+  console.log("[PATCH Trial] User context:", {
+    orgRole: user.orgRole,
+    trialRole: user.trialRole,
+    orgMemberId: user.orgMemberId,
+  });
+
+  // Check edit permission
+  const perms = getTrialPermissions(user.orgRole, user.trialRole);
+  console.log("[PATCH Trial] Permissions:", { canEditTrial: perms.canEditTrial });
+
+  if (!perms.canEditTrial) {
+    console.log("[PATCH Trial] DENIED - canEditTrial is false");
+    return responses.forbidden("You don't have permission to edit this trial");
+  }
+
   const { orgId, trialId } = ctx.params;
   const supabase = await createClient();
 

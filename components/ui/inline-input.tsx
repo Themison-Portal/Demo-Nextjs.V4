@@ -15,6 +15,7 @@ interface InlineInputProps {
   onSave: (value: string) => Promise<void>;
   className?: string;
   align?: "left" | "right";
+  disabled?: boolean;
 }
 
 export function InlineInput({
@@ -23,6 +24,7 @@ export function InlineInput({
   onSave,
   className,
   align = "right",
+  disabled = false,
 }: InlineInputProps) {
   const [localValue, setLocalValue] = useState(value || "");
   const [isFocused, setIsFocused] = useState(false);
@@ -56,6 +58,22 @@ export function InlineInput({
       inputRef.current?.blur();
     }
   };
+
+  // Read-only display when disabled
+  if (disabled) {
+    return (
+      <span
+        className={cn(
+          "text-sm px-2 py-1",
+          align === "right" && "text-right",
+          !value && "text-gray-400",
+          className
+        )}
+      >
+        {value || placeholder}
+      </span>
+    );
+  }
 
   return (
     <input

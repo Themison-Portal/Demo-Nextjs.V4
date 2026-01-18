@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { withAuth } from "./withAuth";
 import { AuthHandler, RouteContext, responses } from "./types";
+import { isAdminRole, type OrgRole } from "@/lib/permissions/constants";
 
 /**
  * Wraps a route handler with organization permission check
@@ -67,7 +68,7 @@ export function withOrgPermission(handler: AuthHandler) {
       return responses.forbidden("Membership is not active");
     }
 
-    if (!["superadmin", "admin"].includes(member.org_role)) {
+    if (!isAdminRole(member.org_role as OrgRole)) {
       return responses.forbidden("Requires superadmin or admin role");
     }
 

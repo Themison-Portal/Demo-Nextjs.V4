@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { useOrganization } from "@/hooks/client/useOrganization";
+import { usePermissions } from "@/hooks/usePermissions";
 import { User, Plus } from "lucide-react";
 import { InviteMemberModal } from "./InviteMemberModal";
 
@@ -16,6 +17,7 @@ interface OrganizationMembersProps {
 
 export function OrganizationMembers({ orgId }: OrganizationMembersProps) {
   const { members, isLoading, inviteMember, isInviting } = useOrganization(orgId);
+  const { canInviteMembers } = usePermissions(orgId);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const handleInvite = async (invites: { email: string; org_role: "superadmin" | "admin" | "editor" | "reader" }[]) => {
@@ -56,13 +58,15 @@ export function OrganizationMembers({ orgId }: OrganizationMembersProps) {
               {members.length} {members.length === 1 ? "member" : "members"}
             </span>
           </div>
-          <button
-            onClick={() => setIsInviteModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Invite
-          </button>
+          {canInviteMembers && (
+            <button
+              onClick={() => setIsInviteModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Invite
+            </button>
+          )}
         </div>
       </div>
 
@@ -126,12 +130,14 @@ export function OrganizationMembers({ orgId }: OrganizationMembersProps) {
       </div>
 
       {/* Invite Modal */}
-      <InviteMemberModal
-        isOpen={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
-        onSubmit={handleInvite}
-        isLoading={isInviting}
-      />
+      {canInviteMembers && (
+        <InviteMemberModal
+          isOpen={isInviteModalOpen}
+          onClose={() => setIsInviteModalOpen(false)}
+          onSubmit={handleInvite}
+          isLoading={isInviting}
+        />
+      )}
     </div>
   );
 }

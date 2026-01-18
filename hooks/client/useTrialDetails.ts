@@ -48,6 +48,13 @@ export function useTrialDetails(orgId: string, trialId: string) {
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['client', 'trials', orgId] });
     },
+    onError: (error: any) => {
+      // Handle 409 conflict error for PI assignment
+      if (error?.message?.includes('already assigned')) {
+        // Error will be shown by the component
+        console.error('[useTrialDetails] PI assignment conflict:', error);
+      }
+    },
   });
 
   // Derived: Principal Investigator
@@ -118,6 +125,7 @@ export function useTrialDetails(orgId: string, trialId: string) {
     updateError: updateMutation.error,
     addTeamMember: addTeamMemberMutation.mutateAsync,
     isAddingTeamMember: addTeamMemberMutation.isPending,
+    addTeamMemberError: addTeamMemberMutation.error,
 
     // Helpers (for components - no logic needed there)
     updateField,

@@ -10,8 +10,7 @@ import { useState } from "react";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2 } from "lucide-react";
-
-type OrgRole = "superadmin" | "admin" | "editor" | "reader";
+import { ORG_ROLES, type OrgRole } from "@/lib/permissions/constants";
 
 interface InviteEntry {
   id: string;
@@ -26,12 +25,11 @@ interface InviteMemberModalProps {
   isLoading?: boolean;
 }
 
-const ROLES: { value: OrgRole; label: string }[] = [
-  { value: "reader", label: "Reader" },
-  { value: "editor", label: "Editor" },
-  { value: "admin", label: "Admin" },
-  { value: "superadmin", label: "Super Admin" },
-];
+/** Format role for display (capitalize) */
+function formatRoleLabel(role: OrgRole): string {
+  if (role === "superadmin") return "Super Admin";
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
@@ -146,9 +144,9 @@ export function InviteMemberModal({
                   disabled={isLoading}
                   className="w-full h-9 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-1"
                 >
-                  {ROLES.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
+                  {ORG_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {formatRoleLabel(role)}
                     </option>
                   ))}
                 </select>

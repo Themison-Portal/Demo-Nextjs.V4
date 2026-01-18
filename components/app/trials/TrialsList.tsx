@@ -12,6 +12,7 @@ import { Plus, FlaskConical, Users, ClipboardList } from "lucide-react";
 import { TrialCard } from "./TrialCard";
 import { CreateTrialModal } from "./CreateTrialModal";
 import { useTrials } from "@/hooks/client/useTrials";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface TrialsListProps {
   orgId: string;
@@ -20,6 +21,7 @@ interface TrialsListProps {
 export function TrialsList({ orgId }: TrialsListProps) {
   const { trials, isLoading, error, createTrial, isCreating } =
     useTrials(orgId);
+  const { canCreateTrial } = usePermissions(orgId);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (isLoading) {
@@ -38,42 +40,53 @@ export function TrialsList({ orgId }: TrialsListProps) {
     );
   }
 
-  // Empty state - invite user to create first trial
+  // Empty state
   if (trials.length === 0) {
     return (
       <div className="space-y-2">
         <h1 className="text-xl font-bold text-gray-900">Trials</h1>
 
-        <Card size="sm" className="  bg-white border border-gray-100">
+        <Card size="sm" className="bg-white border border-gray-100">
           <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-6">
               <FlaskConical className="h-6 w-6 text-blue-600" />
             </div>
 
-            <h2 className="text-lg font-normal text-gray-900 mb-2">
-              Create your first clinical trial
-            </h2>
-
-            <p className="text-gray-800 max-w-md mb-4">
-              Start managing your clinical research by creating a trial. You'll
-              be able to track patients, schedule visits, and coordinate your
-              team.
-            </p>
-
-            <Button
-              className="flex items-center gap-2 mb-8"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              <span>Create Trial</span>
-            </Button>
-
-            <CreateTrialModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onSubmit={createTrial}
-              isSubmitting={isCreating}
-            />
+            {canCreateTrial ? (
+              <>
+                <h2 className="text-lg font-normal text-gray-900 mb-2">
+                  Create your first clinical trial
+                </h2>
+                <p className="text-gray-800 max-w-md mb-4">
+                  Start managing your clinical research by creating a trial.
+                  You'll be able to track patients, schedule visits, and
+                  coordinate your team.
+                </p>
+                <Button
+                  className="flex items-center gap-2 mb-8"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Create Trial</span>
+                </Button>
+                <CreateTrialModal
+                  isOpen={isModalOpen}
+                  onClose={() => setIsModalOpen(false)}
+                  onSubmit={createTrial}
+                  isSubmitting={isCreating}
+                />
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-normal text-gray-900 mb-2">
+                  No trials assigned
+                </h2>
+                <p className="text-gray-800 max-w-md mb-4">
+                  You don't have any trials assigned yet. Contact your
+                  organization admin to be added to a trial team.
+                </p>
+              </>
+            )}
 
             {/* Feature highlights */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-2xl pt-8 border-t border-gray-200">
@@ -101,15 +114,17 @@ export function TrialsList({ orgId }: TrialsListProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Select a Trial</h1>
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex items-center gap-2"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <Plus className="h-4 w-4" />
-          <span>Create New Trial</span>
-        </Button>
+        {canCreateTrial && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create New Trial</span>
+          </Button>
+        )}
       </div>
 
       {/* Trials Grid */}
@@ -131,12 +146,14 @@ export function TrialsList({ orgId }: TrialsListProps) {
         ))}
       </div>
 
-      <CreateTrialModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={createTrial}
-        isSubmitting={isCreating}
-      />
+      {canCreateTrial && (
+        <CreateTrialModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={createTrial}
+          isSubmitting={isCreating}
+        />
+      )}
     </div>
   );
 }

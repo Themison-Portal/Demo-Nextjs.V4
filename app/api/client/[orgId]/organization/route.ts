@@ -1,19 +1,22 @@
 /**
  * Client - Organization API Route
- * GET: Get organization with members (org admin or staff with support)
+ * GET: Get organization with members (any org member)
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { withOrgPermission } from "@/lib/api/middleware";
+import { withOrgMember } from "@/lib/api/middleware";
+import { isAdminRole } from "@/lib/permissions/constants";
 
 /**
  * GET /api/client/[orgId]/organization
  * Get organization details with members
- * Allows: superadmin, admin of org, or staff with support_enabled
+ * Allows: any active org member
+ * Note: pending invitations only visible to admin
  */
-export const GET = withOrgPermission(async (req, ctx, user) => {
+export const GET = withOrgMember(async (req, ctx, user) => {
   const { orgId } = ctx.params;
   const supabase = await createClient();
+  const canSeeInvitations = isAdminRole(user.orgRole);
 
   // Fetch organization
   const { data: organization, error: orgError } = await supabase
@@ -61,25 +64,29 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
     );
   }
 
-  // Fetch pending invitations
-  const { data: invitations, error: invitationsError } = await supabase
-    .from("invitations")
-    .select("*")
-    .eq("org_id", orgId)
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
+  // Fetch pending invitations (admin only)
+  let invitations: any[] = [];
+  if (canSeeInvitations) {
+    const { data: invitationsData, error: invitationsError } = await supabase
+      .from("invitations")
+      .select("*")
+      .eq("org_id", orgId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
 
-  if (invitationsError) {
-    console.error("[API] Error fetching invitations:", invitationsError);
-    return Response.json(
-      { error: "Failed to fetch invitations" },
-      { status: 500 }
-    );
+    if (invitationsError) {
+      console.error("[API] Error fetching invitations:", invitationsError);
+      return Response.json(
+        { error: "Failed to fetch invitations" },
+        { status: 500 }
+      );
+    }
+    invitations = invitationsData || [];
   }
 
   return Response.json({
     ...organization,
     members: members || [],
-    invitations: invitations || [],
+    invitations,
   });
 });

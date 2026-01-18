@@ -9,6 +9,7 @@
 import Link from "next/link";
 import { useTrialDetails } from "@/hooks/client/useTrialDetails";
 import { useOrganization } from "@/hooks/client/useOrganization";
+import { useTrialPermissions } from "@/hooks/useTrialPermissions";
 import { ROUTES } from "@/lib/routes";
 import { parseLocalDate } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,6 +51,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
     isLoading,
     error,
     isAddingTeamMember,
+    addTeamMemberError,
     // Helpers from hook
     updateField,
     updateDate,
@@ -60,7 +62,10 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
   // Get organization members for PI selection
   const { members: orgMembers } = useOrganization(orgId);
 
-  if (isLoading) {
+  // Get trial-level permissions
+  const { canEditTrial, canManageTeam, canAssignPI, isLoading: isPermissionsLoading } = useTrialPermissions(orgId, teamMembers);
+
+  if (isLoading || isPermissionsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-gray-500">Loading trial...</div>
@@ -122,6 +127,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 onSave={(value) => updateField("description", value)}
                 multiline
                 className="text-gray-700"
+                disabled={!canEditTrial}
               />
             </div>
 
@@ -150,7 +156,13 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 }))}
                 onSelect={assignPI}
                 isLoading={isAddingTeamMember}
+                disabled={!canAssignPI}
               />
+              {addTeamMemberError && (
+                <p className="text-xs text-red-600">
+                  {(addTeamMemberError as any)?.message || "Failed to assign PI"}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -291,6 +303,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 value={trial.status}
                 options={TRIAL_STATUS_OPTIONS}
                 onSelect={(value) => updateField("status", value)}
+                disabled={!canEditTrial}
               />
             </div>
 
@@ -302,6 +315,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 options={TRIAL_PHASE_OPTIONS}
                 placeholder="Select phase"
                 onSelect={(value) => updateField("phase", value)}
+                disabled={!canEditTrial}
               />
             </div>
 
@@ -312,6 +326,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 value={startDate}
                 onChange={(date) => updateDate("start_date", date ?? null)}
                 placeholder="Set date"
+                disabled={!canEditTrial}
               />
             </div>
 
@@ -323,6 +338,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 onChange={(date) => updateDate("end_date", date ?? null)}
                 placeholder="Set date"
                 minDate={startDate}
+                disabled={!canEditTrial}
               />
             </div>
 
@@ -333,7 +349,8 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 value={sponsor}
                 placeholder="Add sponsor"
                 onSave={(value) => updateSettings("sponsor", value)}
-                className="w-[130px] "
+                className="w-[130px]"
+                disabled={!canEditTrial}
               />
             </div>
 
@@ -344,7 +361,8 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 value={location}
                 placeholder="Add location"
                 onSave={(value) => updateSettings("location", value)}
-                className="w-[130px] "
+                className="w-[130px]"
+                disabled={!canEditTrial}
               />
             </div>
 

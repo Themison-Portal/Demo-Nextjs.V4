@@ -27,6 +27,7 @@ import {
   Share,
 } from "lucide-react";
 import { APP_BASE_URL } from "@/lib/constants";
+import { ORG_ROLES, type OrgRole } from "@/lib/permissions/constants";
 import Link from "next/link";
 
 interface OrganizationDetailsProps {
@@ -57,9 +58,7 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
   // Add member form state
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
-  const [newMemberRole, setNewMemberRole] = useState<
-    "superadmin" | "admin" | "editor" | "reader"
-  >("reader");
+  const [newMemberRole, setNewMemberRole] = useState<OrgRole>("reader");
 
   // Error state
   const [formError, setFormError] = useState<string | null>(null);
@@ -333,13 +332,14 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
                   <select
                     id="new-member-role"
                     value={newMemberRole}
-                    onChange={(e) => setNewMemberRole(e.target.value as any)}
+                    onChange={(e) => setNewMemberRole(e.target.value as OrgRole)}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
                   >
-                    <option value="superadmin">Superadmin</option>
-                    <option value="admin">Admin</option>
-                    <option value="editor">Editor</option>
-                    <option value="reader">Reader</option>
+                    {ORG_ROLES.map((role) => (
+                      <option key={role} value={role} className="capitalize">
+                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="flex gap-2">

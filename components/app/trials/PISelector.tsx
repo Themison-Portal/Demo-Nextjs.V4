@@ -36,6 +36,8 @@ interface PISelectorProps {
   onSelect: (orgMemberId: string) => void;
   /** Whether selection is in progress */
   isLoading?: boolean;
+  /** Whether the selector is disabled (read-only) */
+  disabled?: boolean;
 }
 
 function getMemberDisplayName(member: Member): string {
@@ -53,6 +55,7 @@ export function PISelector({
   members,
   onSelect,
   isLoading = false,
+  disabled = false,
 }: PISelectorProps) {
   const [open, setOpen] = useState(false);
 
@@ -60,6 +63,20 @@ export function PISelector({
     onSelect(orgMemberId);
     setOpen(false);
   };
+
+  // Read-only display when disabled
+  if (disabled) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1 -mx-2">
+        <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
+          <User className="h-3 w-3 text-gray-500" />
+        </div>
+        <span className="text-sm text-gray-900">
+          {currentPIName || "Not assigned"}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

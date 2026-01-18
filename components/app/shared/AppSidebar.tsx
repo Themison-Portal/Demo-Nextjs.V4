@@ -9,6 +9,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
+import { usePermissions } from "@/hooks/usePermissions";
 import Image from "next/image";
 import {
   LayoutDashboard,
@@ -31,14 +32,14 @@ function SidebarItem({ href, label, icon, active }: SidebarItemProps) {
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-2 rounded-sm px-2 py-2 text-sm font-normal transition-colors",
+        "flex items-center gap-2 rounded-sm px-2 py-2 text-sm font-medium transition-colors",
         active
-          ? "bg-gray-100 text-gray-900"
-          : "text-gray-900 hover:bg-gray-200 hover:text-gray-800"
+          ? "bg-gray-100 text-blue-700"
+          : "text-gray-800 hover:bg-gray-200 hover:text-gray-800"
       )}
     >
       <div className="h-4 w-4">{icon}</div>
-      <p className="font-normal">{label}</p>
+      <p className="">{label}</p>
     </Link>
   );
 }
@@ -55,6 +56,7 @@ export function AppSidebar({
   userFirstName,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const { canManageOrg } = usePermissions(orgId);
 
   return (
     <div className="flex h-screen w-[15%] min-w-44 flex-col border-r border-gray-200 bg-white">

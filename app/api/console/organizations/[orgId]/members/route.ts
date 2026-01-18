@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { withStaffPermission } from "@/lib/api/middleware";
 import { sendInvitationEmail } from "@/lib/email/sendInvitationEmail";
 import { getInvitationUrl } from "@/lib/constants";
+import { ORG_ROLES } from "@/lib/permissions/constants";
 
 /**
  * POST /api/console/organizations/[orgId]/members
@@ -34,12 +35,10 @@ export const POST = withStaffPermission(async (req: NextRequest, ctx, user) => {
   }
 
   // Validate org_role
-  const validRoles = ["superadmin", "admin", "editor", "reader"];
-  if (!validRoles.includes(org_role)) {
+  if (!ORG_ROLES.includes(org_role)) {
     return Response.json(
       {
-        error:
-          "Invalid org_role. Must be one of: superadmin, admin, editor, reader",
+        error: `Invalid org_role. Must be one of: ${ORG_ROLES.join(", ")}`,
       },
       { status: 400 }
     );

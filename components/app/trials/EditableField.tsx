@@ -15,6 +15,7 @@ interface EditableTextProps {
   className?: string;
   inputClassName?: string;
   multiline?: boolean;
+  disabled?: boolean;
 }
 
 export function EditableText({
@@ -24,6 +25,7 @@ export function EditableText({
   className = "",
   inputClassName = "",
   multiline = false,
+  disabled = false,
 }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
@@ -98,6 +100,15 @@ export function EditableText({
 
   const displayValue = value || placeholder;
   const isEmpty = !value;
+
+  // Read-only mode when disabled
+  if (disabled) {
+    return (
+      <div className={`rounded px-2 py-1 -mx-2 ${className}`}>
+        <span className={isEmpty ? "text-gray-400" : ""}>{displayValue}</span>
+      </div>
+    );
+  }
 
   return (
     <div

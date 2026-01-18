@@ -5,19 +5,27 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { withOrgPermission } from "@/lib/api/middleware";
+import { withOrgPermission, withOrgMember } from "@/lib/api/middleware";
+import { isAdminRole } from "@/lib/permissions/constants";
 
 /**
  * GET /api/client/[orgId]/trials
- * Get all trials for an organization
- * Allows: superadmin, admin of org, or staff with support_enabled
+ * Get trials for an organization
+ *
+ * Access:
+ * - superadmin/admin: See ALL trials in the organization
+ * - editor/reader: See only trials where they are assigned (via trial_team_members)
+ * - staff (with support_enabled): See ALL trials
  */
-export const GET = withOrgPermission(async (req, ctx, user) => {
+export const GET = withOrgMember(async (req, ctx, user) => {
   const { orgId } = ctx.params;
   const supabase = await createClient();
 
-  // Fetch trials with team member count
-  const { data: trials, error: trialsError } = await supabase
+  // Determine if user can see all trials
+  const canViewAll = user.isStaff || isAdminRole(user.orgRole);
+
+  // Build query
+  let query = supabase
     .from("trials")
     .select(`
       *,
@@ -26,6 +34,7 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
         trial_role,
         org_member_id,
         organization_members:org_member_id (
+          deleted_at,
           user:user_id (
             id,
             email,
@@ -38,6 +47,35 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
+  // If editor/reader, filter to only assigned trials
+  if (!canViewAll) {
+    // Get trial IDs where user is a team member
+    const { data: memberTrials, error: memberError } = await supabase
+      .from("trial_team_members")
+      .select("trial_id")
+      .eq("org_member_id", user.orgMemberId);
+
+    // DEBUG: Log for troubleshooting
+    console.log("[API] Editor/Reader trial access check:", {
+      userId: user.id,
+      orgMemberId: user.orgMemberId,
+      orgRole: user.orgRole,
+      memberTrials,
+      memberError,
+    });
+
+    const trialIds = (memberTrials || []).map((m) => m.trial_id);
+
+    if (trialIds.length === 0) {
+      // No assigned trials
+      return Response.json({ trials: [], total: 0 });
+    }
+
+    query = query.in("id", trialIds);
+  }
+
+  const { data: trials, error: trialsError } = await query;
+
   if (trialsError) {
     console.error("[API] Error fetching trials:", trialsError);
     return Response.json({ error: "Failed to fetch trials" }, { status: 500 });
@@ -45,7 +83,10 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
 
   // Transform to include computed fields
   const transformedTrials = (trials || []).map((trial) => {
-    const teamMembers = trial.trial_team_members || [];
+    // Filter out team members whose org membership was deleted
+    const teamMembers = (trial.trial_team_members || []).filter(
+      (m: any) => m.organization_members?.deleted_at === null
+    );
 
     // Find PI (Principal Investigator)
     const piMember = teamMembers.find((m: any) => m.trial_role === 'PI');

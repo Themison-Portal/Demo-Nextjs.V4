@@ -8,6 +8,37 @@ import type {
   OrganizationDetails,
   AddMemberInput,
 } from '../organizations/types';
+import type { OrgRole } from '@/lib/permissions/constants';
+
+/**
+ * Current user's membership in an organization
+ */
+export interface OrgMembership {
+  userId: string;
+  email: string;
+  orgMemberId: string;
+  orgRole: OrgRole;
+  isStaff: boolean;
+}
+
+/**
+ * Get current user's membership in an organization
+ * Lightweight endpoint for permission checks
+ * Allows: any active member of the org
+ */
+export async function getMyMembership(orgId: string): Promise<OrgMembership> {
+  const response = await fetch(`/api/client/${orgId}/me`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch membership');
+  }
+
+  return response.json();
+}
 
 /**
  * Get organization with members
