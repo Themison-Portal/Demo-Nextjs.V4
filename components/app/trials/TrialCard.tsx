@@ -16,6 +16,7 @@ interface TrialCardProps {
   location: string;
   role?: string;
   principalInvestigator?: string;
+  protocolNumber: string;
 }
 
 export function TrialCard({
@@ -26,6 +27,7 @@ export function TrialCard({
   location,
   role,
   principalInvestigator,
+  protocolNumber,
 }: TrialCardProps) {
   return (
     <Link href={ROUTES.APP.TRIAL(orgId, id)}>
@@ -35,7 +37,10 @@ export function TrialCard({
       >
         <CardContent className="space-y-3 p-0">
           <div className="flex items-center justify-between bg-blue-600 px-6 py-8">
-            <h3 className="text-base font-semibold text-gray-100">{name}</h3>
+            <div className="space-y-1 flex flex-col">
+              <h3 className="text-base font-semibold text-gray-100">{name}</h3>
+              <small className="text-white">{protocolNumber}</small>
+            </div>
             <ChevronRight className=" h-4 w-4 text-gray-100 font-light" />
           </div>
           <div className="space-y-4 px-6 py-4">

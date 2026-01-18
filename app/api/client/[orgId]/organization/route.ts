@@ -33,6 +33,7 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
     .from("organization_members")
     .select(
       `
+      id,
       user_id,
       org_id,
       org_role,
@@ -43,6 +44,7 @@ export const GET = withOrgPermission(async (req, ctx, user) => {
         email,
         first_name,
         last_name,
+        full_name,
         avatar_url
       )
     `

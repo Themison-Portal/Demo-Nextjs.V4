@@ -39,8 +39,12 @@ export const APP_ROUTES = {
   /** Client trials */
   TRIALS: (orgId: string) => `/${orgId}/trials`,
 
-  /** Trial detail page */
+  /** Trial detail page (redirects to overview) */
   TRIAL: (orgId: string, trialId: string) => `/${orgId}/trials/${trialId}`,
+
+  /** Trial tab (overview, documentation, team, patients) */
+  TRIAL_TAB: (orgId: string, trialId: string, tab: string) =>
+    `/${orgId}/trials/${trialId}/${tab}`,
 
   /** Client patients */
   PATIENTS: (orgId: string) => `/${orgId}/patients`,

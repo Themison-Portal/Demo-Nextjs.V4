@@ -38,7 +38,7 @@ function SidebarItem({ href, label, icon, active }: SidebarItemProps) {
       )}
     >
       <div className="h-4 w-4">{icon}</div>
-      <span>{label}</span>
+      <p className="font-normal">{label}</p>
     </Link>
   );
 }

@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
 
 export interface TabItem {
   label: string;
@@ -16,12 +17,18 @@ export interface TabItem {
   icon?: React.ReactNode;
 }
 
+interface BackLinkProps {
+  label: string;
+  href: string;
+}
+
 interface NavigationTabsProps {
   tabs: TabItem[];
+  backLink?: BackLinkProps;
   className?: string;
 }
 
-export function NavigationTabs({ tabs, className }: NavigationTabsProps) {
+export function NavigationTabs({ tabs, backLink, className }: NavigationTabsProps) {
   const pathname = usePathname();
 
   return (
@@ -32,6 +39,21 @@ export function NavigationTabs({ tabs, className }: NavigationTabsProps) {
       )}
     >
       <nav className="flex items-center gap-1">
+        {/* Back link */}
+        {backLink && (
+          <>
+            <Link
+              href={backLink.href}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {backLink.label}
+            </Link>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+          </>
+        )}
+
+        {/* Tabs */}
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
 

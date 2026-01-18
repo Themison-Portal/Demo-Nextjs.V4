@@ -69,7 +69,12 @@ export function Dashboard() {
               </h2>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={isLoading}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="cursor-pointer"
+                disabled={isLoading}
+              >
                 <Link href={ROUTES.CONSOLE.ORGANIZATIONS}>View all</Link>
               </Button>
               <Button

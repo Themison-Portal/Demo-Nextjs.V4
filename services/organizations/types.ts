@@ -32,6 +32,7 @@ export interface OrganizationListResponse {
 }
 
 export interface OrganizationMember {
+  id: string; // org_member_id - used for trial_team_members
   user_id: string;
   org_id: string;
   org_role: 'superadmin' | 'admin' | 'editor' | 'reader';
@@ -42,6 +43,7 @@ export interface OrganizationMember {
     email: string;
     first_name?: string;
     last_name?: string;
+    full_name?: string;
     avatar_url?: string;
   };
 }
