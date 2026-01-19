@@ -11,7 +11,16 @@
 // ============================================================================
 
 export type OrgRole = 'superadmin' | 'admin' | 'editor' | 'reader';
-export type TrialRole = 'PI' | 'CRC' | 'Physician' | 'Nurse' | 'Lab Technician' | string;
+export type TrialRole =
+  | 'PI'
+  | 'CRC'
+  | 'Physician'
+  | 'Nurse'
+  | 'Data Manager'
+  | 'Laboratory'
+  | 'Pharmacist'
+  | 'Monitor'
+  | 'CR';
 
 export interface OrgPermissions {
   // Trials
@@ -112,7 +121,17 @@ export const ADMIN_ORG_ROLES: OrgRole[] = ['superadmin', 'admin'];
 export const CRITICAL_TRIAL_ROLES: TrialRole[] = ['PI', 'CRC'];
 
 /** Standard trial roles for clinical trials */
-export const TRIAL_ROLES: TrialRole[] = ['PI', 'CRC', 'Physician', 'Nurse', 'Lab Technician'];
+export const TRIAL_ROLES: TrialRole[] = [
+  'PI',
+  'CRC',
+  'Physician',
+  'Nurse',
+  'Data Manager',
+  'Laboratory',
+  'Pharmacist',
+  'Monitor',
+  'CR',
+];
 
 /**
  * Get trial permissions based on org role and trial role

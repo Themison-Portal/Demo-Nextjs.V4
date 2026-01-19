@@ -25,3 +25,17 @@ export function formatDateForApi(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * Format ISO timestamp for display (MMM DD, YYYY)
+ * "2026-01-18T12:00:00Z" -> "Jan 18, 2026"
+ */
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}

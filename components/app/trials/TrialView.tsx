@@ -9,6 +9,7 @@ import { NavigationTabs, TabItem } from "@/components/app/shared/NavigationTabs"
 import { ROUTES } from "@/lib/routes";
 import { LayoutDashboard, FileText, Users, UserRound } from "lucide-react";
 import { TrialOverview } from "./TrialOverview";
+import { TrialTeam } from "./TrialTeam";
 
 type ValidTab = "overview" | "documentation" | "team" | "patients";
 
@@ -53,7 +54,7 @@ export function TrialView({ orgId, trialId, activeTab }: TrialViewProps) {
       case "documentation":
         return <PlaceholderTab title="Documentation" description="Trial documents and protocols will be managed here." />;
       case "team":
-        return <PlaceholderTab title="Team" description="Manage trial team members and their roles." />;
+        return <TrialTeam orgId={orgId} trialId={trialId} />;
       case "patients":
         return <PlaceholderTab title="Patients" description="Track and manage enrolled patients." />;
       default:

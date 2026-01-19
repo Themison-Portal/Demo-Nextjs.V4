@@ -2,12 +2,17 @@
  * Organization Types
  */
 
+export interface OrganizationSettings {
+  address?: string;
+  [key: string]: unknown;
+}
+
 export interface Organization {
   id: string;
   name: string;
   slug?: string;
   support_enabled: boolean;
-  settings?: Record<string, unknown>;
+  settings?: OrganizationSettings;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
@@ -68,6 +73,7 @@ export interface OrganizationDetails extends Organization {
 export interface UpdateOrganizationInput {
   name?: string;
   support_enabled?: boolean;
+  settings?: Partial<OrganizationSettings>;
 }
 
 export interface AddMemberInput {

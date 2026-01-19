@@ -16,6 +16,7 @@ interface EditableTextProps {
   inputClassName?: string;
   multiline?: boolean;
   disabled?: boolean;
+  fullWidth?: boolean; // Control if input takes full width
 }
 
 export function EditableText({
@@ -26,6 +27,7 @@ export function EditableText({
   inputClassName = "",
   multiline = false,
   disabled = false,
+  fullWidth = true,
 }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
@@ -82,7 +84,9 @@ export function EditableText({
       onBlur: handleSave,
       onKeyDown: handleKeyDown,
       disabled: isSaving,
-      className: `w-full bg-white border border-blue-500 rounded px- py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputClassName}`,
+      className: `${
+        fullWidth ? "w-full" : "min-w-[200px]"
+      } bg-white  rounded px-2 py-1 -mx-2 text-sm focus:outline-none  focus:ring-1 focus:ring-blue-400 ${inputClassName}`,
     };
 
     if (multiline) {
@@ -90,7 +94,7 @@ export function EditableText({
         <textarea
           {...commonProps}
           rows={3}
-          className={`${commonProps.className} resize-none`}
+          className={`${commonProps.className} resize-none min-h-18`}
         />
       );
     }
@@ -172,7 +176,7 @@ export function EditableSelect({
         onChange={handleChange}
         onBlur={() => setIsEditing(false)}
         disabled={isSaving}
-        className="bg-white border border-blue-500 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="bg-white border border-blue-400 rounded px-2 py-1 -mx-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-500"
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (

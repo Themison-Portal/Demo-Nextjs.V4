@@ -1,10 +1,11 @@
 /**
  * Client - Organization API Route
  * GET: Get organization with members (any org member)
+ * PATCH: Update organization (admin only)
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { withOrgMember } from "@/lib/api/middleware";
+import { withOrgMember, responses } from "@/lib/api/middleware";
 import { isAdminRole } from "@/lib/permissions/constants";
 
 /**
@@ -89,4 +90,71 @@ export const GET = withOrgMember(async (req, ctx, user) => {
     members: members || [],
     invitations,
   });
+});
+
+/**
+ * PATCH /api/client/[orgId]/organization
+ * Update organization details
+ * Allows: org admin only
+ * Body: { name?: string, settings?: object }
+ */
+export const PATCH = withOrgMember(async (req, ctx, user) => {
+  // Check admin permission
+  if (!isAdminRole(user.orgRole)) {
+    return responses.forbidden("Only organization admins can update organization settings");
+  }
+
+  const { orgId } = ctx.params;
+  const supabase = await createClient();
+
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { name, settings } = body;
+
+  // Build update object
+  const updates: any = {};
+  if (name !== undefined) updates.name = name;
+  if (settings !== undefined) {
+    // Merge with existing settings
+    const { data: currentOrg } = await supabase
+      .from("organizations")
+      .select("settings")
+      .eq("id", orgId)
+      .single();
+
+    updates.settings = {
+      ...(currentOrg?.settings || {}),
+      ...settings,
+    };
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return Response.json(
+      { error: "At least one field to update is required" },
+      { status: 400 }
+    );
+  }
+
+  // Update organization
+  const { data: updated, error: updateError } = await supabase
+    .from("organizations")
+    .update(updates)
+    .eq("id", orgId)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error("[API] Error updating organization:", updateError);
+    return Response.json(
+      { error: "Failed to update organization" },
+      { status: 500 }
+    );
+  }
+
+  return Response.json(updated);
 });

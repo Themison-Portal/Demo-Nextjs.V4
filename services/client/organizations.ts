@@ -7,6 +7,8 @@
 import type {
   OrganizationDetails,
   AddMemberInput,
+  UpdateOrganizationInput,
+  Organization,
 } from '../organizations/types';
 import type { OrgRole } from '@/lib/permissions/constants';
 
@@ -104,4 +106,29 @@ export async function removeMember(
     const error = await response.json();
     throw new Error(error.error || 'Failed to remove member');
   }
+}
+
+/**
+ * Update organization details
+ * Allows: org admin only
+ */
+export async function updateOrganization(
+  orgId: string,
+  input: UpdateOrganizationInput
+): Promise<Organization> {
+  const response = await fetch(`/api/client/${orgId}/organization`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update organization');
+  }
+
+  return response.json();
 }

@@ -63,7 +63,7 @@ export function SelectPopover({
           <ChevronDown className="h-3 w-3 text-gray-400" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[180px] p-1" align="end">
+      <PopoverContent className=" min-w-40 w-auto p-1" align="end">
         {options.map((option) => {
           const isSelected = option.value === value;
 

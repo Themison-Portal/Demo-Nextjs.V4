@@ -57,7 +57,16 @@ export interface TrialListResponse {
 // TRIAL TEAM MEMBER
 // ============================================================================
 
-export type TrialRole = 'PI' | 'CRC' | 'Physician' | 'Nurse' | 'Lab Technician' | string;
+export type TrialRole =
+  | 'PI'
+  | 'CRC'
+  | 'Physician'
+  | 'Nurse'
+  | 'Data Manager'
+  | 'Laboratory'
+  | 'Pharmacist'
+  | 'Monitor'
+  | 'CR';
 
 export interface TrialTeamMember {
   id: string;
@@ -66,6 +75,12 @@ export interface TrialTeamMember {
   trial_role: TrialRole;
   assigned_at: string;
   assigned_by?: string | null;
+  status?: 'active' | 'inactive';
+  settings?: {
+    notes?: string;
+    contact_info?: string;
+    [key: string]: unknown;
+  };
   // From join with organization_members -> users
   user?: {
     id: string;

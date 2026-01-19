@@ -28,6 +28,8 @@ export const GET = withTrialMember(async (req, ctx, user) => {
       trial_role,
       assigned_at,
       assigned_by,
+      status,
+      settings,
       organization_members:org_member_id (
         id,
         deleted_at,
@@ -59,6 +61,8 @@ export const GET = withTrialMember(async (req, ctx, user) => {
     trial_role: member.trial_role,
     assigned_at: member.assigned_at,
     assigned_by: member.assigned_by,
+    status: member.status,
+    settings: member.settings,
     user: member.organization_members?.user || null,
   }));
 
@@ -238,8 +242,8 @@ export const POST = withTrialMember(async (req, ctx, user) => {
 
 /**
  * PUT /api/client/[orgId]/trials/[trialId]/team
- * Update a team member's role
- * Body: { org_member_id: string, trial_role: string }
+ * Update a team member's role, status, or settings
+ * Body: { org_member_id: string, trial_role?: string, status?: string, settings?: object }
  * Allows: org admin OR PI/CRC (but only org admin can assign PI role)
  */
 export const PUT = withTrialMember(async (req, ctx, user) => {
@@ -253,16 +257,24 @@ export const PUT = withTrialMember(async (req, ctx, user) => {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { org_member_id, trial_role } = body;
+  const { org_member_id, trial_role, status, settings } = body;
 
-  if (!org_member_id || !trial_role) {
+  if (!org_member_id) {
     return Response.json(
-      { error: "org_member_id and trial_role are required" },
+      { error: "org_member_id is required" },
       { status: 400 }
     );
   }
 
-  // Check permissions based on role being assigned
+  // At least one field to update is required
+  if (!trial_role && !status && !settings) {
+    return Response.json(
+      { error: "At least one of trial_role, status, or settings must be provided" },
+      { status: 400 }
+    );
+  }
+
+  // Check permissions based on what's being updated
   const perms = getTrialPermissions(user.orgRole, user.trialRole);
 
   if (trial_role === 'PI') {
@@ -271,7 +283,7 @@ export const PUT = withTrialMember(async (req, ctx, user) => {
       return responses.forbidden("Only organization admins can assign the PI role");
     }
   } else {
-    // PI/CRC can manage other team members
+    // PI/CRC can manage other team members (role, status, settings)
     if (!perms.canManageTeam) {
       return responses.forbidden("You don't have permission to manage team members");
     }
@@ -325,10 +337,16 @@ export const PUT = withTrialMember(async (req, ctx, user) => {
     }
   }
 
-  // Update the role
+  // Build update object with provided fields
+  const updates: any = {};
+  if (trial_role !== undefined) updates.trial_role = trial_role;
+  if (status !== undefined) updates.status = status;
+  if (settings !== undefined) updates.settings = settings;
+
+  // Update the team member
   const { data: updated, error: updateError } = await supabase
     .from("trial_team_members")
-    .update({ trial_role })
+    .update(updates)
     .eq("trial_id", trialId)
     .eq("org_member_id", org_member_id)
     .select()

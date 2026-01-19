@@ -10,8 +10,9 @@ import {
   getOrganization,
   inviteMember,
   removeMember,
+  updateOrganization,
 } from '@/services/client/organizations';
-import type { AddMemberInput } from '@/services/organizations/types';
+import type { AddMemberInput, UpdateOrganizationInput } from '@/services/organizations/types';
 
 /**
  * Hook for organization data and member management in Client App
@@ -49,6 +50,14 @@ export function useOrganization(orgId: string) {
     },
   });
 
+  // Mutation: update organization
+  const updateMutation = useMutation({
+    mutationFn: (input: UpdateOrganizationInput) => updateOrganization(orgId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   return {
     // Data
     organization: data,
@@ -67,5 +76,8 @@ export function useOrganization(orgId: string) {
     removeMember: removeMutation.mutateAsync,
     isRemoving: removeMutation.isPending,
     removeError: removeMutation.error,
+    updateOrganization: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
+    updateError: updateMutation.error,
   };
 }

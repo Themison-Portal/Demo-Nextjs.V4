@@ -12,7 +12,7 @@ import type {
   UpdateTrialInput,
   TrialTeamMember,
   AddTrialTeamMemberInput,
-} from '../trials/types';
+} from "../trials/types";
 
 /**
  * Get all trials for an organization
@@ -20,13 +20,13 @@ import type {
  */
 export async function getTrials(orgId: string): Promise<TrialListResponse> {
   const response = await fetch(`/api/client/${orgId}/trials`, {
-    method: 'GET',
-    credentials: 'include',
+    method: "GET",
+    credentials: "include",
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch trials');
+    throw new Error(error.error || "Failed to fetch trials");
   }
 
   return response.json();
@@ -41,13 +41,13 @@ export async function getTrialById(
   trialId: string
 ): Promise<TrialDetails> {
   const response = await fetch(`/api/client/${orgId}/trials/${trialId}`, {
-    method: 'GET',
-    credentials: 'include',
+    method: "GET",
+    credentials: "include",
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch trial');
+    throw new Error(error.error || "Failed to fetch trial");
   }
 
   return response.json();
@@ -62,17 +62,17 @@ export async function createTrial(
   input: CreateTrialInput
 ): Promise<Trial> {
   const response = await fetch(`/api/client/${orgId}/trials`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to create trial');
+    throw new Error(error.error || "Failed to create trial");
   }
 
   return response.json();
@@ -88,17 +88,17 @@ export async function updateTrial(
   input: UpdateTrialInput
 ): Promise<Trial> {
   const response = await fetch(`/api/client/${orgId}/trials/${trialId}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to update trial');
+    throw new Error(error.error || "Failed to update trial");
   }
 
   return response.json();
@@ -116,13 +116,13 @@ export async function getTrialTeam(
   trialId: string
 ): Promise<{ team_members: TrialTeamMember[] }> {
   const response = await fetch(`/api/client/${orgId}/trials/${trialId}/team`, {
-    method: 'GET',
-    credentials: 'include',
+    method: "GET",
+    credentials: "include",
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch trial team');
+    throw new Error(error.error || "Failed to fetch trial team");
   }
 
   return response.json();
@@ -138,17 +138,17 @@ export async function addTrialTeamMember(
   input: AddTrialTeamMemberInput
 ): Promise<TrialTeamMember> {
   const response = await fetch(`/api/client/${orgId}/trials/${trialId}/team`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to add team member');
+    throw new Error(error.error || "Failed to add team member");
   }
 
   return response.json();
@@ -164,17 +164,69 @@ export async function updateTrialTeamMember(
   trialRole: string
 ): Promise<TrialTeamMember> {
   const response = await fetch(`/api/client/${orgId}/trials/${trialId}/team`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
     body: JSON.stringify({ org_member_id: orgMemberId, trial_role: trialRole }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to update team member');
+    throw new Error(error.error || "Failed to update team member");
+  }
+
+  return response.json();
+}
+
+/**
+ * Update trial team member settings (notes, contact_info, etc.)
+ */
+export async function updateTrialTeamMemberSettings(
+  orgId: string,
+  trialId: string,
+  orgMemberId: string,
+  settings: { notes?: string; contact_info?: string; [key: string]: unknown }
+): Promise<TrialTeamMember> {
+  const response = await fetch(`/api/client/${orgId}/trials/${trialId}/team`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ org_member_id: orgMemberId, settings }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to update team member settings");
+  }
+
+  return response.json();
+}
+
+/**
+ * Update trial team member status
+ */
+export async function updateTrialTeamMemberStatus(
+  orgId: string,
+  trialId: string,
+  orgMemberId: string,
+  status: "active" | "inactive"
+): Promise<TrialTeamMember> {
+  const response = await fetch(`/api/client/${orgId}/trials/${trialId}/team`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ org_member_id: orgMemberId, status }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to update team member status");
   }
 
   return response.json();
@@ -191,13 +243,13 @@ export async function removeTrialTeamMember(
   const response = await fetch(
     `/api/client/${orgId}/trials/${trialId}/team?org_member_id=${orgMemberId}`,
     {
-      method: 'DELETE',
-      credentials: 'include',
+      method: "DELETE",
+      credentials: "include",
     }
   );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to remove team member');
+    throw new Error(error.error || "Failed to remove team member");
   }
 }

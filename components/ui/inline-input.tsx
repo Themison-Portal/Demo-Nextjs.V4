@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface InlineInputProps {
@@ -30,6 +30,11 @@ export function InlineInput({
   const [isFocused, setIsFocused] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local state when value prop changes
+  useEffect(() => {
+    setLocalValue(value || "");
+  }, [value]);
 
   const handleBlur = async () => {
     setIsFocused(false);
@@ -87,12 +92,12 @@ export function InlineInput({
       disabled={isSaving}
       placeholder={placeholder}
       className={cn(
-        "text-sm bg-transparent border border-transparent rounded px-2 py-1 transition-all",
+        "text-sm bg-transparent  border-transparent rounded px-2 py-1 transition-all",
         "placeholder:text-gray-400",
         "focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500",
         "hover:bg-gray-50",
         align === "right" && "text-right",
-        isSaving && "opacity-50",
+        isSaving && "opacity-100",
         className
       )}
     />

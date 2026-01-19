@@ -64,7 +64,11 @@ export const TRIAL_ROLES = {
   CRC: "CRC",
   PHYSICIAN: "Physician",
   NURSE: "Nurse",
-  LAB_TECHNICIAN: "Lab Technician",
+  DATA_MANAGER: "Data Manager",
+  LABORATORY: "Laboratory",
+  PHARMACIST: "Pharmacist",
+  MONITOR: "Monitor",
+  CR: "CR",
 } as const;
 
 export const TRIAL_ROLE_OPTIONS = [
@@ -72,5 +76,18 @@ export const TRIAL_ROLE_OPTIONS = [
   { value: "CRC", label: "Clinical Research Coordinator" },
   { value: "Physician", label: "Physician" },
   { value: "Nurse", label: "Nurse" },
-  { value: "Lab Technician", label: "Lab Technician" },
+  { value: "Data Manager", label: "Data Manager" },
+  { value: "Laboratory", label: "Laboratory" },
+  { value: "Pharmacist", label: "Pharmacist" },
+  { value: "Monitor", label: "Monitor" },
+  { value: "CR", label: "Clinical Research" },
+];
+
+// ============================================================================
+// TEAM MEMBER STATUS
+// ============================================================================
+
+export const TEAM_MEMBER_STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
 ];

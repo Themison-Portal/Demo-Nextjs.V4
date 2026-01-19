@@ -27,7 +27,7 @@ import {
   UserPlus,
   Upload,
 } from "lucide-react";
-import { EditableText } from "./EditableField";
+import { EditableText } from "../shared/EditableField";
 import { PISelector } from "./PISelector";
 import {
   TRIAL_STATUS_OPTIONS,
@@ -63,7 +63,12 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
   const { members: orgMembers } = useOrganization(orgId);
 
   // Get trial-level permissions
-  const { canEditTrial, canManageTeam, canAssignPI, isLoading: isPermissionsLoading } = useTrialPermissions(orgId, teamMembers);
+  const {
+    canEditTrial,
+    canManageTeam,
+    canAssignPI,
+    isLoading: isPermissionsLoading,
+  } = useTrialPermissions(orgId, teamMembers);
 
   if (isLoading || isPermissionsLoading) {
     return (
@@ -125,7 +130,6 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 value={trial.description}
                 placeholder="Add a description..."
                 onSave={(value) => updateField("description", value)}
-                multiline
                 className="text-gray-700"
                 disabled={!canEditTrial}
               />
@@ -160,7 +164,8 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
               />
               {addTeamMemberError && (
                 <p className="text-xs text-red-600">
-                  {(addTeamMemberError as any)?.message || "Failed to assign PI"}
+                  {(addTeamMemberError as any)?.message ||
+                    "Failed to assign PI"}
                 </p>
               )}
             </div>
@@ -349,7 +354,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 value={sponsor}
                 placeholder="Add sponsor"
                 onSave={(value) => updateSettings("sponsor", value)}
-                className="w-[130px]"
+                className="w-[120px]"
                 disabled={!canEditTrial}
               />
             </div>
@@ -361,7 +366,7 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 value={location}
                 placeholder="Add location"
                 onSave={(value) => updateSettings("location", value)}
-                className="w-[130px]"
+                className="w-[120px]"
                 disabled={!canEditTrial}
               />
             </div>
