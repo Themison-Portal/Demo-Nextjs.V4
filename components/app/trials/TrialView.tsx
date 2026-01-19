@@ -10,6 +10,7 @@ import { ROUTES } from "@/lib/routes";
 import { LayoutDashboard, FileText, Users, UserRound } from "lucide-react";
 import { TrialOverview } from "./TrialOverview";
 import { TrialTeam } from "./TrialTeam";
+import { PatientsList } from "@/components/app/patients/PatientsList";
 
 type ValidTab = "overview" | "documentation" | "team" | "patients";
 
@@ -56,7 +57,7 @@ export function TrialView({ orgId, trialId, activeTab }: TrialViewProps) {
       case "team":
         return <TrialTeam orgId={orgId} trialId={trialId} />;
       case "patients":
-        return <PlaceholderTab title="Patients" description="Track and manage enrolled patients." />;
+        return <PatientsList orgId={orgId} trialId={trialId} />;
       default:
         return null;
     }
@@ -71,7 +72,9 @@ export function TrialView({ orgId, trialId, activeTab }: TrialViewProps) {
           href: ROUTES.APP.TRIALS(orgId),
         }}
       />
-      {renderContent()}
+      <div className="animate-in fade-in duration-300">
+        {renderContent()}
+      </div>
     </div>
   );
 }

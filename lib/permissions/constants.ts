@@ -164,8 +164,10 @@ export function getTrialPermissions(
     // Delete: only org admin or PI
     canDeleteTrial: isOrgAdmin || trialRole === 'PI',
 
-    // Patients/Tasks: any trial member can manage
-    canManagePatients: isOrgAdmin || isTrialMember,
+    // Patients: only org admin or PI/CRC (critical roles)
+    canManagePatients: isOrgAdmin || isCriticalRole,
+
+    // Tasks: any trial member can manage
     canManageTasks: isOrgAdmin || isTrialMember,
   };
 }

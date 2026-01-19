@@ -46,8 +46,16 @@ export const APP_ROUTES = {
   TRIAL_TAB: (orgId: string, trialId: string, tab: string) =>
     `/${orgId}/trials/${trialId}/${tab}`,
 
-  /** Client patients */
-  PATIENTS: (orgId: string) => `/${orgId}/patients`,
+  /** Trial patients list */
+  PATIENTS: (orgId: string, trialId: string) => `/${orgId}/trials/${trialId}/patients`,
+
+  /** Trial patient detail */
+  PATIENT: (orgId: string, trialId: string, patientId: string) =>
+    `/${orgId}/trials/${trialId}/patients/${patientId}`,
+
+  /** Patient tab (overview, visits, documents) */
+  PATIENT_TAB: (orgId: string, trialId: string, patientId: string, tab: string) =>
+    `/${orgId}/trials/${trialId}/patients/${patientId}/${tab}`,
 
   /** Organization management */
   ORGANIZATION: (orgId: string) => `/${orgId}/organization`,

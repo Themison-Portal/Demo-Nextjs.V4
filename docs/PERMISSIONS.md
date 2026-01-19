@@ -81,7 +81,7 @@ Trial permissions depend on **both** `org_role` and `trial_role`:
 | `canManageTeam`     | ✅        | ✅  | ✅  | ❌                |
 | `canAssignPI`       | ✅        | ❌  | ❌  | ❌                |
 | **Patients/Tasks**  |           |     |     |                   |
-| `canManagePatients` | ✅        | ✅  | ✅  | ✅                |
+| `canManagePatients` | ✅        | ✅  | ✅  | ❌                |
 | `canManageTasks`    | ✅        | ✅  | ✅  | ✅                |
 
 **Source:** `lib/permissions/constants.ts:140-171`
@@ -91,7 +91,8 @@ Trial permissions depend on **both** `org_role` and `trial_role`:
 - Org admins have full access to all trials (even without trial assignment)
 - PI and CRC are "critical roles" with extended permissions
 - Only org admins can assign/change the PI role
-- Any trial team member can manage patients and tasks
+- Patient data (demographics, enrollment) can only be managed by PI/CRC
+- Tasks can be managed by any trial team member
 
 **Permission calculation logic:**
 
