@@ -1,334 +1,200 @@
-# Themison - Clinical Trials Management System
+# Themison - Clinical Trials Platform
 
-> Clinical trial management platform for research organizations
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Local Development Setup](#local-development-setup)
-- [Project Structure](#project-structure)
-- [Architecture & Conventions](#architecture--conventions)
-- [Development Workflow](#development-workflow)
-- [Documentation](#documentation)
+> A comprehensive clinical trial management system for research organizations
 
 ---
 
 ## Overview
 
-Themison is a comprehensive clinical trial management platform that helps research organizations manage trials, patients, documents, tasks, and team communication. Key features:
+Themison helps research organizations manage trials, patients, documentation, tasks, and team communication with a focus on compliance, security, and usability.
 
+**Key Features:**
 - Multi-tenant architecture with granular permissions
-- Patient enrollment and visit schedule tracking
-- AI-powered Document Assistant (RAG) for protocol queries
-- Auto-generated tasks from visit schedules
-- Internal team communication hub
+- Role-based access control (org + trial levels)
+- Patient enrollment and visit schedules
+- Document management with AI assistance
 - Complete audit logging for compliance
 
 ---
 
 ## Tech Stack
 
-**Frontend:**
-
-- Next.js 16.1.1 (App Router)
-- React 19 + TypeScript
-- TailwindCSS 4
-- Zustand (UI state management)
-- TanStack Query (data fetching)
-
-**Backend:**
-
-- Next.js API routes (`app/api/`)
-- Supabase (PostgreSQL + Auth)
-- Row Level Security (RLS) for permissions
-
-**Architecture Pattern:**
-
-```
-Component → Hook → Service → Backend
-```
-
-Never skip layers. See [Architecture Guide](./.claude/architecture.md) for details.
+- **Frontend**: Next.js 16.1.1 (App Router), React 19, TypeScript
+- **UI**: Shadcn/ui components + Radix UI primitives, Tailwind CSS 4
+- **State**: TanStack Query (data fetching & caching)
+- **Backend**: Next.js API Routes, Supabase (PostgreSQL + Auth)
+- **Architecture**: Component → Hook → Service → Backend (strict layers)
 
 ---
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- npm/yarn/pnpm
-- Supabase CLI (for local development)
-
-### Installation
+## Quick Start
 
 ```bash
 # Install dependencies
 npm install
 
-# Install Supabase CLI (if not already installed)
+# Install Supabase CLI
 brew install supabase/tap/supabase
 
-# Login to Supabase
-supabase login
-```
-
----
-
-## Local Development Setup
-
-### ⚠️ IMPORTANT: Always Use Local Database
-
-**NEVER point your local development environment to the production database.**
-
-We use Supabase's local development environment to ensure production data is never affected.
-
-### Option 1: Supabase Local (Recommended)
-
-```bash
-# Start local Supabase (runs PostgreSQL, Auth, Storage locally)
+# Start local Supabase
 supabase start
 
-# This will output local credentials:
-# API URL: http://localhost:54321
-# DB URL: postgresql://postgres:postgres@localhost:54322/postgres
-# anon key: <local_anon_key>
-# service_role key: <local_service_role_key>
-```
-
-Create `.env.local` with local credentials:
-
-```bash
-# .env.local (LOCAL DEVELOPMENT ONLY)
+# Configure environment (copy local credentials from supabase start output)
+cat > .env.local << EOF
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<local_anon_key_from_supabase_start>
-SUPABASE_SERVICE_ROLE_KEY=<local_service_role_key_from_supabase_start>
-```
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<local_anon_key>
+SUPABASE_SERVICE_ROLE_KEY=<local_service_role_key>
+EOF
 
-Run the development server:
-
-```bash
+# Run development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### Option 2: Supabase Development Branch
-
-Alternatively, you can create a development branch on Supabase:
-
-```bash
-# Link to project
-supabase link --project-ref npfouzkvpnyjusdozymu
-
-# Create development branch
-supabase branches create dev
-
-# This creates an isolated database branch
-# Update .env.local with branch credentials
-```
-
-### Stopping Local Supabase
-
-```bash
-# Stop local Supabase
-supabase stop
-
-# Stop and reset all data
-supabase stop --no-backup
-```
+**Important:** Always use local Supabase for development. Never point to production.
 
 ---
 
-## Project Structure
+## Architecture Diagram
 
 ```
-demo/
-├── app/                    # Next.js App Router
-│   ├── api/               # Backend API routes
-│   ├── [orgId]/           # Organization-scoped pages
-│   └── dashboard/         # Dashboard pages
-├── src/
-│   ├── components/        # Reusable UI components
-│   ├── hooks/             # React hooks (connect services to UI)
-│   ├── services/          # Business logic (can call each other)
-│   ├── stores/            # Zustand stores (UI state)
-│   └── lib/               # External config (Supabase client, etc.)
-├── .claude/               # AI assistant documentation
-├── public/                # Static assets
-└── supabase/              # Supabase migrations and config
-    ├── migrations/        # Database migrations
-    └── config.toml        # Supabase configuration
+┌─────────────────────────────────────────────────────────────┐
+│                      UI Components                          │
+│              (components/app, components/ui)                │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    React Hooks                              │
+│           (hooks/client, hooks/usePermissions)              │
+│          TanStack Query: useQuery, useMutation              │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Service Layer                             │
+│        (services/client, services/console)                  │
+│           Pure functions, fetch to API routes               │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Backend API                               │
+│               (app/api/client, app/api/console)             │
+│      Middleware: withAuth → withOrgMember → withTrialMember │
+│              Direct Supabase calls + RLS                    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
----
-
-## Architecture & Conventions
-
-### Layered Architecture
-
-**ALWAYS follow this pattern:**
-
-```typescript
-Component → Hook → Service → Backend
-```
-
-**Example:**
-
-```typescript
-// ❌ WRONG - Component calling service directly
-function TaskList() {
-  const tasks = await taskService.getAll(); // NO!
-}
-
-// ✅ RIGHT - Component → Hook → Service
-function TaskList() {
-  const { tasks } = useTasks(trialId); // Hook calls service
-}
-```
-
-### Critical Conventions
-
-#### 1. Soft Deletes Only
-
-```typescript
-// ❌ WRONG
-await supabase.from("tasks").delete().eq("id", taskId);
-
-// ✅ RIGHT
-await supabase
-  .from("tasks")
-  .update({ deleted_at: new Date().toISOString() })
-  .eq("id", taskId);
-
-// Always filter out deleted records
-await supabase.from("tasks").select("*").is("deleted_at", null);
-```
-
-#### 2. Audit Logging (Backend Only)
-
-```typescript
-// After every mutation, log in backend
-await supabase.from("audit_logs").insert({
-  action: "task.delete",
-  user_id: user.id,
-  org_id: task.org_id,
-  trial_id: task.trial_id,
-  resource_type: "task",
-  resource_id: task.id,
-  before: task,
-  after: null,
-  ip_address: req.headers.get("x-forwarded-for"),
-  user_agent: req.headers.get("user-agent"),
-});
-```
-
-#### 3. Permission Middleware
-
-```typescript
-// app/api/orgs/[orgId]/trials/route.ts
-export const POST = withOrgPermission(async (req, ctx, user) => {
-  // Create trial - organization scope
-});
-
-// app/api/trials/[trialId]/tasks/route.ts
-export const POST = withTrialPermission(async (req, ctx, user) => {
-  // Create task - trial scope
-});
-
-// app/api/trials/[trialId]/tasks/[taskId]/route.ts
-export const DELETE = withCriticalPermission(async (req, ctx, user) => {
-  // Delete task - critical action (PI/CRC only)
-});
-```
-
-### Permission Scopes
-
-1. **Organization Scope** - Create/pause trials, invite members
-
-   - Requires: `superadmin` or `admin`
-
-2. **Trial Scope (Standard)** - Create patient, upload docs, send messages
-
-   - Requires: Any `trial_team` member
-
-3. **Trial Scope (Critical)** - Delete patient, assign team, configure schedule
-   - Requires: `PI` or `CRC` role (or superadmin/admin override)
-
----
-
-## Development Workflow
-
-### Database Migrations
-
-```bash
-# Create new migration
-supabase migration new migration_name
-
-# Apply migrations locally
-supabase db push
-
-# Apply migrations to remote (after testing locally)
-supabase db push --db-url <remote_db_url>
-```
-
-### Code Quality
-
-```bash
-# Run linter
-npm run lint
-
-# Type checking
-npx tsc --noEmit
-```
-
-### Git Workflow
-
-```bash
-# Create feature branch
-git checkout -b feature/your-feature-name
-
-# Commit with descriptive messages
-git commit -m "feat: add patient enrollment flow"
-
-# Push and create PR
-git push origin feature/your-feature-name
-```
+**Never skip layers.** Components call hooks, hooks call services, services call API routes.
 
 ---
 
 ## Documentation
 
-Detailed documentation is available in the `.claude/` directory:
+Detailed guides are organized by topic in `docs/`:
 
-| File                                                 | Purpose                              |
-| ---------------------------------------------------- | ------------------------------------ |
-| [.claude/README.md](./.claude/README.md)             | Quick reference and conventions      |
-| [.claude/architecture.md](./.claude/architecture.md) | Layered architecture deep dive       |
-| [.claude/backend.md](./.claude/backend.md)           | Permission middleware, audit logging |
-| [.claude/user-flows.md](./.claude/user-flows.md)     | All 40 user flows by area            |
-| [.claude/permissions.md](./.claude/permissions.md)   | Complete permissions matrix          |
-| [.claude/supabase.md](./.claude/supabase.md)         | Supabase project details             |
+### Core Documentation
+
+**[📐 Architecture Guide](docs/ARCHITECTURE.md)** - Start here
+- Folder structure and organization
+- Layer separation (Component → Hook → Service → Backend)
+- State management with TanStack Query
+- Naming conventions and import patterns
+- Server vs Client Components
+
+**[🔐 Permissions System](docs/PERMISSIONS.md)**
+- Complete permission matrix (org + trial levels)
+- Middleware stack (withAuth → withOrgMember → withTrialMember)
+- Real API examples with access control
+- Frontend hooks for conditional rendering
+- Route protection patterns
+
+**[⚙️ Backend Patterns](docs/BACKEND.md)**
+- API route structure and conventions
+- Middleware composition patterns
+- Database access with Supabase
+- Soft delete implementation
+- Error handling and logging
+
+**[🎨 UI & Layout](docs/UI_LAYOUT.md)**
+- 3-zone layout system (Sidebar, Header, Main)
+- Shadcn/ui component library usage
+- Non-boxed design patterns
+- Padding and spacing conventions
+- Component composition guidelines
+
+**[🗄️ Supabase Guide](docs/supabase.md)**
+- Local development setup
+- Database schema overview
+- Migration workflow
+- RLS policies and patterns
+- Critical patterns (soft deletes, multi-tenancy)
+
+**[🔄 User Flows](docs/user-flows.md)**
+- Complete user flows by feature area
+- Step-by-step interaction patterns
+
+### Additional Resources
+
+- [Project Rules](.claude/CLAUDE.md) - Development rules and conventions for AI
 
 ---
 
-## Environment Variables
+## Development Workflow
 
-### Local Development (`.env.local`)
+### Common Tasks
 
 ```bash
-# Supabase Local
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<local_anon_key>
-SUPABASE_SERVICE_ROLE_KEY=<local_service_role_key>
+# Start local Supabase
+supabase start
+
+# Create database migration
+supabase migration new your_migration_name
+
+# Apply migrations locally
+supabase db push
+
+# Stop local Supabase
+supabase stop
+
+# Type checking
+npx tsc --noEmit
+
+# Linting
+npm run lint
 ```
 
-### Production (DO NOT USE LOCALLY)
+### Critical Conventions
+
+1. **TanStack Query for all backend data** - Never use `useState` for data from the backend
+2. **Soft deletes only** - Never hard delete, use `deleted_at` column
+3. **Backend validates permissions** - Frontend conditionally renders, backend enforces
+4. **Follow layer architecture** - Component → Hook → Service → Backend (no shortcuts)
+
+---
+
+## Environment Setup
+
+### Local Development (Required)
+
+**Always use local Supabase.** Never point local development to production.
 
 ```bash
-# PRODUCTION - Never use these in local development!
+# Start local Supabase
+supabase start
+
+# .env.local
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<from_supabase_start>
+SUPABASE_SERVICE_ROLE_KEY=<from_supabase_start>
+```
+
+### Production (Reference Only)
+
+```bash
+# DO NOT USE LOCALLY
 NEXT_PUBLIC_SUPABASE_URL=https://npfouzkvpnyjusdozymu.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<prod_anon_key>
 SUPABASE_SERVICE_ROLE_KEY=<prod_service_role_key>
@@ -336,33 +202,47 @@ SUPABASE_SERVICE_ROLE_KEY=<prod_service_role_key>
 
 ---
 
-## Common Issues
+## Project Rules
 
-### "Cannot connect to Supabase"
+These rules are non-negotiable:
 
-- Make sure `supabase start` is running
-- Check `.env.local` has correct local credentials
-- Verify you're NOT pointing to production database
-
-### "Permission denied"
-
-- Check your user's `org_role` and `trial_role`
-- Verify RLS policies are correct
-- See [permissions.md](./.claude/permissions.md)
-
-### "Migration failed"
-
-- Test migrations locally first with `supabase db push`
-- Never run migrations directly on production
-- Use Supabase dashboard or branches for testing
+- **Use Shadcn/Radix components** → Never recreate existing UI primitives (Button, Input, Card, etc.)
+- **No hardcoded env values** → Use `lib/constants.ts` → `process.env`
+- **Soft deletes only** → `.update({ deleted_at: ... })` + filter `.is('deleted_at', null)`
+- **Permissions in backend only** → Middleware validates, frontend hints UI
+- **Audit log every mutation** → In API routes only (future implementation)
+- **Components = zero logic** → Props in, render out
+- **Follow layer architecture** → Component → Hook → Service → Backend (no shortcuts)
 
 ---
 
-## Team
+## Key Files Referenced
 
-**Themison** - Clinical Trials Management Platform
+Quick links to important files:
 
-For questions or support, reach out to the development team.
+- **Routes**: `lib/routes.ts` - Centralized route definitions
+- **Permissions**: `lib/permissions/constants.ts` - Permission matrix
+- **Auth**: `lib/auth/getUser.ts` - Server-side auth
+- **Middleware**: `lib/api/middleware/` - API middleware stack
+- **Layout**: `components/app/shared/AppMain.tsx` - Main layout component
+
+---
+
+## Common Issues
+
+### "Cannot connect to Supabase"
+- Ensure `supabase start` is running
+- Verify `.env.local` has correct local credentials
+- Check you're NOT pointing to production
+
+### "Permission denied"
+- Check user's `org_role` and `trial_role`
+- See [docs/PERMISSIONS.md](docs/PERMISSIONS.md) for permission matrix
+- Backend ALWAYS validates (RLS + middleware)
+
+### "Module not found"
+- Ensure imports use `@/` alias (not relative paths)
+- TypeScript paths configured in `tsconfig.json`
 
 ---
 

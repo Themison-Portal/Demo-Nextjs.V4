@@ -152,8 +152,8 @@ export function getTrialPermissions(
     canViewPatients: isOrgAdmin || isTrialMember,
     canViewTasks: isOrgAdmin || isTrialMember,
 
-    // Edit: org admin, or editor/PI/CRC in trial
-    canEditTrial: isOrgAdmin || (orgRole === 'editor' && isTrialMember) || isCriticalRole,
+    // Edit trial properties: only org admin or PI/CRC
+    canEditTrial: isOrgAdmin || isCriticalRole,
 
     // Manage team: org admin or PI/CRC (but not assign PI - see canAssignPI)
     canManageTeam: isOrgAdmin || isCriticalRole,
@@ -164,9 +164,9 @@ export function getTrialPermissions(
     // Delete: only org admin or PI
     canDeleteTrial: isOrgAdmin || trialRole === 'PI',
 
-    // Patients/Tasks: org admin, editor, or critical roles
-    canManagePatients: isOrgAdmin || (orgRole === 'editor' && isTrialMember) || isCriticalRole,
-    canManageTasks: isOrgAdmin || (orgRole === 'editor' && isTrialMember) || isCriticalRole,
+    // Patients/Tasks: any trial member can manage
+    canManagePatients: isOrgAdmin || isTrialMember,
+    canManageTasks: isOrgAdmin || isTrialMember,
   };
 }
 
