@@ -57,10 +57,16 @@ export function PatientOverview({ orgId, trialId, patientId }: PatientOverviewPr
     );
   }
 
-  // Parse dates for DatePicker
+  // Parse dates for DatePicker (only for editable fields)
   const dateOfBirth = parseLocalDate(patient.date_of_birth);
-  const enrollmentDate = parseLocalDate(patient.enrollment_date);
-  const visitStartDate = parseLocalDate(patient.visit_start_date);
+  const screeningDate = parseLocalDate(patient.screening_date);
+  const randomizationDate = parseLocalDate(patient.randomization_date);
+
+  // Randomization expected is the calculated Day 0 (visit_start_date)
+  const isScreening = patient.status === "screening";
+  const randomizationDisplayDate = isScreening
+    ? patient.visit_start_date
+    : patient.randomization_date;
 
   return (
     <Card>
@@ -126,82 +132,40 @@ export function PatientOverview({ orgId, trialId, patientId }: PatientOverviewPr
             <h2 className="text-xs font-medium text-gray-400 uppercase">
               Date of Birth
             </h2>
-            {canManagePatients ? (
-              <DatePicker
-                date={dateOfBirth}
-                onSelect={(date) => updateDate("date_of_birth", date)}
-                placeholder="Select date..."
-              />
-            ) : (
-              <p className="text-sm text-gray-700">
-                {patient.date_of_birth
-                  ? formatDate(patient.date_of_birth)
-                  : "-"}
-              </p>
-            )}
+            <p className="text-sm text-gray-700">
+              {patient.date_of_birth ? formatDate(patient.date_of_birth) : "-"}
+            </p>
           </div>
 
           {/* Sex */}
           <div className="space-y-2">
             <h2 className="text-xs font-medium text-gray-400 uppercase">Sex</h2>
-            {canManagePatients ? (
-              <SelectPopover
-                value={patient.sex || ""}
-                options={[
-                  { value: "", label: "Not specified" },
-                  ...PATIENT_SEX_OPTIONS,
-                ]}
-                onSelect={(value) => updateField("sex", value || null)}
-                placeholder="Select sex..."
-              />
-            ) : (
-              <p className="text-sm text-gray-700 capitalize">
-                {patient.sex || "-"}
-              </p>
-            )}
+            <p className="text-sm text-gray-700 capitalize">
+              {patient.sex || "-"}
+            </p>
           </div>
         </div>
 
         {/* Dates Row */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Enrollment Date */}
+          {/* Screening Date */}
           <div className="space-y-2">
             <h2 className="text-xs font-medium text-gray-400 uppercase">
-              Enrollment Date
+              Screening Date
             </h2>
-            {canManagePatients ? (
-              <DatePicker
-                date={enrollmentDate}
-                onSelect={(date) => updateDate("enrollment_date", date)}
-                placeholder="Select date..."
-              />
-            ) : (
-              <p className="text-sm text-gray-700">
-                {patient.enrollment_date
-                  ? formatDate(patient.enrollment_date)
-                  : "-"}
-              </p>
-            )}
+            <p className="text-sm text-gray-700">
+              {patient.screening_date ? formatDate(patient.screening_date) : "-"}
+            </p>
           </div>
 
-          {/* Visit Start Date */}
+          {/* Randomization Date - Calculated or Actual */}
           <div className="space-y-2">
             <h2 className="text-xs font-medium text-gray-400 uppercase">
-              Visit Start Date
+              {isScreening ? "Randomization Expected" : "Randomized At"}
             </h2>
-            {canManagePatients ? (
-              <DatePicker
-                date={visitStartDate}
-                onSelect={(date) => updateDate("visit_start_date", date)}
-                placeholder="Select date..."
-              />
-            ) : (
-              <p className="text-sm text-gray-700">
-                {patient.visit_start_date
-                  ? formatDate(patient.visit_start_date)
-                  : "-"}
-              </p>
-            )}
+            <p className="text-sm text-gray-700">
+              {randomizationDisplayDate ? formatDate(randomizationDisplayDate) : "-"}
+            </p>
           </div>
         </div>
 

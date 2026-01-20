@@ -8,9 +8,10 @@ export interface Patient {
   initials?: string | null;
   date_of_birth?: string | null;
   sex?: PatientSex | null;
-  enrollment_date?: string | null;
+  screening_date?: string | null;
   status: PatientStatus;
   visit_start_date?: string | null;
+  randomization_date?: string | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;
@@ -27,8 +28,7 @@ export interface CreatePatientInput {
   initials?: string;
   date_of_birth?: string;
   sex?: PatientSex;
-  enrollment_date?: string;
-  visit_start_date?: string;
+  screening_date?: string;
   notes?: string;
 }
 
@@ -37,8 +37,9 @@ export interface UpdatePatientInput {
   initials?: string | null;
   date_of_birth?: string | null;
   sex?: PatientSex | null;
-  enrollment_date?: string | null;
+  screening_date?: string | null;
   status?: PatientStatus;
   visit_start_date?: string | null;
+  randomization_date?: string | null;
   notes?: string | null;
 }

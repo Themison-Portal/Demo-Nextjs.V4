@@ -7,6 +7,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { withTrialMember, responses } from "@/lib/api/middleware";
 import { getTrialPermissions } from "@/lib/permissions/constants";
+import { TRIAL_CONSTANTS } from "@/lib/constants";
 
 /**
  * GET /api/client/[orgId]/trials/[trialId]
@@ -34,7 +35,8 @@ export const GET = withTrialMember(async (req, ctx, user) => {
   // Fetch team members with user data
   const { data: allMembers, error: teamError } = await supabase
     .from("trial_team_members")
-    .select(`
+    .select(
+      `
       id,
       trial_id,
       org_member_id,
@@ -50,7 +52,8 @@ export const GET = withTrialMember(async (req, ctx, user) => {
           avatar_url
         )
       )
-    `)
+    `
+    )
     .eq("trial_id", trialId);
 
   // Filter out members whose org membership was deleted (user removed from org)
@@ -80,21 +83,21 @@ export const GET = withTrialMember(async (req, ctx, user) => {
     };
   });
 
-  // Fetch visit schedule templates
-  const { data: visitSchedules, error: visitError } = await supabase
-    .from("visit_schedule_templates")
-    .select("*")
-    .eq("trial_id", trialId)
-    .is("deleted_at", null)
-    .order("visit_order", { ascending: true });
+  // // Fetch visit schedule templates
+  // const { data: visitSchedules, error: visitError } = await supabase
+  //   .from("visit_schedule_templates")
+  //   .select("*")
+  //   .eq("trial_id", trialId)
+  //   .is("deleted_at", null)
+  //   .order("visit_order", { ascending: true });
 
-  if (visitError) {
-    console.error("[API] Error fetching visit schedules:", visitError);
-    return Response.json(
-      { error: "Failed to fetch visit schedules" },
-      { status: 500 }
-    );
-  }
+  // if (visitError) {
+  //   console.error("[API] Error fetching visit schedules:", visitError);
+  //   return Response.json(
+  //     { error: "Failed to fetch visit schedules" },
+  //     { status: 500 }
+  //   );
+  // }
 
   // Get patient counts
   const { count: patientCount, error: patientCountError } = await supabase
@@ -127,7 +130,7 @@ export const GET = withTrialMember(async (req, ctx, user) => {
   return Response.json({
     ...trial,
     team_members: transformedTeamMembers,
-    visit_schedules: visitSchedules || [],
+    // visit_schedules: visitSchedules || [],
     patient_count: patientCount || 0,
     active_patient_count: activePatientCount || 0,
     task_count: taskCount || 0,
@@ -150,7 +153,9 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
 
   // Check edit permission
   const perms = getTrialPermissions(user.orgRole, user.trialRole);
-  console.log("[PATCH Trial] Permissions:", { canEditTrial: perms.canEditTrial });
+  console.log("[PATCH Trial] Permissions:", {
+    canEditTrial: perms.canEditTrial,
+  });
 
   if (!perms.canEditTrial) {
     console.log("[PATCH Trial] DENIED - canEditTrial is false");
@@ -207,7 +212,8 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
 
   // Handle settings merge (partial update)
   if (body.settings && typeof body.settings === "object") {
-    const currentSettings = (existingTrial.settings as Record<string, unknown>) || {};
+    const currentSettings =
+      (existingTrial.settings as Record<string, unknown>) || {};
     updateData.settings = {
       ...currentSettings,
       ...body.settings,
@@ -215,19 +221,23 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
   }
 
   // Validate name if provided
-  if ("name" in updateData && (!updateData.name || updateData.name.trim() === "")) {
-    return Response.json({ error: "Trial name cannot be empty" }, { status: 400 });
+  if (
+    "name" in updateData &&
+    (!updateData.name || updateData.name.trim() === "")
+  ) {
+    return Response.json(
+      { error: "Trial name cannot be empty" },
+      { status: 400 }
+    );
   }
 
   // Validate phase if provided
-  const validPhases = ["Phase I", "Phase II", "Phase III", "Phase IV"];
-  if (updateData.phase && !validPhases.includes(updateData.phase)) {
+  if (updateData.phase && !TRIAL_CONSTANTS.phases.includes(updateData.phase)) {
     return Response.json({ error: "Invalid phase value" }, { status: 400 });
   }
 
   // Validate status if provided
-  const validStatuses = ["active", "paused", "completed", "terminated"];
-  if (updateData.status && !validStatuses.includes(updateData.status)) {
+  if (updateData.status && !TRIAL_CONSTANTS.status.includes(updateData.status)) {
     return Response.json({ error: "Invalid status value" }, { status: 400 });
   }
 

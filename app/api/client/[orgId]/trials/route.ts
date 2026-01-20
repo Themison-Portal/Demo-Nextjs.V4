@@ -7,6 +7,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { withOrgPermission, withOrgMember } from "@/lib/api/middleware";
 import { isAdminRole } from "@/lib/permissions/constants";
+import { TRIAL_CONSTANTS } from "@/lib/constants";
 
 /**
  * GET /api/client/[orgId]/trials
@@ -145,8 +146,7 @@ export const POST = withOrgPermission(async (req, ctx, user) => {
   }
 
   // Validate phase if provided
-  const validPhases = ["Phase I", "Phase II", "Phase III", "Phase IV"];
-  if (phase && !validPhases.includes(phase)) {
+  if (phase && !TRIAL_CONSTANTS.phases.includes(phase)) {
     return Response.json({ error: "Invalid phase value" }, { status: 400 });
   }
 

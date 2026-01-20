@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { withTrialMember, responses } from "@/lib/api/middleware";
 import { getTrialPermissions } from "@/lib/permissions/constants";
+import { PATIENT_CONSTANTS } from "@/lib/constants";
 
 // GET: Ver patient
 export const GET = withTrialMember(async (req, ctx, user) => {
@@ -95,15 +96,31 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
   }
 
   // Validar sex
-  const validSex = ["male", "female", "other"];
-  if (updateData.sex && !validSex.includes(updateData.sex)) {
+  if (updateData.sex && !PATIENT_CONSTANTS.sex.includes(updateData.sex)) {
     return Response.json({ error: "Invalid sex value" }, { status: 400 });
   }
 
   // Validar status
-  const validStatuses = ["screening", "enrolled", "completed", "withdrawn", "screen_failed"];
-  if (updateData.status && !validStatuses.includes(updateData.status)) {
-    return Response.json({ error: "Invalid status value" }, { status: 400 });
+  if (updateData.status) {
+    if (!PATIENT_CONSTANTS.status.includes(updateData.status)) {
+      return Response.json({ error: "Invalid status value" }, { status: 400 });
+    }
+
+    // Only allow manual setting of withdrawn/screen_failed
+    // screening/enrolled/completed are auto-calculated
+    if (PATIENT_CONSTANTS.autoCalculatedStatuses.includes(updateData.status as any)) {
+      return Response.json({
+        error: "Status 'screening', 'enrolled', and 'completed' are auto-calculated and cannot be set manually"
+      }, { status: 400 });
+    }
+  }
+
+  // Auto-calculate status based on randomization_date
+  if ('randomization_date' in updateData && !updateData.status) {
+    if (updateData.randomization_date !== null) {
+      // Patient was randomized → enrolled
+      updateData.status = 'enrolled';
+    }
   }
 
   // Update

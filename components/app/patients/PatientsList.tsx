@@ -69,7 +69,7 @@ export function PatientsList({ orgId, trialId }: PatientsListProps) {
         <div className="col-span-2">Patient #</div>
         <div className="col-span-2">Initials</div>
         <div className="col-span-2">Status</div>
-        <div className="col-span-2">Enrollment Date</div>
+        <div className="col-span-2">Screening Date</div>
         <div className="col-span-2">Sex</div>
         <div className="col-span-2">Created</div>
       </div>
@@ -111,8 +111,8 @@ export function PatientsList({ orgId, trialId }: PatientsListProps) {
               </div>
               <div className="col-span-2">
                 <p className="text-sm text-gray-600">
-                  {patient.enrollment_date
-                    ? formatDate(patient.enrollment_date)
+                  {patient.screening_date
+                    ? formatDate(patient.screening_date)
                     : "-"}
                 </p>
               </div>

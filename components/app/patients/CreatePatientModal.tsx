@@ -27,7 +27,7 @@ export function CreatePatientModal({
     initials: "",
     date_of_birth: "",
     sex: undefined,
-    enrollment_date: "",
+    screening_date: "",
     notes: "",
   });
 
@@ -44,7 +44,7 @@ export function CreatePatientModal({
       initials: "",
       date_of_birth: "",
       sex: undefined,
-      enrollment_date: "",
+      screening_date: "",
       notes: "",
     });
     onClose();
@@ -121,13 +121,13 @@ export function CreatePatientModal({
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700">
-            Enrollment Date
+            Screening Date
           </label>
           <input
             type="date"
-            value={formData.enrollment_date}
+            value={formData.screening_date}
             onChange={(e) =>
-              setFormData({ ...formData, enrollment_date: e.target.value })
+              setFormData({ ...formData, screening_date: e.target.value })
             }
             disabled={isLoading}
             className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-1"

@@ -43,6 +43,28 @@ export const EMAIL_CONFIG = {
 };
 
 // ============================================================================
+// Business Logic Constants
+// ============================================================================
+
+/**
+ * Patient-related constants
+ */
+export const PATIENT_CONSTANTS = {
+  sex: ['male', 'female', 'other'] as const,
+  status: ['screening', 'enrolled', 'completed', 'withdrawn', 'screen_failed'] as const,
+  autoCalculatedStatuses: ['screening', 'enrolled', 'completed'] as const,
+  manualOnlyStatuses: ['withdrawn', 'screen_failed'] as const,
+} as const;
+
+/**
+ * Trial-related constants
+ */
+export const TRIAL_CONSTANTS = {
+  phases: ['Phase I', 'Phase II', 'Phase III', 'Phase IV'] as const,
+  status: ['active', 'paused', 'completed', 'terminated'] as const,
+} as const;
+
+// ============================================================================
 // Helper Functions
 // ============================================================================
 

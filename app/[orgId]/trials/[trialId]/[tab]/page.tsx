@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { ROUTES } from "@/lib/routes";
 import { TrialView } from "@/components/app/trials/TrialView";
 
-const VALID_TABS = ["overview", "documentation", "team", "patients"] as const;
+const VALID_TABS = ["overview", "template", "documentation", "team", "patients"] as const;
 type ValidTab = (typeof VALID_TABS)[number];
 
 interface TrialTabPageProps {

@@ -7,12 +7,13 @@
 
 import { NavigationTabs, TabItem } from "@/components/app/shared/NavigationTabs";
 import { ROUTES } from "@/lib/routes";
-import { LayoutDashboard, FileText, Users, UserRound } from "lucide-react";
+import { LayoutDashboard, FileText, Users, UserRound, CalendarDays } from "lucide-react";
 import { TrialOverview } from "./TrialOverview";
 import { TrialTeam } from "./TrialTeam";
 import { PatientsList } from "@/components/app/patients/PatientsList";
+import { TemplateBuilder } from "@/components/app/templates/TemplateBuilder";
 
-type ValidTab = "overview" | "documentation" | "team" | "patients";
+type ValidTab = "overview" | "documentation" | "team" | "patients" | "template";
 
 interface TrialViewProps {
   orgId: string;
@@ -27,6 +28,12 @@ export function TrialView({ orgId, trialId, activeTab }: TrialViewProps) {
       value: "overview",
       href: ROUTES.APP.TRIAL_TAB(orgId, trialId, "overview"),
       icon: <LayoutDashboard className="h-4 w-4" />,
+    },
+    {
+      label: "Visit Template",
+      value: "template",
+      href: ROUTES.APP.TRIAL_TAB(orgId, trialId, "template"),
+      icon: <CalendarDays className="h-4 w-4" />,
     },
     {
       label: "Documentation",
@@ -52,6 +59,8 @@ export function TrialView({ orgId, trialId, activeTab }: TrialViewProps) {
     switch (activeTab) {
       case "overview":
         return <TrialOverview orgId={orgId} trialId={trialId} />;
+      case "template":
+        return <TemplateBuilder orgId={orgId} trialId={trialId} />;
       case "documentation":
         return <PlaceholderTab title="Documentation" description="Trial documents and protocols will be managed here." />;
       case "team":
