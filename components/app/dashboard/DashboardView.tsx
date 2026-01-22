@@ -8,6 +8,7 @@
 import { StatsGrid } from "./StatsGrid";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Plus, UserPlus } from "lucide-react";
+import { MyWorkload } from "@/components/app/tasks/MyWorkload";
 
 interface DashboardViewProps {
   orgId: string;
@@ -49,6 +50,11 @@ export function DashboardView({ userName, orgName }: DashboardViewProps) {
             <span className="flex-1">Sign a New Patient</span>
           </Button>
         </div>
+      </div>
+
+      {/* My Workload Section */}
+      <div className="mt-8">
+        <MyWorkload />
       </div>
     </div>
   );

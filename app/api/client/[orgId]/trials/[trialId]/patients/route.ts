@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { withTrialMember, responses } from "@/lib/api/middleware";
 import { getTrialPermissions } from "@/lib/permissions/constants";
-import { hydrateVisitSchedule } from "@/services/visits/hydration";
+import { hydrateScreeningVisit } from "@/services/visits/hydration";
 import { PATIENT_CONSTANTS } from "@/lib/constants";
 
 // GET: Listar patients
@@ -48,17 +48,17 @@ export const POST = withTrialMember(async (req, ctx, user) => {
 
   const { patient_number, initials, date_of_birth, sex, screening_date, notes } = body;
 
-  // Validar patient_number requerido
+  // Validate patient_number required
   if (!patient_number || patient_number.trim() === "") {
     return Response.json({ error: "Patient number is required" }, { status: 400 });
   }
 
-  // Validar sex si existe
+  // Validate sex if exists
   if (sex && !PATIENT_CONSTANTS.sex.includes(sex)) {
     return Response.json({ error: "Invalid sex value" }, { status: 400 });
   }
 
-  // Verificar trial existe y obtener template
+  // Verify trial exists
   const { data: trial, error: trialError } = await supabase
     .from("trials")
     .select("id, visit_schedule_template")
@@ -71,40 +71,15 @@ export const POST = withTrialMember(async (req, ctx, user) => {
     return Response.json({ error: "Trial not found" }, { status: 404 });
   }
 
-  // Calculate visit_start_date from screening_date
-  let visit_start_date: string | null = null;
-  if (screening_date && trial.visit_schedule_template) {
-    const template = trial.visit_schedule_template as any;
-    const visits = template?.visits || [];
-
-    if (visits.length === 0) {
-      return Response.json(
-        { error: "Trial has no visit schedule template defined" },
-        { status: 400 }
-      );
-    }
-
-    // Find the visit with the lowest days_from_day_zero (typically the screening visit)
-    const screeningVisit = visits.reduce((min: any, visit: any) => {
-      const currentOffset = visit.days_from_day_zero ?? 0;
-      const minOffset = min.days_from_day_zero ?? 0;
-      return currentOffset < minOffset ? visit : min;
-    }, visits[0]);
-
-    const screeningOffset = screeningVisit.days_from_day_zero ?? 0;
-
-    // Calculate Day 0 (Baseline): visit_start_date = screening_date - screening_offset
-    // Example: screening_date = 2026-01-20, screening_offset = -28
-    // visit_start_date = 2026-01-20 - (-28) = 2026-01-20 + 28 = 2026-02-17
-    const screeningDateObj = new Date(screening_date);
-    const visitStartDateObj = new Date(screeningDateObj);
-    visitStartDateObj.setDate(visitStartDateObj.getDate() - screeningOffset);
-
-    // Format as YYYY-MM-DD
-    visit_start_date = visitStartDateObj.toISOString().split('T')[0];
+  // If screening_date provided, validate template exists
+  if (screening_date && !trial.visit_schedule_template) {
+    return Response.json(
+      { error: "Cannot create patient with screening_date: trial has no visit schedule template" },
+      { status: 400 }
+    );
   }
 
-  // Verificar patient_number único en este trial
+  // Verify patient_number is unique in this trial
   const { data: existing } = await supabase
     .from("patients")
     .select("id")
@@ -120,8 +95,7 @@ export const POST = withTrialMember(async (req, ctx, user) => {
     );
   }
 
-  // Create patient with calculated visit_start_date (Day 0/Baseline)
-  // If screening_date was not provided, visit_start_date will be null and hydration won't run
+  // Create patient (baseline_date will be set during enrollment)
   const { data: patient, error: createError } = await supabase
     .from("patients")
     .insert({
@@ -131,7 +105,6 @@ export const POST = withTrialMember(async (req, ctx, user) => {
       date_of_birth: date_of_birth || null,
       sex: sex || null,
       screening_date: screening_date || null,
-      visit_start_date: visit_start_date || null,
       notes: notes?.trim() || null,
       status: "screening",
     })
@@ -143,26 +116,30 @@ export const POST = withTrialMember(async (req, ctx, user) => {
     return Response.json({ error: "Failed to create patient" }, { status: 500 });
   }
 
-  // Hydrate visit schedule if visit_start_date is provided
+  // Hydrate screening visit if screening_date is provided
   let hydrationResult = null;
-  if (visit_start_date && patient) {
+  if (screening_date && patient) {
     try {
-      hydrationResult = await hydrateVisitSchedule(
+      hydrationResult = await hydrateScreeningVisit(
         patient.id,
         trialId,
-        visit_start_date
+        screening_date
       );
-      console.log("[API] Visit schedule hydrated:", hydrationResult);
+      console.log("[API] Screening visit hydrated:", hydrationResult);
     } catch (hydrationError: unknown) {
-      // Log error but don't fail patient creation
-      // The patient exists, but schedule wasn't generated
-      // This could happen if trial has no template
       const errorMessage = hydrationError instanceof Error ? hydrationError.message : "Unknown error";
-      console.error("[API] Error hydrating visit schedule:", errorMessage);
+      console.error("[API] Error hydrating screening visit:", errorMessage);
 
-      // Optionally, you could rollback the patient creation here
-      // For now, we'll just log and continue
-      // TODO: Decide on rollback strategy
+      // Rollback patient creation on hydration failure
+      await supabase
+        .from("patients")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", patient.id);
+
+      return Response.json(
+        { error: "Failed to create screening visit: " + errorMessage },
+        { status: 500 }
+      );
     }
   }
 

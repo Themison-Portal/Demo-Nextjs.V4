@@ -45,7 +45,7 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  // Verificar patient existe
+  // Verify patient exists
   const { data: existing } = await supabase
     .from("patients")
     .select("id, trial_id")
@@ -71,13 +71,13 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
     }
   }
 
-  // Validar patient_number si existe
+  // Validate patient_number if exists
   if ("patient_number" in updateData) {
     if (!updateData.patient_number || updateData.patient_number.trim() === "") {
       return Response.json({ error: "Patient number cannot be empty" }, { status: 400 });
     }
 
-    // Verificar duplicado
+    // Verify duplicate
     const { data: duplicate } = await supabase
       .from("patients")
       .select("id")
@@ -95,12 +95,12 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
     }
   }
 
-  // Validar sex
+  // Validate sex
   if (updateData.sex && !PATIENT_CONSTANTS.sex.includes(updateData.sex)) {
     return Response.json({ error: "Invalid sex value" }, { status: 400 });
   }
 
-  // Validar status
+  // Validate status
   if (updateData.status) {
     if (!PATIENT_CONSTANTS.status.includes(updateData.status)) {
       return Response.json({ error: "Invalid status value" }, { status: 400 });

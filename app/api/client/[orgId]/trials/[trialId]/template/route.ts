@@ -53,7 +53,7 @@ export const PUT = withTrialMember(async (req, ctx, user) => {
 
   const { template } = body;
 
-  // Validar estructura básica
+  // Validate basic structure
   if (!template || typeof template !== "object") {
     return Response.json({ error: "Template is required and must be an object" }, { status: 400 });
   }
@@ -66,7 +66,7 @@ export const PUT = withTrialMember(async (req, ctx, user) => {
     return Response.json({ error: "Template must have an assignees object" }, { status: 400 });
   }
 
-  // Validar que haya exactamente un day_zero
+  // Validate exactly one day_zero exists
   const dayZeroCount = template.visits.filter((v) => v.is_day_zero).length;
   if (dayZeroCount !== 1) {
     return Response.json(
@@ -77,7 +77,7 @@ export const PUT = withTrialMember(async (req, ctx, user) => {
     );
   }
 
-  // Validar que no haya visits duplicadas (mismo order o mismo name)
+  // Validate no duplicate visits (same order or same name)
   const visitOrders = template.visits.map((v) => v.order);
   const visitNames = template.visits.map((v) => v.name);
 
@@ -89,7 +89,67 @@ export const PUT = withTrialMember(async (req, ctx, user) => {
     return Response.json({ error: "Template has duplicate visit names" }, { status: 400 });
   }
 
-  // Actualizar template (DB constraint también validará)
+  // ============================================================================
+  // Create missing activities on-the-fly
+  // ============================================================================
+  // Collect all activity_ids from template
+  const activityIds = new Set<string>();
+  template.visits.forEach((visit) => {
+    visit.activity_ids.forEach((id) => activityIds.add(id));
+  });
+
+  // For each activity_id, ensure it exists in global or trial activities
+  for (const activityId of activityIds) {
+    // Check if exists in global catalog
+    const { data: globalActivity } = await supabase
+      .from("activity_types")
+      .select("id")
+      .eq("id", activityId)
+      .is("deleted_at", null)
+      .single();
+
+    if (globalActivity) {
+      continue; // Exists in global catalog, skip
+    }
+
+    // Check if exists in trial activities
+    const { data: trialActivity } = await supabase
+      .from("trial_activity_types")
+      .select("id")
+      .eq("trial_id", trialId)
+      .eq("activity_id", activityId)
+      .is("deleted_at", null)
+      .single();
+
+    if (trialActivity) {
+      continue; // Exists in trial activities, skip
+    }
+
+    // Doesn't exist anywhere, create in trial_activity_types
+    // Use activity_id as name (can be edited later)
+    const { error: createError } = await supabase
+      .from("trial_activity_types")
+      .insert({
+        trial_id: trialId,
+        activity_id: activityId,
+        name: activityId.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), // "medical_history" → "Medical History"
+        category: null,
+        description: null,
+        is_custom: true,
+      });
+
+    if (createError) {
+      console.error(
+        `[API] Error creating activity "${activityId}":`,
+        createError
+      );
+      // Continue anyway - hydration will use activity_id as fallback
+    }
+  }
+
+  // ============================================================================
+  // Update template (DB constraint will also validate)
+  // ============================================================================
   const { data: updatedTrial, error: updateError } = await supabase
     .from("trials")
     .update({

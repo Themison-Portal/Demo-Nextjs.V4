@@ -168,7 +168,7 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -182,7 +182,7 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
         <Button
           onClick={handleSave}
           disabled={!hasChanges || isUpdating}
-          className="gap-2 text-md"
+          className="gap-2 text-md "
         >
           {isUpdating ? (
             <>

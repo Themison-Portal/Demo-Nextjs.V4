@@ -7,7 +7,10 @@
 
 import { AppSidebar } from "./AppSidebar";
 import { useOrganization } from "@/hooks/client/useOrganization";
+import { useTrialDetails } from "@/hooks/client/useTrialDetails";
+import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { useMemo } from "react";
 
 interface AppMainProps {
   orgId: string;
@@ -22,7 +25,21 @@ export function AppMain({
   userEmail,
   userFirstName,
 }: AppMainProps) {
+  const pathname = usePathname();
   const { organization, isLoading } = useOrganization(orgId);
+
+  // Extract trialId from pathname if in trial route
+  const trialId = useMemo(() => {
+    const match = pathname.match(/\/trials\/([^\/]+)/);
+    return match ? match[1] : null;
+  }, [pathname]);
+
+  // Fetch trial details if in trial route
+  // Hook already handles enabled: !!trialId internally
+  const { trial, isLoading: isLoadingTrial } = useTrialDetails(
+    orgId,
+    trialId || ''
+  );
 
   return (
     <div className="flex h-screen bg-white">
@@ -51,8 +68,19 @@ export function AppMain({
                   </span>
                 </div>
 
-                {/* Separator for future breadcrumb items */}
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                {/* Trial breadcrumb if in trial route */}
+                {trialId && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    {isLoadingTrial ? (
+                      <div className="h-5 w-24 animate-pulse bg-gray-200 rounded" />
+                    ) : (
+                      <span className="text-gray-700 font-medium">
+                        {trial?.name || 'Trial'}
+                      </span>
+                    )}
+                  </>
+                )}
               </>
             )}
           </nav>

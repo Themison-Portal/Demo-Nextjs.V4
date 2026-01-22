@@ -6,8 +6,13 @@ import {
   createPatient,
   updatePatient,
   deletePatient,
+  enrollPatient,
 } from '@/services/client/patients';
-import type { CreatePatientInput, UpdatePatientInput } from '@/services/patients/types';
+import type {
+  CreatePatientInput,
+  UpdatePatientInput,
+  EnrollPatientInput,
+} from '@/services/patients/types';
 
 export function usePatients(orgId: string, trialId: string) {
   const queryClient = useQueryClient();
@@ -46,6 +51,16 @@ export function usePatients(orgId: string, trialId: string) {
     },
   });
 
+  const enrollMutation = useMutation({
+    mutationFn: ({ patientId, input }: { patientId: string; input: EnrollPatientInput }) =>
+      enrollPatient(orgId, trialId, patientId, input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['client', 'patient', orgId, trialId, variables.patientId] });
+      queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
+    },
+  });
+
   return {
     patients: data?.patients || [],
     total: data?.total || 0,
@@ -58,5 +73,8 @@ export function usePatients(orgId: string, trialId: string) {
     isUpdating: updateMutation.isPending,
     deletePatient: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+    enrollPatient: (patientId: string, input: EnrollPatientInput) =>
+      enrollMutation.mutateAsync({ patientId, input }),
+    isEnrolling: enrollMutation.isPending,
   };
 }

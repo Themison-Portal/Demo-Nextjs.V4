@@ -38,7 +38,7 @@ export function NavigationTabs({
   return (
     <div
       className={cn(
-        "bg-white rounded-lg border border-gray-200 px-2 py-1.5",
+        "bg-white rounded-lg border border-gray-200 px-2 py-1.5 sticky -top-8 sticky:shadow-md z-10",
         className
       )}
     >

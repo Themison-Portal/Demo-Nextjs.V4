@@ -64,6 +64,14 @@ export const TRIAL_CONSTANTS = {
   status: ['active', 'paused', 'completed', 'terminated'] as const,
 } as const;
 
+/**
+ * Task-related constants
+ */
+export const TASK_CONSTANTS = {
+  status: ['todo', 'in_progress', 'completed', 'blocked'] as const,
+  priority: ['low', 'medium', 'high', 'urgent'] as const,
+} as const;
+
 // ============================================================================
 // Helper Functions
 // ============================================================================

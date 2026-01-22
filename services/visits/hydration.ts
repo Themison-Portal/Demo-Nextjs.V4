@@ -2,6 +2,84 @@ import { createClient } from "@/lib/supabase/server";
 import type { HydrationResult, RecalculationResult } from "./types";
 
 /**
+ * Hydrate screening visit only
+ *
+ * Creates ONLY the screening visit (order=1) and its tasks.
+ * Called when a patient is created with a screening_date.
+ * Also calculates and updates patient.baseline_deadline_date.
+ *
+ * @param patientId - Patient UUID
+ * @param trialId - Trial UUID
+ * @param screeningDate - Date of screening visit
+ * @returns Summary of created records + baseline_deadline_date
+ * @throws Error if trial has no template or hydration fails
+ */
+export async function hydrateScreeningVisit(
+  patientId: string,
+  trialId: string,
+  screeningDate: string
+): Promise<HydrationResult & { baseline_deadline_date: string }> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("hydrate_screening_visit", {
+    p_patient_id: patientId,
+    p_trial_id: trialId,
+    p_screening_date: screeningDate,
+  });
+
+  if (error) {
+    console.error("[hydration] Error hydrating screening visit:", error);
+    throw new Error(error.message || "Failed to hydrate screening visit");
+  }
+
+  if (!data) {
+    throw new Error("Screening hydration returned no data");
+  }
+
+  return data as HydrationResult & { baseline_deadline_date: string };
+}
+
+/**
+ * Hydrate remaining visits (Day 0 onwards)
+ *
+ * Creates remaining visits (order > 1, from Day 0 onwards) and their tasks.
+ * Called during enrollment when baseline_date is set.
+ *
+ * @param patientId - Patient UUID
+ * @param trialId - Trial UUID
+ * @param baselineDate - Date of Day 0 (Baseline visit)
+ * @returns Summary of created records
+ * @throws Error if trial has no template or hydration fails
+ */
+export async function hydrateRemainingVisits(
+  patientId: string,
+  trialId: string,
+  baselineDate: string,
+  assigneeOverrides?: Record<string, string | null>
+): Promise<HydrationResult> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("hydrate_remaining_visits", {
+    p_patient_id: patientId,
+    p_trial_id: trialId,
+    p_baseline_date: baselineDate,
+    p_assignee_overrides: assigneeOverrides || null,
+  });
+
+  if (error) {
+    console.error("[hydration] Error hydrating remaining visits:", error);
+    throw new Error(error.message || "Failed to hydrate remaining visits");
+  }
+
+  if (!data) {
+    throw new Error("Remaining visits hydration returned no data");
+  }
+
+  return data as HydrationResult;
+}
+
+/**
+ * @deprecated Use hydrateScreeningVisit + hydrateRemainingVisits instead
  * Hydrate visit schedule for a patient
  *
  * Generates visits, visit_activities, and tasks from the trial's JSONB template.
@@ -28,9 +106,7 @@ export async function hydrateVisitSchedule(
 
   if (error) {
     console.error("[hydration] Error hydrating visit schedule:", error);
-    throw new Error(
-      error.message || "Failed to hydrate visit schedule"
-    );
+    throw new Error(error.message || "Failed to hydrate visit schedule");
   }
 
   if (!data) {

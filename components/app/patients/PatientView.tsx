@@ -9,6 +9,7 @@ import { NavigationTabs, TabItem } from "@/components/app/shared/NavigationTabs"
 import { ROUTES } from "@/lib/routes";
 import { LayoutDashboard, Calendar, FileText } from "lucide-react";
 import { PatientOverview } from "./PatientOverview";
+import { VisitsTab } from "./VisitsTab";
 
 type ValidTab = "overview" | "visits" | "documents";
 
@@ -46,7 +47,7 @@ export function PatientView({ orgId, trialId, patientId, activeTab }: PatientVie
       case "overview":
         return <PatientOverview orgId={orgId} trialId={trialId} patientId={patientId} />;
       case "visits":
-        return <PlaceholderTab title="Visits" description="Patient visit schedule will be displayed here." />;
+        return <VisitsTab orgId={orgId} trialId={trialId} patientId={patientId} />;
       case "documents":
         return <PlaceholderTab title="Documents" description="Patient documents will be managed here." />;
       default:
