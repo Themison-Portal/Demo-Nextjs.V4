@@ -16,7 +16,7 @@ interface DashboardViewProps {
   orgName?: string;
 }
 
-export function DashboardView({ userName, orgName }: DashboardViewProps) {
+export function DashboardView({ orgId, userName, orgName }: DashboardViewProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 w-full">
@@ -54,7 +54,7 @@ export function DashboardView({ userName, orgName }: DashboardViewProps) {
 
       {/* My Workload Section */}
       <div className="mt-8">
-        <MyWorkload />
+        <MyWorkload orgId={orgId} />
       </div>
     </div>
   );

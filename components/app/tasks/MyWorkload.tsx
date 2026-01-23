@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useMemo } from "react";
-import { useMyTasks } from "@/hooks/client/useMyTasks";
+import { useTasks } from "@/hooks/client/useTasks";
 import { TaskCard } from "./TaskCard";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,12 @@ import { ClipboardList, ListTodo, Clock, CheckCircle2, XCircle, ChevronDown, Che
 import { cn } from "@/lib/utils";
 import type { TaskStatus } from "@/services/tasks/types";
 
-export function MyWorkload() {
-  const { tasks, isLoading, error } = useMyTasks();
+interface MyWorkloadProps {
+  orgId: string;
+}
+
+export function MyWorkload({ orgId }: MyWorkloadProps) {
+  const { tasks, isLoading, error } = useTasks(orgId, { assigned_to: "me" });
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [trialFilter, setTrialFilter] = useState<string | 'all'>('all');
   const [activityFilter, setActivityFilter] = useState<string | 'all'>('all');

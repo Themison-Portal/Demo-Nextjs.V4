@@ -18,6 +18,7 @@ import {
   LogOut,
   User,
   Building2,
+  ClipboardList,
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -81,6 +82,13 @@ export function AppSidebar({
           label="Trials"
           icon={<FlaskConical className="h-4 w-4" />}
           active={pathname?.startsWith(ROUTES.APP.TRIALS(orgId))}
+        />
+
+        <SidebarItem
+          href={ROUTES.APP.TASKS(orgId)}
+          label="Tasks"
+          icon={<ClipboardList className="h-4 w-4" />}
+          active={pathname?.startsWith(ROUTES.APP.TASKS(orgId))}
         />
 
         {/* <SidebarItem

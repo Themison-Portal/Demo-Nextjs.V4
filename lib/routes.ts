@@ -57,6 +57,9 @@ export const APP_ROUTES = {
   PATIENT_TAB: (orgId: string, trialId: string, patientId: string, tab: string) =>
     `/${orgId}/trials/${trialId}/patients/${patientId}/${tab}`,
 
+  /** Task management */
+  TASKS: (orgId: string) => `/${orgId}/tasks`,
+
   /** Organization management */
   ORGANIZATION: (orgId: string) => `/${orgId}/organization`,
 

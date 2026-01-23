@@ -37,9 +37,48 @@ export interface TaskWithContext extends Task {
   trial?: {
     name: string;
   };
+  assigned_user?: {
+    id: string;
+    email: string;
+    full_name?: string | null;
+  } | null;
 }
 
-export interface MyTasksResponse {
+export interface TasksResponse {
   tasks: TaskWithContext[];
   total: number;
+}
+
+// Input types for mutations
+export interface CreateTaskInput {
+  trial_id: string;
+  patient_id?: string | null;
+  visit_id?: string | null;
+  activity_type_id?: string | null;
+  title: string;
+  description?: string | null;
+  status?: TaskStatus;
+  priority?: TaskPriority | null;
+  assigned_to?: string | null;
+  due_date?: string | null;
+}
+
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string | null;
+  status?: TaskStatus;
+  priority?: TaskPriority | null;
+  assigned_to?: string | null;
+  due_date?: string | null;
+  patient_id?: string | null;
+  visit_id?: string | null;
+  activity_type_id?: string | null;
+}
+
+export interface TaskFilters {
+  trial_id?: string;
+  patient_id?: string;
+  assigned_to?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
 }
