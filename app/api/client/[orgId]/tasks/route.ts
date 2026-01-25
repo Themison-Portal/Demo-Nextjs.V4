@@ -19,6 +19,7 @@ import type { TaskWithContext } from "@/services/tasks/types";
  * - assigned_to: Filter by assignee (use "me" for current user)
  * - status: Filter by status
  * - priority: Filter by priority
+ * - category: Filter by activity type category
  *
  * Access:
  * - superadmin/admin: See ALL tasks in the organization
@@ -37,6 +38,7 @@ export const GET = withOrgMember(async (req, ctx, user) => {
   const assignedToFilter = url.searchParams.get("assigned_to");
   const statusFilter = url.searchParams.get("status");
   const priorityFilter = url.searchParams.get("priority");
+  const categoryFilter = url.searchParams.get("category");
 
   // Determine if user can see all tasks in org
   const canViewAll = user.isStaff || isAdminRole(user.orgRole);
@@ -85,6 +87,7 @@ export const GET = withOrgMember(async (req, ctx, user) => {
     }
     if (statusFilter) query = query.eq("status", statusFilter);
     if (priorityFilter) query = query.eq("priority", priorityFilter);
+    // Note: category filter applied post-query due to LEFT JOIN limitations
 
     const { data: tasks, error } = await query;
 
@@ -93,9 +96,17 @@ export const GET = withOrgMember(async (req, ctx, user) => {
       return Response.json({ error: "Failed to fetch tasks" }, { status: 500 });
     }
 
+    // Apply category filter post-query
+    let filteredTasks = tasks || [];
+    if (categoryFilter) {
+      filteredTasks = filteredTasks.filter(
+        (task: any) => task.activity_types?.category === categoryFilter
+      );
+    }
+
     return Response.json({
-      tasks: transformTasks(tasks || []),
-      total: (tasks || []).length,
+      tasks: transformTasks(filteredTasks),
+      total: filteredTasks.length,
     });
   }
 
@@ -137,6 +148,7 @@ export const GET = withOrgMember(async (req, ctx, user) => {
   if (patientIdFilter) query = query.eq("patient_id", patientIdFilter);
   if (statusFilter) query = query.eq("status", statusFilter);
   if (priorityFilter) query = query.eq("priority", priorityFilter);
+  // Note: category filter applied post-query due to LEFT JOIN limitations
 
   const { data: tasks, error: tasksError } = await query;
 
@@ -160,6 +172,13 @@ export const GET = withOrgMember(async (req, ctx, user) => {
   if (assignedToFilter) {
     const assignee = assignedToFilter === "me" ? user.id : assignedToFilter;
     finalTasks = filteredTasks.filter((task: any) => task.assigned_to === assignee);
+  }
+
+  // Step 5: Apply category filter if provided
+  if (categoryFilter) {
+    finalTasks = finalTasks.filter(
+      (task: any) => task.activity_types?.category === categoryFilter
+    );
   }
 
   return Response.json({

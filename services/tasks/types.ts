@@ -81,4 +81,5 @@ export interface TaskFilters {
   assigned_to?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
+  category?: string;
 }

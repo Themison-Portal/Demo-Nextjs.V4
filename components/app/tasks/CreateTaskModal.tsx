@@ -18,6 +18,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTrials } from "@/hooks/client/useTrials";
+import { useTeamMembers } from "@/hooks/client/useTeamMembers";
+import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
+import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS } from "@/lib/constants/tasks";
 import type { CreateTaskInput, TaskStatus, TaskPriority } from "@/services/tasks/types";
 
 interface CreateTaskModalProps {
@@ -29,20 +32,6 @@ interface CreateTaskModalProps {
   initialStatus?: TaskStatus;
 }
 
-const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: "todo", label: "To Do" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Done" },
-  { value: "blocked", label: "Blocked" },
-];
-
-const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
-  { value: "urgent", label: "Urgent" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
-];
-
 export function CreateTaskModal({
   isOpen,
   onClose,
@@ -52,11 +41,13 @@ export function CreateTaskModal({
   initialStatus,
 }: CreateTaskModalProps) {
   const { trials } = useTrials(orgId);
+  const { teamMembers } = useTeamMembers(orgId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [trialId, setTrialId] = useState("");
   const [status, setStatus] = useState<TaskStatus>(initialStatus || "todo");
   const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [assignedTo, setAssignedTo] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +59,7 @@ export function CreateTaskModal({
       setTrialId(trials.length === 1 ? trials[0].id : "");
       setStatus(initialStatus || "todo");
       setPriority("medium");
+      setAssignedTo(null);
       setDueDate("");
       setError(null);
     }
@@ -93,6 +85,7 @@ export function CreateTaskModal({
         trial_id: trialId,
         status,
         priority,
+        assigned_to: assignedTo || undefined,
         due_date: dueDate || undefined,
       });
       onClose();
@@ -103,7 +96,7 @@ export function CreateTaskModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
       <ModalHeader>Create New Task</ModalHeader>
       <ModalBody>
         <div className="space-y-4">
@@ -166,7 +159,7 @@ export function CreateTaskModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
+                  {TASK_STATUS_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -186,7 +179,7 @@ export function CreateTaskModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRIORITY_OPTIONS.map((option) => (
+                  {TASK_PRIORITY_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -194,6 +187,17 @@ export function CreateTaskModal({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Assignee */}
+          <div className="space-y-2">
+            <Label>Assignee</Label>
+            <TaskAssigneeSelect
+              value={assignedTo}
+              teamMembers={teamMembers}
+              onChange={setAssignedTo}
+              disabled={isLoading}
+            />
           </div>
 
           {/* Due Date */}

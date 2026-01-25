@@ -17,6 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTeamMembers } from "@/hooks/client/useTeamMembers";
+import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
+import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS } from "@/lib/constants/tasks";
 import type { TaskWithContext, UpdateTaskInput, TaskStatus, TaskPriority } from "@/services/tasks/types";
 
 interface EditTaskModalProps {
@@ -30,20 +33,6 @@ interface EditTaskModalProps {
   orgId: string;
 }
 
-const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: "todo", label: "To Do" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Done" },
-  { value: "blocked", label: "Blocked" },
-];
-
-const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
-  { value: "urgent", label: "Urgent" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
-];
-
 export function EditTaskModal({
   isOpen,
   onClose,
@@ -52,11 +41,14 @@ export function EditTaskModal({
   isLoading,
   isDeleting,
   task,
+  orgId,
 }: EditTaskModalProps) {
+  const { teamMembers } = useTeamMembers(orgId);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || "");
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [priority, setPriority] = useState<TaskPriority>(task.priority || "medium");
+  const [assignedTo, setAssignedTo] = useState<string | null>(task.assigned_to || null);
   const [dueDate, setDueDate] = useState(task.due_date?.split("T")[0] || "");
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +59,7 @@ export function EditTaskModal({
       setDescription(task.description || "");
       setStatus(task.status);
       setPriority(task.priority || "medium");
+      setAssignedTo(task.assigned_to || null);
       setDueDate(task.due_date?.split("T")[0] || "");
       setError(null);
     }
@@ -86,6 +79,7 @@ export function EditTaskModal({
         description: description.trim() || undefined,
         status,
         priority,
+        assigned_to: assignedTo || undefined,
         due_date: dueDate || undefined,
       });
       onClose();
@@ -96,7 +90,7 @@ export function EditTaskModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
       <ModalHeader>Edit Task</ModalHeader>
       <ModalBody>
         <div className="space-y-4">
@@ -159,7 +153,7 @@ export function EditTaskModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
+                  {TASK_STATUS_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -179,7 +173,7 @@ export function EditTaskModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRIORITY_OPTIONS.map((option) => (
+                  {TASK_PRIORITY_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -187,6 +181,17 @@ export function EditTaskModal({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Assignee */}
+          <div className="space-y-2">
+            <Label>Assignee</Label>
+            <TaskAssigneeSelect
+              value={assignedTo}
+              teamMembers={teamMembers}
+              onChange={setAssignedTo}
+              disabled={isLoading}
+            />
           </div>
 
           {/* Due Date */}

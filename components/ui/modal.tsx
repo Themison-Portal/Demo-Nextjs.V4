@@ -14,6 +14,7 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
 }
 
 interface ModalHeaderProps {
@@ -32,7 +33,7 @@ interface ModalFooterProps {
   className?: string;
 }
 
-export function Modal({ isOpen, onClose, children, className }: ModalProps) {
+export function Modal({ isOpen, onClose, children, className, size = "md" }: ModalProps) {
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -52,6 +53,14 @@ export function Modal({ isOpen, onClose, children, className }: ModalProps) {
 
   if (!isOpen) return null;
 
+  const sizeClasses = {
+    sm: "max-w-sm",
+    md: "max-w-md",
+    lg: "max-w-lg",
+    xl: "max-w-xl",
+    "2xl": "max-w-2xl",
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -64,7 +73,8 @@ export function Modal({ isOpen, onClose, children, className }: ModalProps) {
       {/* Modal */}
       <div
         className={cn(
-          "relative w-full max-w-md rounded-lg bg-white shadow-xl",
+          "relative w-full rounded-lg bg-white shadow-xl",
+          sizeClasses[size],
           className
         )}
         role="dialog"

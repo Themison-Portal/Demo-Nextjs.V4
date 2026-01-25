@@ -9,15 +9,18 @@ import { TaskKanbanCard } from "./TaskKanbanCard";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import type { TaskStatus, TaskWithContext } from "@/services/tasks/types";
+import type { TeamMember } from "@/services/client/teamMembers";
 
 interface TaskStatusColumnProps {
   status: TaskStatus;
   title: string;
   tasks: TaskWithContext[];
+  teamMembers: TeamMember[];
   onAddTask: () => void;
   onEditTask: (task: TaskWithContext) => void;
   onDeleteTask: (taskId: string) => void;
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
+  onUpdateAssignee: (taskId: string, userId: string | null) => void;
   isUpdating: boolean;
   bgColor?: string;
 }
@@ -26,10 +29,12 @@ export function TaskStatusColumn({
   status,
   title,
   tasks,
+  teamMembers,
   onAddTask,
   onEditTask,
   onDeleteTask,
   onUpdateStatus,
+  onUpdateAssignee,
   isUpdating,
   bgColor,
 }: TaskStatusColumnProps) {
@@ -60,9 +65,11 @@ export function TaskStatusColumn({
             <TaskKanbanCard
               key={task.id}
               task={task}
+              teamMembers={teamMembers}
               onEdit={() => onEditTask(task)}
               onDelete={() => onDeleteTask(task.id)}
               onUpdateStatus={(newStatus) => onUpdateStatus(task.id, newStatus)}
+              onUpdateAssignee={(userId) => onUpdateAssignee(task.id, userId)}
               disabled={isUpdating}
             />
           ))

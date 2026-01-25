@@ -19,6 +19,7 @@ export async function getTasks(
   if (filters?.assigned_to) params.append("assigned_to", filters.assigned_to);
   if (filters?.status) params.append("status", filters.status);
   if (filters?.priority) params.append("priority", filters.priority);
+  if (filters?.category) params.append("category", filters.category);
 
   const queryString = params.toString();
   const url = `/api/client/${orgId}/tasks${queryString ? `?${queryString}` : ""}`;

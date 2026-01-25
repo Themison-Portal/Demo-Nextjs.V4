@@ -6,15 +6,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { useTasks } from "@/hooks/client/useTasks";
+import { useTeamMembers } from "@/hooks/client/useTeamMembers";
 import { TaskStatusColumn } from "./TaskStatusColumn";
 import { TaskFiltersBar } from "./TaskFiltersBar";
 import { CreateTaskModal } from "./CreateTaskModal";
 import { EditTaskModal } from "./EditTaskModal";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Kanban } from "lucide-react";
+import { ROUTES } from "@/lib/routes";
+import Link from "next/link";
 import type {
   TaskStatus,
   TaskWithContext,
@@ -26,7 +28,6 @@ interface TasksViewProps {
 }
 
 export function TasksView({ orgId }: TasksViewProps) {
-  const router = useRouter();
   const [filters, setFilters] = useState<TaskFilters>({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskWithContext | null>(null);
@@ -45,6 +46,8 @@ export function TasksView({ orgId }: TasksViewProps) {
     isUpdating,
     isDeleting,
   } = useTasks(orgId, filters);
+
+  const { teamMembers } = useTeamMembers(orgId);
 
   // Group tasks by status
   const tasksByStatus = useMemo(() => {
@@ -79,6 +82,10 @@ export function TasksView({ orgId }: TasksViewProps) {
     }
   };
 
+  const handleUpdateAssignee = async (taskId: string, userId: string | null) => {
+    await updateTask(taskId, { assigned_to: userId });
+  };
+
   const handleAddTaskInColumn = (status: TaskStatus) => {
     setCreateModalStatus(status);
     setIsCreateModalOpen(true);
@@ -104,34 +111,43 @@ export function TasksView({ orgId }: TasksViewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header with navigation */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
-        <div className="flex items-center gap-4 mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push(`/${orgId}/dashboard`)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-          <div className="h-4 w-px bg-gray-300" />
-          <h1 className="text-lg font-semibold text-gray-900">Kanban Board</h1>
+      {/* Navigation Bar */}
+      <div className="bg-white rounded-lg border border-gray-200 px-2 py-1.5 mb-6">
+        <div className="flex items-center justify-between">
+          {/* Left: Back + Kanban Board */}
+          <div className="flex items-center gap-1">
+            <Link
+              href={ROUTES.APP.DASHBOARD(orgId)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Link>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-gray-100 rounded-md">
+              <Kanban className="h-4 w-4" />
+              <span>Kanban Board</span>
+            </div>
+          </div>
+
+          {/* Right: Add Task Button */}
           <Button
             size="sm"
             onClick={() => setIsCreateModalOpen(true)}
-            className="ml-auto"
           >
             <Plus className="h-4 w-4 mr-1" />
-            New Task
+            Add Task
           </Button>
         </div>
+      </div>
 
-        {/* Filters */}
+      {/* Filters */}
+      <div className="mb-4">
         <TaskFiltersBar
           orgId={orgId}
           filters={filters}
           onFiltersChange={setFilters}
+          tasks={tasks}
         />
       </div>
 
@@ -143,12 +159,14 @@ export function TasksView({ orgId }: TasksViewProps) {
               status="todo"
               title="To Do"
               tasks={tasksByStatus.todo}
+              teamMembers={teamMembers}
               onAddTask={() => handleAddTaskInColumn("todo")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}
               onUpdateStatus={(taskId, status) =>
                 updateTask(taskId, { status })
               }
+              onUpdateAssignee={handleUpdateAssignee}
               isUpdating={isUpdating}
               bgColor="bg-gray-100"
             />
@@ -156,12 +174,14 @@ export function TasksView({ orgId }: TasksViewProps) {
               status="in_progress"
               title="In Progress"
               tasks={tasksByStatus.in_progress}
+              teamMembers={teamMembers}
               onAddTask={() => handleAddTaskInColumn("in_progress")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}
               onUpdateStatus={(taskId, status) =>
                 updateTask(taskId, { status })
               }
+              onUpdateAssignee={handleUpdateAssignee}
               isUpdating={isUpdating}
               bgColor="bg-blue-50"
             />
@@ -169,12 +189,14 @@ export function TasksView({ orgId }: TasksViewProps) {
               status="completed"
               title="Done"
               tasks={tasksByStatus.completed}
+              teamMembers={teamMembers}
               onAddTask={() => handleAddTaskInColumn("completed")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}
               onUpdateStatus={(taskId, status) =>
                 updateTask(taskId, { status })
               }
+              onUpdateAssignee={handleUpdateAssignee}
               isUpdating={isUpdating}
               bgColor="bg-green-50"
             />
@@ -182,12 +204,14 @@ export function TasksView({ orgId }: TasksViewProps) {
               status="blocked"
               title="Blocked"
               tasks={tasksByStatus.blocked}
+              teamMembers={teamMembers}
               onAddTask={() => handleAddTaskInColumn("blocked")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}
               onUpdateStatus={(taskId, status) =>
                 updateTask(taskId, { status })
               }
+              onUpdateAssignee={handleUpdateAssignee}
               isUpdating={isUpdating}
               bgColor="bg-red-50"
             />
