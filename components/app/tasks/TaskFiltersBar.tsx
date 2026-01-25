@@ -3,22 +3,30 @@
  * Filter controls for tasks: Trial, Assignee, Priority, Patient
  */
 
-'use client';
+"use client";
 
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ChevronDown, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTrials } from "@/hooks/client/useTrials";
 import { useTeamMembers } from "@/hooks/client/useTeamMembers";
-import type { TaskFilters, TaskPriority, TaskWithContext } from "@/services/tasks/types";
+import type {
+  TaskFilters,
+  TaskPriority,
+  TaskWithContext,
+} from "@/services/tasks/types";
 
 interface TaskFiltersBarProps {
   orgId: string;
   filters: TaskFilters;
   onFiltersChange: (filters: TaskFilters) => void;
-  tasks: TaskWithContext[]; // Needed for patient filter (option A - simple)
+  tasks: TaskWithContext[]; // All unfiltered tasks - needed to extract filter options
 }
 
 const PRIORITIES: { value: TaskPriority; label: string }[] = [
@@ -37,10 +45,7 @@ export function TaskFiltersBar({
   const { trials } = useTrials(orgId);
   const { teamMembers } = useTeamMembers(orgId);
 
-  // Extract unique patients from current tasks (Option A - simple)
-  // NOTE: For Option B (show all patients from trials), we would need a
-  // dedicated /api/client/[orgId]/patients endpoint that returns patients
-  // from all trials the user has access to, similar to how team-members works.
+  // Extract unique patients from all unfiltered tasks
   const patients = useMemo(() => {
     const uniquePatients = new Map();
     tasks.forEach((task) => {
@@ -55,7 +60,7 @@ export function TaskFiltersBar({
     return Array.from(uniquePatients.values());
   }, [tasks]);
 
-  // Extract unique categories from current tasks
+  // Extract unique categories from all unfiltered tasks
   const categories = useMemo(() => {
     const uniqueCategories = new Set<string>();
     tasks.forEach((task) => {
@@ -107,7 +112,7 @@ export function TaskFiltersBar({
             onClick={() => updateFilter("trial_id", undefined)}
             className={cn(
               "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-              !filters.trial_id && "bg-gray-50"
+              !filters.trial_id && "bg-gray-50",
             )}
           >
             <span>All Trials</span>
@@ -119,7 +124,7 @@ export function TaskFiltersBar({
               onClick={() => updateFilter("trial_id", trial.id)}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-                filters.trial_id === trial.id && "bg-gray-50"
+                filters.trial_id === trial.id && "bg-gray-50",
               )}
             >
               <span>{trial.name}</span>
@@ -146,11 +151,13 @@ export function TaskFiltersBar({
             onClick={() => updateFilter("assigned_to", undefined)}
             className={cn(
               "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-              !filters.assigned_to && "bg-gray-50"
+              !filters.assigned_to && "bg-gray-50",
             )}
           >
             <span>All Assignees</span>
-            {!filters.assigned_to && <Check className="h-4 w-4 text-blue-600" />}
+            {!filters.assigned_to && (
+              <Check className="h-4 w-4 text-blue-600" />
+            )}
           </button>
           <div className="max-h-64 overflow-y-auto">
             {teamMembers.map((member) => {
@@ -163,7 +170,7 @@ export function TaskFiltersBar({
                   onClick={() => updateFilter("assigned_to", member.user_id)}
                   className={cn(
                     "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded transition-colors hover:bg-gray-100",
-                    isSelected && "bg-gray-50"
+                    isSelected && "bg-gray-50",
                   )}
                 >
                   {/* Avatar */}
@@ -184,9 +191,7 @@ export function TaskFiltersBar({
                   </div>
 
                   {/* Check icon */}
-                  {isSelected && (
-                    <Check className="h-3 w-3 text-blue-600" />
-                  )}
+                  {isSelected && <Check className="h-3 w-3 text-blue-600" />}
                 </button>
               );
             })}
@@ -201,7 +206,9 @@ export function TaskFiltersBar({
             <Button variant="outline" size="sm">
               {selectedPatient
                 ? `${selectedPatient.patient_number}${
-                    selectedPatient.initials ? ` (${selectedPatient.initials})` : ""
+                    selectedPatient.initials
+                      ? ` (${selectedPatient.initials})`
+                      : ""
                   }`
                 : "All Patients"}
               <ChevronDown className="h-4 w-4 ml-1" />
@@ -212,11 +219,13 @@ export function TaskFiltersBar({
               onClick={() => updateFilter("patient_id", undefined)}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-                !filters.patient_id && "bg-gray-50"
+                !filters.patient_id && "bg-gray-50",
               )}
             >
               <span>All Patients</span>
-              {!filters.patient_id && <Check className="h-4 w-4 text-blue-600" />}
+              {!filters.patient_id && (
+                <Check className="h-4 w-4 text-blue-600" />
+              )}
             </button>
             <div className="max-h-64 overflow-y-auto">
               {patients.map((patient) => {
@@ -231,13 +240,11 @@ export function TaskFiltersBar({
                     onClick={() => updateFilter("patient_id", patient.id)}
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-                      isSelected && "bg-gray-50"
+                      isSelected && "bg-gray-50",
                     )}
                   >
                     <span>{displayName}</span>
-                    {isSelected && (
-                      <Check className="h-4 w-4 text-blue-600" />
-                    )}
+                    {isSelected && <Check className="h-4 w-4 text-blue-600" />}
                   </button>
                 );
               })}
@@ -262,7 +269,7 @@ export function TaskFiltersBar({
             onClick={() => updateFilter("priority", undefined)}
             className={cn(
               "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-              !filters.priority && "bg-gray-50"
+              !filters.priority && "bg-gray-50",
             )}
           >
             <span>All Priorities</span>
@@ -274,7 +281,7 @@ export function TaskFiltersBar({
               onClick={() => updateFilter("priority", priority.value)}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-                filters.priority === priority.value && "bg-gray-50"
+                filters.priority === priority.value && "bg-gray-50",
               )}
             >
               <span>{priority.label}</span>
@@ -300,7 +307,7 @@ export function TaskFiltersBar({
               onClick={() => updateFilter("category", undefined)}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-                !filters.category && "bg-gray-50"
+                !filters.category && "bg-gray-50",
               )}
             >
               <span>All Categories</span>
@@ -311,8 +318,8 @@ export function TaskFiltersBar({
                 key={category}
                 onClick={() => updateFilter("category", category)}
                 className={cn(
-                  "w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors hover:bg-gray-100",
-                  filters.category === category && "bg-gray-50"
+                  "w-full flex items-center justify-between px-3 py-2 text-sm capital rounded transition-colors hover:bg-gray-100",
+                  filters.category === category && "bg-gray-50",
                 )}
               >
                 <span>{category}</span>

@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown, Check, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -35,37 +35,41 @@ export function TaskAssigneeSelect({
 }: TaskAssigneeSelectProps) {
   const [open, setOpen] = useState(false);
 
-  // Group members by suggested role
-  // For each member, check if ANY of their trial roles match the suggested role
-  const suggested = suggestedRole
-    ? teamMembers.filter((m) =>
-        m.trials.some((t) => t.trial_role === suggestedRole)
-      )
-    : [];
+  // Memoize expensive filtering operations
+  const suggested = useMemo(() => {
+    if (!suggestedRole) return [];
+    return teamMembers.filter((m) =>
+      m.trials.some((t) => t.trial_role === suggestedRole)
+    );
+  }, [teamMembers, suggestedRole]);
 
-  const others = suggestedRole
-    ? teamMembers.filter(
-        (m) => !m.trials.some((t) => t.trial_role === suggestedRole)
-      )
-    : teamMembers;
+  const others = useMemo(() => {
+    if (!suggestedRole) return teamMembers;
+    return teamMembers.filter(
+      (m) => !m.trials.some((t) => t.trial_role === suggestedRole)
+    );
+  }, [teamMembers, suggestedRole]);
 
   // Find selected member
-  const selectedMember = value
-    ? teamMembers?.find((m) => m.user_id === value)
-    : null;
+  const selectedMember = useMemo(() => {
+    return value ? teamMembers?.find((m) => m.user_id === value) : null;
+  }, [value, teamMembers]);
 
   const handleSelect = (userId: string | null) => {
     onChange(userId);
     setOpen(false);
   };
 
-  // Display name logic
-  let displayName = "Unassigned";
-  if (selectedMember) {
-    displayName = selectedMember.full_name || selectedMember.email || "Unknown";
-  } else if (suggestedRole && !value) {
-    displayName = suggestedRole;
-  }
+  // Memoize display name
+  const displayName = useMemo(() => {
+    if (selectedMember) {
+      return selectedMember.full_name || selectedMember.email || "Unknown";
+    }
+    if (suggestedRole && !value) {
+      return suggestedRole;
+    }
+    return "Unassigned";
+  }, [selectedMember, suggestedRole, value]);
 
   const buttonClasses = cn(
     "flex items-center gap-1 rounded px-2 py-1 transition-colors",
@@ -77,7 +81,12 @@ export function TaskAssigneeSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" disabled={disabled} className={buttonClasses}>
+        <button
+          type="button"
+          disabled={disabled}
+          className={buttonClasses}
+          onClick={(e) => e.stopPropagation()}
+        >
           <User className={cn(size === "sm" ? "h-3 w-3" : "h-4 w-4")} />
           <span>{displayName}</span>
           <ChevronDown

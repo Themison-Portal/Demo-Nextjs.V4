@@ -6,9 +6,13 @@
 import { Badge } from "@/components/ui/badge";
 import type { TaskWithContext } from "@/services/tasks/types";
 import { cn } from "@/lib/utils";
+import { useFormattedTaskDate } from "@/hooks/ui/useFormattedTaskDate";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/routes";
 
 interface TaskCardProps {
   task: TaskWithContext;
+  orgId?: string;
 }
 
 // Priority indicators
@@ -27,30 +31,32 @@ const statusVariants = {
   blocked: { label: "Blocked", className: "bg-red-100 text-red-700 border-red-200" },
 };
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, orgId }: TaskCardProps) {
+  const router = useRouter();
   const statusConfig = statusVariants[task.status];
   const priorityColor = priorityColors[task.priority];
+  const dueDate = useFormattedTaskDate(task.due_date, task.status);
 
-  // Format due date
-  const formatDueDate = (date: string | null) => {
-    if (!date) return null;
-    const dueDate = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // Only make clickable if task has patient and visit
+  const isClickable = task.patient_id && task.visit_id && orgId;
 
-    if (diffDays < 0) return { text: `Overdue by ${Math.abs(diffDays)}d`, isOverdue: true };
-    if (diffDays === 0) return { text: "Due today", isOverdue: false };
-    if (diffDays === 1) return { text: "Due tomorrow", isOverdue: false };
-    return { text: `Due in ${diffDays}d`, isOverdue: false };
+  const handleClick = () => {
+    if (!isClickable) return;
+
+    // Navigate to patient visits tab with visitId as query param
+    const url = `${ROUTES.APP.PATIENT_TAB(orgId, task.trial_id, task.patient_id!, "visits")}?visitId=${task.visit_id}`;
+    router.push(url);
   };
 
-  const dueDate = formatDueDate(task.due_date);
-
   return (
-    <div className="flex items-center gap-3 px-3 py-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:border-gray-300 transition-colors">
+    <div
+      onClick={handleClick}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 bg-white border border-gray-200 rounded-md transition-colors",
+        isClickable && "cursor-pointer hover:bg-gray-50 hover:border-gray-300",
+        !isClickable && "cursor-default"
+      )}
+    >
       {/* Priority Indicator */}
       <div className={cn("w-1 h-8 rounded-full shrink-0", priorityColor)} />
 

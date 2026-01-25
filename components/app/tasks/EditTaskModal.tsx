@@ -18,12 +18,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTeamMembers } from "@/hooks/client/useTeamMembers";
 import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
 import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_CATEGORY_OPTIONS } from "@/lib/constants/tasks";
 import { ROUTES } from "@/lib/routes";
 import { ExternalLink } from "lucide-react";
 import type { TaskWithContext, UpdateTaskInput, TaskStatus, TaskPriority } from "@/services/tasks/types";
+import type { TeamMember } from "@/services/client/teamMembers";
 
 interface EditTaskModalProps {
   isOpen: boolean;
@@ -34,6 +34,7 @@ interface EditTaskModalProps {
   isDeleting: boolean;
   task: TaskWithContext;
   orgId: string;
+  teamMembers: TeamMember[];
 }
 
 export function EditTaskModal({
@@ -45,8 +46,8 @@ export function EditTaskModal({
   isDeleting,
   task,
   orgId,
+  teamMembers,
 }: EditTaskModalProps) {
-  const { teamMembers } = useTeamMembers(orgId);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || "");
   const [status, setStatus] = useState<TaskStatus>(task.status);

@@ -72,6 +72,7 @@ export interface VisitActivity {
   completed_at?: string | null;
   completed_by?: string | null; // user_id
   notes?: string | null;
+  clinical_data?: Record<string, any> | null; // JSONB: checklists, lab results, vitals, etc.
   created_at: string;
 }
 

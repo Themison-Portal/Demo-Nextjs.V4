@@ -5,6 +5,7 @@
 
 "use client";
 
+import { useCallback } from "react";
 import { TaskKanbanCard } from "./TaskKanbanCard";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -24,6 +25,8 @@ interface TaskStatusColumnProps {
   onUpdateAssignee: (taskId: string, userId: string | null) => void;
   isUpdating: boolean;
   bgColor?: string;
+  bgColorHeader?: string;
+  textColorHeader?: string;
 }
 
 export function TaskStatusColumn({
@@ -39,25 +42,37 @@ export function TaskStatusColumn({
   onUpdateAssignee,
   isUpdating,
   bgColor,
+  bgColorHeader,
+  textColorHeader,
 }: TaskStatusColumnProps) {
   return (
     <div
-      className={`flex flex-col h-full rounded-lg border border-gray-200 ${
+      className={`flex flex-col w-full h-full rounded-lg border border-gray-200 ${
         bgColor ? bgColor : "bg-white"
       }`}
     >
       {/* Column Header */}
-      <div className="px-4 py-3 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">
+      <div
+        className={`px-4 py-3 border-b border-gray-200 shrink-0 rounded-t-lg w-full ${
+          bgColor ? bgColor : "bg-white"
+        }`}
+      >
+        <div
+          className={`flex items-center justify-start  rounded-sm gap-4 w-auto`}
+        >
+          <h3
+            className={`text-xs font-semibold uppercase ${textColorHeader || "text-white"} ${bgColorHeader || "bg-white"} px-3 py-1 rounded-sm `}
+          >
             {title}{" "}
-            <span className="text-gray-500 font-normal">({tasks.length})</span>
           </h3>
+          <span className={`font-normal ${textColorHeader}`}>
+            {tasks.length}
+          </span>
         </div>
       </div>
 
       {/* Tasks List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto px-2 space-y-2 mt-2">
         {tasks.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-xs text-gray-400">No tasks</p>
@@ -69,10 +84,10 @@ export function TaskStatusColumn({
               task={task}
               teamMembers={teamMembers}
               orgId={orgId}
-              onEdit={() => onEditTask(task)}
-              onDelete={() => onDeleteTask(task.id)}
-              onUpdateStatus={(newStatus) => onUpdateStatus(task.id, newStatus)}
-              onUpdateAssignee={(userId) => onUpdateAssignee(task.id, userId)}
+              onEdit={onEditTask}
+              onDelete={onDeleteTask}
+              onUpdateStatus={onUpdateStatus}
+              onUpdateAssignee={onUpdateAssignee}
               disabled={isUpdating}
             />
           ))
@@ -80,12 +95,12 @@ export function TaskStatusColumn({
       </div>
 
       {/* Add Task Button */}
-      <div className="p-3 border-t border-gray-200">
+      <div className="p-2 border-t border-gray-200">
         <Button
           variant="ghost"
           size="sm"
           onClick={onAddTask}
-          className="w-full justify-start text-gray-600 hover:text-gray-900"
+          className={`w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-200`}
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Task

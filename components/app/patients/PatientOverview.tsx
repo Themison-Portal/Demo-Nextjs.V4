@@ -11,6 +11,7 @@ import { usePatientDetails } from "@/hooks/client/usePatientDetails";
 import { useTrialDetails } from "@/hooks/client/useTrialDetails";
 import { useTrialPermissions } from "@/hooks/useTrialPermissions";
 import { usePatients } from "@/hooks/client/usePatients";
+import { useTasks } from "@/hooks/client/useTasks";
 import { parseLocalDate, formatDate } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import {
   PATIENT_STATUS_STYLES,
   PATIENT_SEX_OPTIONS,
 } from "@/lib/constants/patients";
-import { UserRound, UserCheck } from "lucide-react";
+import { UserRound, UserCheck, CheckCircle2, Circle } from "lucide-react";
 
 interface PatientOverviewProps {
   orgId: string;
@@ -44,6 +45,12 @@ export function PatientOverview({
   const { teamMembers } = useTrialDetails(orgId, trialId);
   const { canManagePatients } = useTrialPermissions(orgId, teamMembers);
   const { enrollPatient, isEnrolling } = usePatients(orgId, trialId);
+
+  // Get patient's pending tasks
+  const { tasks: patientTasks } = useTasks(orgId, {
+    patient_id: patientId,
+    status: 'todo' // Only show pending tasks
+  });
 
   if (isLoading) {
     return (
@@ -249,6 +256,55 @@ export function PatientOverview({
           </div>
         </CardContent>
       </Card>
+
+      {/* Pending Tasks Section */}
+      {patientTasks.length > 0 && (
+        <Card>
+          <CardContent className="px-6 py-4">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">
+              Pending Tasks ({patientTasks.length})
+            </h2>
+            <div className="space-y-2">
+              {patientTasks.slice(0, 5).map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-3 py-2 px-3 rounded hover:bg-gray-50"
+                >
+                  <Circle className="h-4 w-4 text-gray-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900 truncate">
+                      {task.title}
+                    </p>
+                    {task.due_date && (
+                      <p className="text-xs text-gray-500">
+                        Due: {formatDate(task.due_date)}
+                      </p>
+                    )}
+                  </div>
+                  {task.priority && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded ${
+                        task.priority === "urgent"
+                          ? "bg-red-100 text-red-700"
+                          : task.priority === "high"
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {task.priority}
+                    </span>
+                  )}
+                </div>
+              ))}
+              {patientTasks.length > 5 && (
+                <p className="text-xs text-gray-500 pt-2">
+                  +{patientTasks.length - 5} more tasks
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Enroll Patient Modal */}
       {patient && (

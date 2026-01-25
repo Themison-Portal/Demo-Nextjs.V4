@@ -38,7 +38,7 @@ export function AppMain({
   // Hook already handles enabled: !!trialId internally
   const { trial, isLoading: isLoadingTrial } = useTrialDetails(
     orgId,
-    trialId || ''
+    trialId || "",
   );
 
   return (
@@ -76,7 +76,7 @@ export function AppMain({
                       <div className="h-5 w-24 animate-pulse bg-gray-200 rounded" />
                     ) : (
                       <span className="text-gray-700 font-medium">
-                        {trial?.name || 'Trial'}
+                        {trial?.name || "Trial"}
                       </span>
                     )}
                   </>
@@ -87,9 +87,7 @@ export function AppMain({
         </header>
 
         {/* Main - scrollable area con fondo gris */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto bg-gray-50 p-8">{children}</main>
       </div>
     </div>
   );

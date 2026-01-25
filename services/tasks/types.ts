@@ -7,6 +7,7 @@ export interface Task {
   trial_id: string;
   patient_id?: string | null;
   visit_id?: string | null;
+  visit_activity_id?: string | null; // FK to visit_activities (1:1 for source='visit')
   activity_type_id?: string | null;
   category?: string | null;
   title: string;

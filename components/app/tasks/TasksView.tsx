@@ -5,9 +5,10 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useTasks } from "@/hooks/client/useTasks";
 import { useTeamMembers } from "@/hooks/client/useTeamMembers";
+import { useTasksByStatus } from "@/hooks/ui/useTasksByStatus";
 import { TaskStatusColumn } from "./TaskStatusColumn";
 import { TaskFiltersBar } from "./TaskFiltersBar";
 import { CreateTaskModal } from "./CreateTaskModal";
@@ -32,11 +33,12 @@ export function TasksView({ orgId }: TasksViewProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskWithContext | null>(null);
   const [createModalStatus, setCreateModalStatus] = useState<TaskStatus | null>(
-    null
+    null,
   );
 
   const {
     tasks,
+    allTasks,
     isLoading,
     error,
     createTask,
@@ -49,21 +51,8 @@ export function TasksView({ orgId }: TasksViewProps) {
 
   const { teamMembers } = useTeamMembers(orgId);
 
-  // Group tasks by status
-  const tasksByStatus = useMemo(() => {
-    const grouped: Record<TaskStatus, TaskWithContext[]> = {
-      todo: [],
-      in_progress: [],
-      completed: [],
-      blocked: [],
-    };
-
-    tasks.forEach((task) => {
-      grouped[task.status].push(task);
-    });
-
-    return grouped;
-  }, [tasks]);
+  // Group and sort tasks by status using custom hook
+  const tasksByStatus = useTasksByStatus(tasks);
 
   const handleCreateTask = async (input: any) => {
     await createTask(input);
@@ -76,20 +65,31 @@ export function TasksView({ orgId }: TasksViewProps) {
     setEditingTask(null);
   };
 
-  const handleDeleteTask = async (taskId: string) => {
+  const handleDeleteTask = useCallback(async (taskId: string) => {
     if (confirm("Are you sure you want to delete this task?")) {
       await deleteTask(taskId);
     }
-  };
+  }, [deleteTask]);
 
-  const handleUpdateAssignee = async (taskId: string, userId: string | null) => {
+  const handleUpdateAssignee = useCallback(async (
+    taskId: string,
+    userId: string | null,
+  ) => {
     await updateTask(taskId, { assigned_to: userId });
-  };
+  }, [updateTask]);
+
+  const handleUpdateStatus = useCallback(async (taskId: string, status: TaskStatus) => {
+    await updateTask(taskId, { status });
+  }, [updateTask]);
 
   const handleAddTaskInColumn = (status: TaskStatus) => {
     setCreateModalStatus(status);
     setIsCreateModalOpen(true);
   };
+
+  const handleEditTask = useCallback((task: TaskWithContext) => {
+    setEditingTask(task);
+  }, []);
 
   if (isLoading) {
     return (
@@ -110,9 +110,9 @@ export function TasksView({ orgId }: TasksViewProps) {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col w-full ">
       {/* Navigation Bar */}
-      <div className="bg-white rounded-lg border border-gray-200 px-2 py-1.5 mb-6">
+      <div className="bg-white rounded-lg border border-gray-200 px-2 py-1.5 mb-6 flex-shrink-0">
         <div className="flex items-center justify-between">
           {/* Left: Back + Kanban Board */}
           <div className="flex items-center gap-1">
@@ -131,10 +131,7 @@ export function TasksView({ orgId }: TasksViewProps) {
           </div>
 
           {/* Right: Add Task Button */}
-          <Button
-            size="sm"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
+          <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
             Add Task
           </Button>
@@ -142,84 +139,79 @@ export function TasksView({ orgId }: TasksViewProps) {
       </div>
 
       {/* Filters */}
-      <div className="mb-4">
+      <div className="mb-4 flex-shrink-0">
         <TaskFiltersBar
           orgId={orgId}
           filters={filters}
           onFiltersChange={setFilters}
-          tasks={tasks}
+          tasks={allTasks}
         />
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto bg-gray-50">
-        <div className="h-full min-w-max px- py-4">
-          <div className="grid grid-cols-4 gap-4 h-full">
-            <TaskStatusColumn
-              status="todo"
-              title="To Do"
-              tasks={tasksByStatus.todo}
-              teamMembers={teamMembers}
-              orgId={orgId}
-              onAddTask={() => handleAddTaskInColumn("todo")}
-              onEditTask={setEditingTask}
-              onDeleteTask={handleDeleteTask}
-              onUpdateStatus={(taskId, status) =>
-                updateTask(taskId, { status })
-              }
-              onUpdateAssignee={handleUpdateAssignee}
-              isUpdating={isUpdating}
-              bgColor="bg-gray-100"
-            />
-            <TaskStatusColumn
-              status="in_progress"
-              title="In Progress"
-              tasks={tasksByStatus.in_progress}
-              teamMembers={teamMembers}
-              orgId={orgId}
-              onAddTask={() => handleAddTaskInColumn("in_progress")}
-              onEditTask={setEditingTask}
-              onDeleteTask={handleDeleteTask}
-              onUpdateStatus={(taskId, status) =>
-                updateTask(taskId, { status })
-              }
-              onUpdateAssignee={handleUpdateAssignee}
-              isUpdating={isUpdating}
-              bgColor="bg-blue-50"
-            />
-            <TaskStatusColumn
-              status="completed"
-              title="Done"
-              tasks={tasksByStatus.completed}
-              teamMembers={teamMembers}
-              orgId={orgId}
-              onAddTask={() => handleAddTaskInColumn("completed")}
-              onEditTask={setEditingTask}
-              onDeleteTask={handleDeleteTask}
-              onUpdateStatus={(taskId, status) =>
-                updateTask(taskId, { status })
-              }
-              onUpdateAssignee={handleUpdateAssignee}
-              isUpdating={isUpdating}
-              bgColor="bg-green-50"
-            />
-            <TaskStatusColumn
-              status="blocked"
-              title="Blocked"
-              tasks={tasksByStatus.blocked}
-              teamMembers={teamMembers}
-              orgId={orgId}
-              onAddTask={() => handleAddTaskInColumn("blocked")}
-              onEditTask={setEditingTask}
-              onDeleteTask={handleDeleteTask}
-              onUpdateStatus={(taskId, status) =>
-                updateTask(taskId, { status })
-              }
-              onUpdateAssignee={handleUpdateAssignee}
-              isUpdating={isUpdating}
-              bgColor="bg-red-50"
-            />
-          </div>
+      <div className="overflow-x-scroll overflow-y-hidden py-4  w-full  flex-1 ">
+        <div className="flex gap-4 items-start h-full w-full flex-1 ">
+          <TaskStatusColumn
+            status="todo"
+            title="To Do"
+            tasks={tasksByStatus.todo}
+            teamMembers={teamMembers}
+            orgId={orgId}
+            onAddTask={() => handleAddTaskInColumn("todo")}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            onUpdateStatus={handleUpdateStatus}
+            onUpdateAssignee={handleUpdateAssignee}
+            isUpdating={isUpdating}
+            bgColor="bg-gray-100"
+            bgColorHeader="bg-gray-200"
+            textColorHeader="text-gray-900"
+          />
+          <TaskStatusColumn
+            status="in_progress"
+            title="In Progress"
+            tasks={tasksByStatus.in_progress}
+            teamMembers={teamMembers}
+            orgId={orgId}
+            onAddTask={() => handleAddTaskInColumn("in_progress")}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            onUpdateStatus={handleUpdateStatus}
+            onUpdateAssignee={handleUpdateAssignee}
+            isUpdating={isUpdating}
+            bgColor="bg-blue-50"
+            bgColorHeader="bg-blue-500"
+          />
+          <TaskStatusColumn
+            status="completed"
+            title="Done"
+            tasks={tasksByStatus.completed}
+            teamMembers={teamMembers}
+            orgId={orgId}
+            onAddTask={() => handleAddTaskInColumn("completed")}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            onUpdateStatus={handleUpdateStatus}
+            onUpdateAssignee={handleUpdateAssignee}
+            isUpdating={isUpdating}
+            bgColor="bg-green-50"
+            bgColorHeader="bg-green-600"
+          />
+          <TaskStatusColumn
+            status="blocked"
+            title="Blocked"
+            tasks={tasksByStatus.blocked}
+            teamMembers={teamMembers}
+            orgId={orgId}
+            onAddTask={() => handleAddTaskInColumn("blocked")}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            onUpdateStatus={handleUpdateStatus}
+            onUpdateAssignee={handleUpdateAssignee}
+            isUpdating={isUpdating}
+            bgColor="bg-red-50"
+            bgColorHeader="bg-red-600"
+          />
         </div>
       </div>
 
@@ -246,6 +238,7 @@ export function TasksView({ orgId }: TasksViewProps) {
           isDeleting={isDeleting}
           task={editingTask}
           orgId={orgId}
+          teamMembers={teamMembers}
         />
       )}
     </div>

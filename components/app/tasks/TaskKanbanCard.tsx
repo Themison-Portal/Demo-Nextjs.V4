@@ -5,11 +5,18 @@
 
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
 import { formatDistanceToNow } from "date-fns";
-import { MoreVertical, Edit, Trash2, ArrowRight, ExternalLink } from "lucide-react";
+import {
+  MoreVertical,
+  Edit,
+  Trash2,
+  ArrowRight,
+  ExternalLink,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,14 +37,14 @@ interface TaskKanbanCardProps {
   task: TaskWithContext;
   teamMembers: TeamMember[];
   orgId: string;
-  onEdit: () => void;
-  onDelete: () => void;
-  onUpdateStatus: (status: TaskStatus) => void;
-  onUpdateAssignee: (userId: string | null) => void;
+  onEdit: (task: TaskWithContext) => void;
+  onDelete: (taskId: string) => void;
+  onUpdateStatus: (taskId: string, status: TaskStatus) => void;
+  onUpdateAssignee: (taskId: string, userId: string | null) => void;
   disabled?: boolean;
 }
 
-export function TaskKanbanCard({
+const TaskKanbanCardComponent = ({
   task,
   teamMembers,
   orgId,
@@ -46,7 +53,7 @@ export function TaskKanbanCard({
   onUpdateStatus,
   onUpdateAssignee,
   disabled,
-}: TaskKanbanCardProps) {
+}: TaskKanbanCardProps) => {
   const isOverdue =
     task.due_date &&
     task.status !== "completed" &&
@@ -57,10 +64,14 @@ export function TaskKanbanCard({
   // This would require enhancing the backend query or types
   const suggestedRole = undefined;
 
+  const handleClick = () => {
+    onEdit(task);
+  };
+
   return (
     <div
       className="group bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={onEdit}
+      onClick={handleClick}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -80,7 +91,7 @@ export function TaskKanbanCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>
+            <DropdownMenuItem onClick={handleClick}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </DropdownMenuItem>
@@ -94,16 +105,16 @@ export function TaskKanbanCard({
                   (status) => (
                     <DropdownMenuItem
                       key={status.value}
-                      onClick={() => onUpdateStatus(status.value)}
+                      onClick={() => onUpdateStatus(task.id, status.value)}
                     >
                       {status.label}
                     </DropdownMenuItem>
-                  )
+                  ),
                 )}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-red-600">
+            <DropdownMenuItem onClick={() => onDelete(task.id)} className="text-red-600">
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </DropdownMenuItem>
@@ -136,10 +147,16 @@ export function TaskKanbanCard({
 
       {/* Patient Info */}
       {task.patient && task.patient_id && (
-        <div className="mb-1" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-1">
           <Link
-            href={ROUTES.APP.PATIENT_TAB(orgId, task.trial_id, task.patient_id, "overview")}
+            href={ROUTES.APP.PATIENT_TAB(
+              orgId,
+              task.trial_id,
+              task.patient_id,
+              "overview",
+            )}
             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+            onClick={(e) => e.stopPropagation()}
           >
             <span>Patient: {task.patient.patient_number}</span>
             {task.patient.initials && <span>({task.patient.initials})</span>}
@@ -150,10 +167,16 @@ export function TaskKanbanCard({
 
       {/* Visit Info */}
       {task.visit && task.visit_id && task.patient_id && (
-        <div className="mb-1" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-1">
           <Link
-            href={ROUTES.APP.PATIENT_TAB(orgId, task.trial_id, task.patient_id, "visits")}
+            href={ROUTES.APP.PATIENT_TAB(
+              orgId,
+              task.trial_id,
+              task.patient_id,
+              "visits",
+            )}
             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+            onClick={(e) => e.stopPropagation()}
           >
             <span>Visit: {task.visit.visit_name}</span>
             <ExternalLink className="h-2.5 w-2.5" />
@@ -174,10 +197,13 @@ export function TaskKanbanCard({
       )}
 
       {/* Status with Quick Actions on Hover */}
-      <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+      <div className="pt-2">
         <div className="relative inline-flex">
           {/* Current Status Badge */}
-          <div className="group/status relative inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+          <div
+            className="group/status relative inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <span className="whitespace-nowrap">
               {TASK_STATUS_CONFIG[task.status].label}
             </span>
@@ -193,7 +219,7 @@ export function TaskKanbanCard({
                       return (
                         <button
                           key={status}
-                          onClick={() => onUpdateStatus(status as TaskStatus)}
+                          onClick={() => onUpdateStatus(task.id, status as TaskStatus)}
                           disabled={disabled}
                           className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${config.color} whitespace-nowrap`}
                           title={config.label}
@@ -211,19 +237,18 @@ export function TaskKanbanCard({
       </div>
 
       {/* Assignee Select - Clickable */}
-      <div
-        className="mt-2 pt-2 border-t border-gray-100"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="mt-2 pt-2 border-t border-gray-100">
         <TaskAssigneeSelect
           value={task.assigned_to}
           suggestedRole={suggestedRole}
           teamMembers={teamMembers}
-          onChange={onUpdateAssignee}
+          onChange={(userId) => onUpdateAssignee(task.id, userId)}
           disabled={disabled}
           size="sm"
         />
       </div>
     </div>
   );
-}
+};
+
+export const TaskKanbanCard = memo(TaskKanbanCardComponent);

@@ -5,15 +5,33 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePatientVisits } from "@/hooks/client/usePatientVisits";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatDate } from "@/lib/date";
 import {
   VISIT_STATUS_STYLES,
   VISIT_ACTIVITY_STATUS_STYLES,
 } from "@/lib/constants/visits";
-import { ChevronDown, ChevronRight, Calendar, AlertCircle } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import type { VisitWithActivities } from "@/services/visits/types";
 
 interface VisitsTabProps {
@@ -23,12 +41,23 @@ interface VisitsTabProps {
 }
 
 export function VisitsTab({ orgId, trialId, patientId }: VisitsTabProps) {
-  const { visits, isLoading, error } = usePatientVisits(
-    orgId,
-    trialId,
-    patientId
-  );
+  const searchParams = useSearchParams();
+  const { visits, isLoading, error, completeVisit, isCompletingVisit } =
+    usePatientVisits(orgId, trialId, patientId);
   const [expandedVisits, setExpandedVisits] = useState<Set<string>>(new Set());
+  const [visitToComplete, setVisitToComplete] = useState<string | null>(null);
+
+  // Auto-expand visit from URL query param
+  useEffect(() => {
+    const visitId = searchParams.get("visitId");
+    if (visitId && visits.length > 0) {
+      setExpandedVisits((prev) => {
+        const next = new Set(prev);
+        next.add(visitId);
+        return next;
+      });
+    }
+  }, [searchParams, visits]);
 
   const toggleVisit = (visitId: string) => {
     setExpandedVisits((prev) => {
@@ -40,6 +69,17 @@ export function VisitsTab({ orgId, trialId, patientId }: VisitsTabProps) {
       }
       return next;
     });
+  };
+
+  const handleCompleteVisit = async () => {
+    if (!visitToComplete) return;
+    try {
+      await completeVisit(visitToComplete);
+      setVisitToComplete(null);
+    } catch (error) {
+      console.error("Error completing visit:", error);
+      // Error handling is done by the hook
+    }
   };
 
   if (isLoading) {
@@ -78,16 +118,44 @@ export function VisitsTab({ orgId, trialId, patientId }: VisitsTabProps) {
   }
 
   return (
-    <div className="space-y-3">
-      {visits.map((visit) => (
-        <VisitCard
-          key={visit.id}
-          visit={visit}
-          isExpanded={expandedVisits.has(visit.id)}
-          onToggle={() => toggleVisit(visit.id)}
-        />
-      ))}
-    </div>
+    <>
+      <div className="space-y-3">
+        {visits.map((visit) => (
+          <VisitCard
+            key={visit.id}
+            visit={visit}
+            isExpanded={expandedVisits.has(visit.id)}
+            onToggle={() => toggleVisit(visit.id)}
+            onCompleteVisit={() => setVisitToComplete(visit.id)}
+          />
+        ))}
+      </div>
+
+      {/* Complete Visit Dialog */}
+      <AlertDialog
+        open={!!visitToComplete}
+        onOpenChange={(open) => !open && setVisitToComplete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete Visit?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mark this visit as completed. This action cannot be undone. All
+              activities must be completed or marked as not applicable.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCompleteVisit}
+              disabled={isCompletingVisit}
+            >
+              {isCompletingVisit ? "Completing..." : "Complete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -95,17 +163,30 @@ interface VisitCardProps {
   visit: VisitWithActivities;
   isExpanded: boolean;
   onToggle: () => void;
+  onCompleteVisit: () => void;
 }
 
-function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
+function VisitCard({
+  visit,
+  isExpanded,
+  onToggle,
+  onCompleteVisit,
+}: VisitCardProps) {
   const statusStyle = VISIT_STATUS_STYLES[visit.status];
   const completedActivities = visit.activities.filter(
     (a) => a.status === "completed"
   ).length;
   const totalActivities = visit.activities.length;
 
+  // Check if all activities are done (completed or not_applicable)
+  const allActivitiesDone = visit.activities.every(
+    (a) => a.status === "completed" || a.status === "not_applicable"
+  );
+  const canCompleteVisit =
+    allActivitiesDone && visit.status !== "completed" && totalActivities > 0;
+
   return (
-    <Card className="p-0">
+    <Card className="p-0 rounded-md">
       <CardContent className="px-0">
         {/* Visit Header - Clickable to expand */}
         <button
@@ -180,6 +261,23 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
                   Notes
                 </p>
                 <p className="text-sm text-gray-700">{visit.notes}</p>
+              </div>
+            )}
+
+            {/* Complete Visit Button */}
+            {canCompleteVisit && (
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCompleteVisit();
+                  }}
+                  size="sm"
+                  className="w-full"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Complete Visit
+                </Button>
               </div>
             )}
           </div>

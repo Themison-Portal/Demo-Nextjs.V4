@@ -32,7 +32,7 @@ export const PATCH = withOrgMember(async (req, ctx, user) => {
   // Get existing task
   const { data: existingTask, error: fetchError } = await supabase
     .from("tasks")
-    .select("id, trial_id, assigned_to")
+    .select("id, trial_id, assigned_to, visit_activity_id")
     .eq("id", taskId)
     .is("deleted_at", null)
     .single();
@@ -95,6 +95,23 @@ export const PATCH = withOrgMember(async (req, ctx, user) => {
   if (updateError) {
     console.error("[API] Error updating task:", updateError);
     return Response.json({ error: "Failed to update task" }, { status: 500 });
+  }
+
+  // Auto-complete activity if task is completed (Hybrid logic: Option 3)
+  if (body.status === 'completed' && existingTask.visit_activity_id) {
+    const { error: activityError } = await supabase
+      .from("visit_activities")
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        completed_by: user.id
+      })
+      .eq("id", existingTask.visit_activity_id);
+
+    if (activityError) {
+      console.error("[API] Error auto-completing activity:", activityError);
+      // Don't fail the request - task was updated successfully
+    }
   }
 
   return Response.json(task);
