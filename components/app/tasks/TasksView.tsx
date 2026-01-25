@@ -160,6 +160,7 @@ export function TasksView({ orgId }: TasksViewProps) {
               title="To Do"
               tasks={tasksByStatus.todo}
               teamMembers={teamMembers}
+              orgId={orgId}
               onAddTask={() => handleAddTaskInColumn("todo")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}
@@ -175,6 +176,7 @@ export function TasksView({ orgId }: TasksViewProps) {
               title="In Progress"
               tasks={tasksByStatus.in_progress}
               teamMembers={teamMembers}
+              orgId={orgId}
               onAddTask={() => handleAddTaskInColumn("in_progress")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}
@@ -190,6 +192,7 @@ export function TasksView({ orgId }: TasksViewProps) {
               title="Done"
               tasks={tasksByStatus.completed}
               teamMembers={teamMembers}
+              orgId={orgId}
               onAddTask={() => handleAddTaskInColumn("completed")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}
@@ -205,6 +208,7 @@ export function TasksView({ orgId }: TasksViewProps) {
               title="Blocked"
               tasks={tasksByStatus.blocked}
               teamMembers={teamMembers}
+              orgId={orgId}
               onAddTask={() => handleAddTaskInColumn("blocked")}
               onEditTask={setEditingTask}
               onDeleteTask={handleDeleteTask}

@@ -11,29 +11,33 @@ interface TaskPriorityBadgeProps {
   size?: "sm" | "md";
 }
 
-const PRIORITY_CONFIG: Record<
-  TaskPriority,
-  { label: string; color: string }
-> = {
-  urgent: { label: "Urgent", color: "bg-red-100 text-red-700 border-red-200" },
-  high: {
-    label: "High",
-    color: "bg-orange-100 text-orange-700 border-orange-200",
-  },
-  medium: {
-    label: "Medium",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  low: { label: "Low", color: "bg-gray-100 text-gray-700 border-gray-200" },
-};
+const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string }> =
+  {
+    urgent: {
+      label: "Urgent",
+      color: "bg-red-500 text-red-100 border-red-200",
+    },
+    high: {
+      label: "High",
+      color: "bg-orange-500 text-orange-100 border-orange-200",
+    },
+    medium: {
+      label: "Medium",
+      color: "bg-blue-500 text-blue-100 border-blue-200",
+    },
+    low: { label: "Low", color: "bg-gray-500 text-white border-gray-200" },
+  };
 
-export function TaskPriorityBadge({ priority, size = "md" }: TaskPriorityBadgeProps) {
+export function TaskPriorityBadge({
+  priority,
+  size = "md",
+}: TaskPriorityBadgeProps) {
   const config = PRIORITY_CONFIG[priority];
 
   return (
     <span
       className={cn(
-        "inline-flex items-center border font-medium rounded",
+        "inline-flex items-center border font-medium rounded-xl",
         config.color,
         size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-xs"
       )}

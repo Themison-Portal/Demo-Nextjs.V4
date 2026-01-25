@@ -59,8 +59,9 @@ export function TaskFiltersBar({
   const categories = useMemo(() => {
     const uniqueCategories = new Set<string>();
     tasks.forEach((task) => {
-      if (task.activity_type?.category) {
-        uniqueCategories.add(task.activity_type.category);
+      const category = task.category || task.activity_type?.category;
+      if (category) {
+        uniqueCategories.add(category);
       }
     });
     return Array.from(uniqueCategories).sort();

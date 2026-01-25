@@ -16,6 +16,7 @@ interface TaskStatusColumnProps {
   title: string;
   tasks: TaskWithContext[];
   teamMembers: TeamMember[];
+  orgId: string;
   onAddTask: () => void;
   onEditTask: (task: TaskWithContext) => void;
   onDeleteTask: (taskId: string) => void;
@@ -30,6 +31,7 @@ export function TaskStatusColumn({
   title,
   tasks,
   teamMembers,
+  orgId,
   onAddTask,
   onEditTask,
   onDeleteTask,
@@ -66,6 +68,7 @@ export function TaskStatusColumn({
               key={task.id}
               task={task}
               teamMembers={teamMembers}
+              orgId={orgId}
               onEdit={() => onEditTask(task)}
               onDelete={() => onDeleteTask(task.id)}
               onUpdateStatus={(newStatus) => onUpdateStatus(task.id, newStatus)}

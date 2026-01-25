@@ -100,7 +100,10 @@ export const GET = withOrgMember(async (req, ctx, user) => {
     let filteredTasks = tasks || [];
     if (categoryFilter) {
       filteredTasks = filteredTasks.filter(
-        (task: any) => task.activity_types?.category === categoryFilter
+        (task: any) => {
+          const category = task.category || task.activity_types?.category;
+          return category === categoryFilter;
+        }
       );
     }
 
@@ -177,7 +180,10 @@ export const GET = withOrgMember(async (req, ctx, user) => {
   // Step 5: Apply category filter if provided
   if (categoryFilter) {
     finalTasks = finalTasks.filter(
-      (task: any) => task.activity_types?.category === categoryFilter
+      (task: any) => {
+        const category = task.category || task.activity_types?.category;
+        return category === categoryFilter;
+      }
     );
   }
 
@@ -209,6 +215,7 @@ export const POST = withOrgMember(async (req, ctx, user) => {
     patient_id,
     visit_id,
     activity_type_id,
+    category,
     title,
     description,
     status,
@@ -263,6 +270,7 @@ export const POST = withOrgMember(async (req, ctx, user) => {
       patient_id: patient_id || null,
       visit_id: visit_id || null,
       activity_type_id: activity_type_id || null,
+      category: category || null,
       title: title.trim(),
       description: description?.trim() || null,
       status: status || "todo",
@@ -292,6 +300,7 @@ function transformTasks(tasks: any[]): TaskWithContext[] {
     patient_id: task.patient_id,
     visit_id: task.visit_id,
     activity_type_id: task.activity_type_id,
+    category: task.category,
     title: task.title,
     description: task.description,
     status: task.status,

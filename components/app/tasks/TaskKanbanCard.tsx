@@ -5,10 +5,11 @@
 
 "use client";
 
+import Link from "next/link";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
 import { formatDistanceToNow } from "date-fns";
-import { MoreVertical, Edit, Trash2, ArrowRight } from "lucide-react";
+import { MoreVertical, Edit, Trash2, ArrowRight, ExternalLink } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +22,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { TASK_STATUS_OPTIONS, TASK_STATUS_CONFIG } from "@/lib/constants/tasks";
+import { ROUTES } from "@/lib/routes";
 import type { TaskWithContext, TaskStatus } from "@/services/tasks/types";
 import type { TeamMember } from "@/services/client/teamMembers";
 
 interface TaskKanbanCardProps {
   task: TaskWithContext;
   teamMembers: TeamMember[];
+  orgId: string;
   onEdit: () => void;
   onDelete: () => void;
   onUpdateStatus: (status: TaskStatus) => void;
@@ -37,6 +40,7 @@ interface TaskKanbanCardProps {
 export function TaskKanbanCard({
   task,
   teamMembers,
+  orgId,
   onEdit,
   onDelete,
   onUpdateStatus,
@@ -120,28 +124,40 @@ export function TaskKanbanCard({
             {task.trial.name}
           </span>
         )}
-        {task.activity_type?.category && (
+        {(task.category || task.activity_type?.category) && (
           <span
             className="inline-block px-2 py-0.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200"
-            title={`Category: ${task.activity_type.category}`}
+            title={`Category: ${task.category || task.activity_type?.category}`}
           >
-            {task.activity_type.category}
+            {task.category || task.activity_type?.category}
           </span>
         )}
       </div>
 
       {/* Patient Info */}
-      {task.patient && (
-        <div className="text-xs text-gray-600 mb-1">
-          Patient: {task.patient.patient_number}
-          {task.patient.initials && ` (${task.patient.initials})`}
+      {task.patient && task.patient_id && (
+        <div className="mb-1" onClick={(e) => e.stopPropagation()}>
+          <Link
+            href={ROUTES.APP.PATIENT_TAB(orgId, task.trial_id, task.patient_id, "overview")}
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            <span>Patient: {task.patient.patient_number}</span>
+            {task.patient.initials && <span>({task.patient.initials})</span>}
+            <ExternalLink className="h-2.5 w-2.5" />
+          </Link>
         </div>
       )}
 
       {/* Visit Info */}
-      {task.visit && (
-        <div className="text-xs text-gray-600 mb-1">
-          Visit: {task.visit.visit_name}
+      {task.visit && task.visit_id && task.patient_id && (
+        <div className="mb-1" onClick={(e) => e.stopPropagation()}>
+          <Link
+            href={ROUTES.APP.PATIENT_TAB(orgId, task.trial_id, task.patient_id, "visits")}
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            <span>Visit: {task.visit.visit_name}</span>
+            <ExternalLink className="h-2.5 w-2.5" />
+          </Link>
         </div>
       )}
 

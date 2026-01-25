@@ -77,3 +77,29 @@ export const TASK_PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
 ];
+
+// ============================================================================
+// CATEGORY
+// ============================================================================
+
+export const TASK_CATEGORIES = [
+  "Laboratory",
+  "Clinical",
+  "Administrative",
+  "Data Management",
+  "Nursing",
+  "Pharmacy",
+  "Monitoring",
+] as const;
+
+export type TaskCategory = typeof TASK_CATEGORIES[number];
+
+export const TASK_CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: "Laboratory", label: "Laboratory" },
+  { value: "Clinical", label: "Clinical" },
+  { value: "Administrative", label: "Administrative" },
+  { value: "Data Management", label: "Data Management" },
+  { value: "Nursing", label: "Nursing" },
+  { value: "Pharmacy", label: "Pharmacy" },
+  { value: "Monitoring", label: "Monitoring" },
+];

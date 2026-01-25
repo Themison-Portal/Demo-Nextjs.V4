@@ -19,8 +19,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTrials } from "@/hooks/client/useTrials";
 import { useTeamMembers } from "@/hooks/client/useTeamMembers";
+import { usePatients } from "@/hooks/client/usePatients";
+import { usePatientVisits } from "@/hooks/client/usePatientVisits";
 import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
-import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS } from "@/lib/constants/tasks";
+import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_CATEGORY_OPTIONS } from "@/lib/constants/tasks";
 import type { CreateTaskInput, TaskStatus, TaskPriority } from "@/services/tasks/types";
 
 interface CreateTaskModalProps {
@@ -49,7 +51,16 @@ export function CreateTaskModal({
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [assignedTo, setAssignedTo] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState("");
+  const [patientId, setPatientId] = useState("__none__");
+  const [visitId, setVisitId] = useState("__none__");
+  const [category, setCategory] = useState("__none__");
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch patients for selected trial
+  const { patients } = usePatients(orgId, trialId);
+
+  // Fetch visits for selected patient (only if patient is selected)
+  const { visits } = usePatientVisits(orgId, trialId, patientId);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -61,9 +72,23 @@ export function CreateTaskModal({
       setPriority("medium");
       setAssignedTo(null);
       setDueDate("");
+      setPatientId("__none__");
+      setVisitId("__none__");
+      setCategory("__none__");
       setError(null);
     }
   }, [isOpen, initialStatus, trials]);
+
+  // Waterfall: when trial changes → reset patient & visit
+  useEffect(() => {
+    setPatientId("__none__");
+    setVisitId("__none__");
+  }, [trialId]);
+
+  // Waterfall: when patient changes → reset visit
+  useEffect(() => {
+    setVisitId("__none__");
+  }, [patientId]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -87,6 +112,9 @@ export function CreateTaskModal({
         priority,
         assigned_to: assignedTo || undefined,
         due_date: dueDate || undefined,
+        patient_id: patientId !== "__none__" ? patientId : undefined,
+        visit_id: visitId !== "__none__" ? visitId : undefined,
+        category: category !== "__none__" ? category : undefined,
       });
       onClose();
     } catch (err: unknown) {
@@ -140,6 +168,76 @@ export function CreateTaskModal({
                 {trials.map((trial) => (
                   <SelectItem key={trial.id} value={trial.id}>
                     {trial.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Patient - Optional */}
+          <div className="space-y-2">
+            <Label htmlFor="patient">Patient (optional)</Label>
+            <Select
+              value={patientId}
+              onValueChange={setPatientId}
+              disabled={!trialId || isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select patient (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">No patient</SelectItem>
+                {patients.map((patient) => (
+                  <SelectItem key={patient.id} value={patient.id}>
+                    {patient.patient_number}
+                    {patient.initials && ` (${patient.initials})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Visit - Optional, only if patient selected */}
+          {patientId !== "__none__" && (
+            <div className="space-y-2">
+              <Label htmlFor="visit">Visit (optional)</Label>
+              <Select
+                value={visitId}
+                onValueChange={setVisitId}
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select visit (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No visit</SelectItem>
+                  {visits.map((visit) => (
+                    <SelectItem key={visit.id} value={visit.id}>
+                      {visit.visit_name}
+                      {visit.scheduled_date && ` - ${new Date(visit.scheduled_date).toLocaleDateString()}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Category - Optional */}
+          <div className="space-y-2">
+            <Label htmlFor="category">Category (optional)</Label>
+            <Select
+              value={category}
+              onValueChange={setCategory}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">No category</SelectItem>
+                {TASK_CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>

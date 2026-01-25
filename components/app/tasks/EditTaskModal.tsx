@@ -6,6 +6,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Modal,
   ModalHeader,
@@ -19,7 +20,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTeamMembers } from "@/hooks/client/useTeamMembers";
 import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
-import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS } from "@/lib/constants/tasks";
+import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_CATEGORY_OPTIONS } from "@/lib/constants/tasks";
+import { ROUTES } from "@/lib/routes";
+import { ExternalLink } from "lucide-react";
 import type { TaskWithContext, UpdateTaskInput, TaskStatus, TaskPriority } from "@/services/tasks/types";
 
 interface EditTaskModalProps {
@@ -50,6 +53,7 @@ export function EditTaskModal({
   const [priority, setPriority] = useState<TaskPriority>(task.priority || "medium");
   const [assignedTo, setAssignedTo] = useState<string | null>(task.assigned_to || null);
   const [dueDate, setDueDate] = useState(task.due_date?.split("T")[0] || "");
+  const [category, setCategory] = useState(task.category || "__none__");
   const [error, setError] = useState<string | null>(null);
 
   // Reset form when task changes
@@ -61,6 +65,7 @@ export function EditTaskModal({
       setPriority(task.priority || "medium");
       setAssignedTo(task.assigned_to || null);
       setDueDate(task.due_date?.split("T")[0] || "");
+      setCategory(task.category || "__none__");
       setError(null);
     }
   }, [isOpen, task]);
@@ -81,6 +86,7 @@ export function EditTaskModal({
         priority,
         assigned_to: assignedTo || undefined,
         due_date: dueDate || undefined,
+        category: category !== "__none__" ? category : undefined,
       });
       onClose();
     } catch (err: unknown) {
@@ -130,13 +136,38 @@ export function EditTaskModal({
           </div>
 
           {/* Patient (if exists, read-only) */}
-          {task.patient && (
+          {task.patient && task.patient_id && (
             <div className="space-y-2">
               <Label>Patient</Label>
-              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700">
-                {task.patient.patient_number}
-                {task.patient.initials && ` (${task.patient.initials})`}
-              </div>
+              <Link
+                href={ROUTES.APP.PATIENT_TAB(orgId, task.trial_id, task.patient_id, "overview")}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span>
+                  {task.patient.patient_number}
+                  {task.patient.initials && ` (${task.patient.initials})`}
+                </span>
+                <ExternalLink className="h-3 w-3 flex-shrink-0" />
+              </Link>
+            </div>
+          )}
+
+          {/* Visit (if exists, read-only) */}
+          {task.visit && task.visit_id && task.patient_id && (
+            <div className="space-y-2">
+              <Label>Visit</Label>
+              <Link
+                href={ROUTES.APP.PATIENT_TAB(orgId, task.trial_id, task.patient_id, "visits")}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span>
+                  {task.visit.visit_name}
+                  {task.visit.scheduled_date && ` - ${new Date(task.visit.scheduled_date).toLocaleDateString()}`}
+                </span>
+                <ExternalLink className="h-3 w-3 flex-shrink-0" />
+              </Link>
             </div>
           )}
 
@@ -181,6 +212,28 @@ export function EditTaskModal({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={category}
+              onValueChange={setCategory}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="No category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">No category</SelectItem>
+                {TASK_CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Assignee */}

@@ -8,6 +8,7 @@ export interface Task {
   patient_id?: string | null;
   visit_id?: string | null;
   activity_type_id?: string | null;
+  category?: string | null;
   title: string;
   description?: string | null;
   status: TaskStatus;
@@ -55,6 +56,7 @@ export interface CreateTaskInput {
   patient_id?: string | null;
   visit_id?: string | null;
   activity_type_id?: string | null;
+  category?: string | null;
   title: string;
   description?: string | null;
   status?: TaskStatus;
@@ -73,6 +75,7 @@ export interface UpdateTaskInput {
   patient_id?: string | null;
   visit_id?: string | null;
   activity_type_id?: string | null;
+  category?: string | null;
 }
 
 export interface TaskFilters {
