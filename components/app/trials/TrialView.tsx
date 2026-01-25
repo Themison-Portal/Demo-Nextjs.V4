@@ -12,6 +12,7 @@ import { TrialOverview } from "./TrialOverview";
 import { TrialTeam } from "./TrialTeam";
 import { PatientsList } from "@/components/app/patients/PatientsList";
 import { TemplateBuilder } from "@/components/app/templates/TemplateBuilder";
+import { DocumentsList } from "@/components/app/documents/DocumentsList";
 
 type ValidTab = "overview" | "documentation" | "team" | "patients" | "template";
 
@@ -62,7 +63,7 @@ export function TrialView({ orgId, trialId, activeTab }: TrialViewProps) {
       case "template":
         return <TemplateBuilder orgId={orgId} trialId={trialId} />;
       case "documentation":
-        return <PlaceholderTab title="Documentation" description="Trial documents and protocols will be managed here." />;
+        return <DocumentsList orgId={orgId} trialId={trialId} />;
       case "team":
         return <TrialTeam orgId={orgId} trialId={trialId} />;
       case "patients":
