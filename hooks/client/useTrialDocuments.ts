@@ -6,7 +6,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTrialDocuments, uploadDocument } from '@/services/client/documents';
+import { getTrialDocuments, uploadDocument, updateDocumentCategory } from '@/services/client/documents';
 
 /**
  * Hook for fetching documents for a trial
@@ -30,7 +30,17 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
   // Mutation: upload document
   const uploadMutation = useMutation({
-    mutationFn: (file: File) => uploadDocument(orgId, trialId, file),
+    mutationFn: ({ file, category }: { file: File; category: string }) =>
+      uploadDocument(orgId, trialId, file, category),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  // Mutation: update document category
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ documentId, category }: { documentId: string; category: string }) =>
+      updateDocumentCategory(orgId, trialId, documentId, category),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
     },
@@ -50,5 +60,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
     uploadDocument: uploadMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
     uploadError: uploadMutation.error,
+    updateCategory: updateCategoryMutation.mutateAsync,
+    isUpdatingCategory: updateCategoryMutation.isPending,
   };
 }

@@ -5,14 +5,23 @@
 
 "use client";
 
-import { NavigationTabs, TabItem } from "@/components/app/shared/NavigationTabs";
+import {
+  NavigationTabs,
+  TabItem,
+} from "@/components/app/shared/NavigationTabs";
 import { ROUTES } from "@/lib/routes";
-import { LayoutDashboard, FileText, Users, UserRound, CalendarDays } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  UserRound,
+  CalendarDays,
+} from "lucide-react";
 import { TrialOverview } from "./TrialOverview";
 import { TrialTeam } from "./TrialTeam";
 import { PatientsList } from "@/components/app/patients/PatientsList";
 import { TemplateBuilder } from "@/components/app/templates/TemplateBuilder";
-import { DocumentsList } from "@/components/app/documents/DocumentsList";
+import { DocumentsList } from "@/components/app/trials/DocumentsList";
 
 type ValidTab = "overview" | "documentation" | "team" | "patients" | "template";
 
@@ -82,15 +91,19 @@ export function TrialView({ orgId, trialId, activeTab }: TrialViewProps) {
           href: ROUTES.APP.TRIALS(orgId),
         }}
       />
-      <div className="animate-in fade-in duration-300">
-        {renderContent()}
-      </div>
+      <div className="animate-in fade-in duration-300">{renderContent()}</div>
     </div>
   );
 }
 
 // Placeholder component for tabs not yet implemented
-function PlaceholderTab({ title, description }: { title: string; description: string }) {
+function PlaceholderTab({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
       <h2 className="text-lg font-medium text-gray-900 mb-2">{title}</h2>

@@ -4,10 +4,24 @@
  */
 
 // ============================================================================
+// DOCUMENT CATEGORY
+// ============================================================================
+
+export type DocumentCategory =
+  | "protocol"
+  | "amendments"
+  | "regulatory"
+  | "consent"
+  | "ops"
+  | "safety"
+  | "admin"
+  | "other";
+
+// ============================================================================
 // DOCUMENT STATUS
 // ============================================================================
 
-export type DocumentStatus = 'uploading' | 'processing' | 'ready' | 'error';
+export type DocumentStatus = "uploading" | "processing" | "ready" | "error";
 
 // ============================================================================
 // TRIAL DOCUMENT
@@ -22,6 +36,7 @@ export interface TrialDocument {
   storage_path: string;
   storage_url: string;
   status: DocumentStatus;
+  category?: DocumentCategory | null;
   uploaded_by?: string | null;
   processing_error?: string | null;
   created_at: string;
@@ -40,7 +55,7 @@ export interface RAGIndexRequest {
 }
 
 export interface RAGIndexResponse {
-  status: 'succeeded' | 'failed';
+  status: "succeeded" | "failed";
   doc_id: string;
   error?: string;
 }

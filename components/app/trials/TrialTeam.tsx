@@ -39,11 +39,11 @@ export function TrialTeam({ orgId, trialId }: TrialTeamProps) {
   // Get trial details to pass to permissions hook
   const { trial, teamMembers: teamMembersForPermissions } = useTrialDetails(
     orgId,
-    trialId
+    trialId,
   );
   const { canManageTeam, canAssignPI } = useTrialPermissions(
     orgId,
-    teamMembersForPermissions
+    teamMembersForPermissions,
   );
 
   // Get org-level permissions for inviting
@@ -68,7 +68,7 @@ export function TrialTeam({ orgId, trialId }: TrialTeamProps) {
   };
 
   const handleInvite = async (
-    invites: { email: string; org_role: OrgRole }[]
+    invites: { email: string; org_role: OrgRole }[],
   ) => {
     // Send invitations sequentially
     for (const invite of invites) {
@@ -89,7 +89,7 @@ export function TrialTeam({ orgId, trialId }: TrialTeamProps) {
   const handleRemoveMember = async (orgMemberId: string) => {
     await removeMember(orgMemberId);
     const removedMember = teamMembers.find(
-      (m) => m.org_member_id === orgMemberId
+      (m) => m.org_member_id === orgMemberId,
     );
     if (removedMember && selectedMemberId === removedMember.id) {
       setSelectedMemberId(null);
@@ -199,8 +199,8 @@ export function TrialTeam({ orgId, trialId }: TrialTeamProps) {
                       member.trial_role === "PI"
                         ? "bg-purple-50 text-purple-700"
                         : member.trial_role === "CRC"
-                        ? "bg-blue-50 text-blue-700"
-                        : "bg-gray-50 text-gray-700"
+                          ? "bg-blue-50 text-blue-700"
+                          : "bg-gray-50 text-gray-700"
                     }`}
                   >
                     {member.trial_role}

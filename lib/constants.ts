@@ -93,3 +93,13 @@ export const isDevelopment = process.env.NODE_ENV === 'development';
  * Check if running in production mode
  */
 export const isProduction = process.env.NODE_ENV === 'production';
+
+// ============================================================================
+// RAG Backend Configuration
+// ============================================================================
+
+export const RAG_CONFIG = {
+  apiUrl: process.env.RAG_API_URL || 'localhost',
+  apiKey: process.env.RAG_API_KEY || '',
+  isLocalMock: (process.env.RAG_API_URL || 'localhost') === 'localhost',
+};

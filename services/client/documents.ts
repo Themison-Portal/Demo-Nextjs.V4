@@ -39,10 +39,12 @@ export async function getTrialDocuments(
 export async function uploadDocument(
   orgId: string,
   trialId: string,
-  file: File
+  file: File,
+  category: string
 ): Promise<UploadDocumentResponse> {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("category", category);
 
   const response = await fetch(
     `/api/client/${orgId}/trials/${trialId}/documents`,
@@ -56,6 +58,35 @@ export async function uploadDocument(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Failed to upload document");
+  }
+
+  return response.json();
+}
+
+/**
+ * Update document category
+ */
+export async function updateDocumentCategory(
+  orgId: string,
+  trialId: string,
+  documentId: string,
+  category: string
+): Promise<{ document: TrialDocument }> {
+  const response = await fetch(
+    `/api/client/${orgId}/trials/${trialId}/documents/${documentId}`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ category }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to update document category");
   }
 
   return response.json();

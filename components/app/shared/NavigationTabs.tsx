@@ -39,7 +39,7 @@ export function NavigationTabs({
     <div
       className={cn(
         "bg-white rounded-lg border border-gray-200 px-2 py-1.5 sticky -top-8 sticky:shadow-md z-10",
-        className
+        className,
       )}
     >
       <nav className="flex items-center gap-1">
@@ -69,7 +69,7 @@ export function NavigationTabs({
                 "flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
                 isActive
                   ? "bg-gray-100 text-blue-700"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
               )}
             >
               {tab.icon && <span className="h-4 w-4">{tab.icon}</span>}
