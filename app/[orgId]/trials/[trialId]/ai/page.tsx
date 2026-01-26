@@ -3,7 +3,7 @@
  * RAG-powered assistant for trial documents
  */
 
-import { AIAssistantView } from "@/components/app/trials/ai/AIAssistantView";
+import { AIAssistantView } from "@/components/app/documentAI/AIAssistantView";
 
 interface AIAssistantPageProps {
   params: Promise<{ orgId: string; trialId: string }>;

@@ -3,7 +3,7 @@
  * Shows response archive for all conversations
  */
 
-import { AIAssistantView } from "@/components/app/trials/ai/AIAssistantView";
+import { AIAssistantView } from "@/components/app/documentAI/AIAssistantView";
 
 interface DocumentAIArchivePageProps {
   params: Promise<{ orgId: string }>;

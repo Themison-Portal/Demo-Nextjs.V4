@@ -10,6 +10,7 @@ import { useTrialDocuments } from "@/hooks/client/useTrialDocuments";
 import { useTasks } from "@/hooks/client/useTasks";
 import { Button } from "@/components/ui/button";
 import { CreateTaskModal } from "@/components/app/tasks/CreateTaskModal";
+import { SaveResponseModal } from "./SaveResponseModal";
 import {
   FileText,
   ArrowUp,
@@ -30,6 +31,11 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  question?: string; // Store the original question for saving
+  rawData?: {
+    question: Record<string, any>;
+    answer: Record<string, any>;
+  };
   timestamp: Date;
 }
 
@@ -52,7 +58,16 @@ export function ChatInterface({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [selectedMessageContent, setSelectedMessageContent] = useState("");
+  const [selectedQuestion, setSelectedQuestion] = useState("");
+  const [selectedRawData, setSelectedRawData] = useState<
+    | {
+        question: Record<string, any>;
+        answer: Record<string, any>;
+      }
+    | undefined
+  >();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -89,6 +104,8 @@ export function ChatInterface({
       timestamp: new Date(),
     };
 
+    const questionText = input.trim(); // Store question for later
+
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -96,12 +113,29 @@ export function ChatInterface({
     // TODO: Replace with actual RAG backend call
     // For now, simulate a response
     setTimeout(() => {
+      const answerText =
+        "This is a placeholder response. RAG backend integration coming soon. Your question was: " +
+        questionText;
+
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content:
-          "This is a placeholder response. RAG backend integration coming soon. Your question was: " +
-          userMessage.content,
+        content: answerText,
+        question: questionText,
+        rawData: {
+          question: {
+            text: questionText,
+            timestamp: new Date().toISOString(),
+          },
+          answer: {
+            text: answerText,
+            // TODO: When RAG is integrated, add real data:
+            // citations: ["Page 5, Section 2.3"],
+            // pages: [5, 12, 18],
+            // checklists: [...],
+            // confidence: 0.95
+          },
+        },
         timestamp: new Date(),
       };
 
@@ -238,7 +272,10 @@ export function ChatInterface({
                     <div className="flex gap-2 mt-3">
                       <button
                         onClick={() => {
-                          /* TODO: Save response */
+                          setSelectedMessageContent(message.content);
+                          setSelectedQuestion(message.question || "");
+                          setSelectedRawData(message.rawData);
+                          setIsSaveModalOpen(true);
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
                       >
@@ -339,6 +376,27 @@ export function ChatInterface({
         orgId={orgId}
         initialDescription={selectedMessageContent}
         initialTrialId={trialId}
+      />
+
+      {/* Save Response Modal */}
+      <SaveResponseModal
+        orgId={orgId}
+        trialId={trialId}
+        documentId={documentId}
+        question={selectedQuestion}
+        answer={selectedMessageContent}
+        rawData={selectedRawData}
+        isOpen={isSaveModalOpen}
+        onClose={() => {
+          setIsSaveModalOpen(false);
+          setSelectedMessageContent("");
+          setSelectedQuestion("");
+          setSelectedRawData(undefined);
+        }}
+        onSuccess={() => {
+          // Optional: Show success message
+          console.log("Response saved successfully!");
+        }}
       />
     </div>
   );

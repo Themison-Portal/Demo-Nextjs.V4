@@ -3,7 +3,7 @@
  * Shows saved conversations and responses
  */
 
-import { AIAssistantView } from "@/components/app/trials/ai/AIAssistantView";
+import { AIAssistantView } from "@/components/app/documentAI/AIAssistantView";
 
 interface AIAssistantArchivePageProps {
   params: Promise<{ orgId: string; trialId: string }>;

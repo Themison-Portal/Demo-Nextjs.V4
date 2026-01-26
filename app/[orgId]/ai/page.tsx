@@ -3,7 +3,7 @@
  * Allows users to select a trial and document to start chatting
  */
 
-import { AIAssistantView } from "@/components/app/trials/ai/AIAssistantView";
+import { AIAssistantView } from "@/components/app/documentAI/AIAssistantView";
 
 interface DocumentAIPageProps {
   params: Promise<{ orgId: string }>;
