@@ -59,7 +59,9 @@ export function NavigationTabs({
 
         {/* Tabs */}
         {tabs.map((tab) => {
-          const isActive = pathname === tab.href;
+          // Extract pathname without query params for comparison
+          const tabPathname = tab.href.split('?')[0];
+          const isActive = pathname === tabPathname;
 
           return (
             <Link

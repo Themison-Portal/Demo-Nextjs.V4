@@ -19,6 +19,7 @@ import {
   User,
   Building2,
   ClipboardList,
+  Sparkles,
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -89,6 +90,13 @@ export function AppSidebar({
           label="Tasks"
           icon={<ClipboardList className="h-4 w-4" />}
           active={pathname?.startsWith(ROUTES.APP.TASKS(orgId))}
+        />
+
+        <SidebarItem
+          href={ROUTES.APP.DOCUMENT_AI(orgId)}
+          label="Document AI"
+          icon={<Sparkles className="h-4 w-4" />}
+          active={pathname?.startsWith(ROUTES.APP.DOCUMENT_AI(orgId))}
         />
 
         {/* <SidebarItem

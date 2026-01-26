@@ -32,6 +32,8 @@ interface CreateTaskModalProps {
   isLoading: boolean;
   orgId: string;
   initialStatus?: TaskStatus;
+  initialDescription?: string;
+  initialTrialId?: string;
 }
 
 export function CreateTaskModal({
@@ -41,6 +43,8 @@ export function CreateTaskModal({
   isLoading,
   orgId,
   initialStatus,
+  initialDescription,
+  initialTrialId,
 }: CreateTaskModalProps) {
   const { trials } = useTrials(orgId);
   const { teamMembers } = useTeamMembers(orgId);
@@ -66,8 +70,8 @@ export function CreateTaskModal({
   useEffect(() => {
     if (isOpen) {
       setTitle("");
-      setDescription("");
-      setTrialId(trials.length === 1 ? trials[0].id : "");
+      setDescription(initialDescription || "");
+      setTrialId(initialTrialId || (trials.length === 1 ? trials[0].id : ""));
       setStatus(initialStatus || "todo");
       setPriority("medium");
       setAssignedTo(null);
@@ -77,7 +81,7 @@ export function CreateTaskModal({
       setCategory("__none__");
       setError(null);
     }
-  }, [isOpen, initialStatus, trials]);
+  }, [isOpen, initialStatus, initialDescription, initialTrialId, trials]);
 
   // Waterfall: when trial changes → reset patient & visit
   useEffect(() => {
