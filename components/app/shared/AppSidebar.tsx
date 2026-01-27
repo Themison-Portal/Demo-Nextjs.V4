@@ -10,6 +10,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useThreads } from "@/hooks/client/useThreads";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import {
   LayoutDashboard,
@@ -20,6 +22,7 @@ import {
   Building2,
   ClipboardList,
   Sparkles,
+  Mail,
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -27,9 +30,10 @@ interface SidebarItemProps {
   label: string;
   icon: React.ReactNode;
   active?: boolean;
+  badge?: number;
 }
 
-function SidebarItem({ href, label, icon, active }: SidebarItemProps) {
+function SidebarItem({ href, label, icon, active, badge }: SidebarItemProps) {
   return (
     <Link
       href={href}
@@ -37,11 +41,16 @@ function SidebarItem({ href, label, icon, active }: SidebarItemProps) {
         "flex items-center gap-2 rounded-sm px-2 py-2 text-sm font-medium transition-colors",
         active
           ? "bg-gray-100 text-blue-700"
-          : "text-gray-800 hover:bg-gray-200 hover:text-gray-800"
+          : "text-gray-800 hover:bg-gray-200 hover:text-gray-800",
       )}
     >
       <div className="h-4 w-4">{icon}</div>
-      <p className="">{label}</p>
+      <p className="flex-1">{label}</p>
+      {badge !== undefined && badge > 0 && (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-semibold text-white">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -59,6 +68,24 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const pathname = usePathname();
   const { canManageOrg } = usePermissions(orgId);
+  const { user } = useAuth();
+
+  // Fetch threads to count unread messages
+  const { threads } = useThreads(orgId);
+
+  // Count unread threads (where last message is different from last_read_message_id)
+  const unreadCount = threads.filter((thread) => {
+    const currentUserParticipant = thread.participants?.find(
+      (p) => p.user_id === user?.id,
+    );
+    const lastMessage = thread.messages?.[thread.messages.length - 1];
+    return (
+      currentUserParticipant &&
+      (!currentUserParticipant.last_read_message_id ||
+        (lastMessage &&
+          lastMessage.id !== currentUserParticipant.last_read_message_id))
+    );
+  }).length;
 
   return (
     <div className="flex h-screen w-[15%] min-w-44 flex-col border-r border-gray-200 bg-white">
@@ -86,6 +113,13 @@ export function AppSidebar({
         />
 
         <SidebarItem
+          href={ROUTES.APP.DOCUMENT_AI(orgId)}
+          label="Document AI"
+          icon={<Sparkles className="h-4 w-4" />}
+          active={pathname?.startsWith(ROUTES.APP.DOCUMENT_AI(orgId))}
+        />
+
+        <SidebarItem
           href={ROUTES.APP.TASKS(orgId)}
           label="Tasks"
           icon={<ClipboardList className="h-4 w-4" />}
@@ -93,10 +127,11 @@ export function AppSidebar({
         />
 
         <SidebarItem
-          href={ROUTES.APP.DOCUMENT_AI(orgId)}
-          label="Document AI"
-          icon={<Sparkles className="h-4 w-4" />}
-          active={pathname?.startsWith(ROUTES.APP.DOCUMENT_AI(orgId))}
+          href={ROUTES.APP.MESSAGES(orgId)}
+          label="Messages"
+          icon={<Mail className="h-4 w-4" />}
+          active={pathname?.startsWith(ROUTES.APP.MESSAGES(orgId))}
+          badge={unreadCount}
         />
 
         {/* <SidebarItem
