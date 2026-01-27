@@ -5,11 +5,13 @@
 
 "use client";
 
+import { useState } from "react";
 import {
   useSavedResponses,
   useDeleteSavedResponse,
 } from "@/hooks/client/useArchive";
 import { Button } from "@/components/ui/button";
+import { SendResponseModal } from "@/components/app/messages/SendResponseModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,13 +35,20 @@ interface ResponsesListProps {
   folderId: string | null;
   selectedResponseId: string | null;
   onSelectResponse: (response: SavedResponse) => void;
+  orgId: string;
 }
 
 export function ResponsesList({
   folderId,
   selectedResponseId,
   onSelectResponse,
+  orgId,
 }: ResponsesListProps) {
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [responseToSend, setResponseToSend] = useState<SavedResponse | null>(
+    null
+  );
+
   const { data: responses = [], isLoading } = useSavedResponses(folderId);
   const deleteResponse = useDeleteSavedResponse();
 
@@ -142,8 +151,8 @@ export function ResponsesList({
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Implement send
-                        alert("Send coming soon");
+                        setResponseToSend(response);
+                        setIsSendModalOpen(true);
                       }}
                     >
                       <Send className="h-4 w-4 mr-2" />
@@ -186,6 +195,24 @@ export function ResponsesList({
           ))}
         </div>
       </div>
+
+      {/* Send Response Modal */}
+      {responseToSend && responseToSend.raw_data && (
+        <SendResponseModal
+          orgId={orgId}
+          trialId={responseToSend.trial_id}
+          responseSnapshot={responseToSend.raw_data}
+          isOpen={isSendModalOpen}
+          onClose={() => {
+            setIsSendModalOpen(false);
+            setResponseToSend(null);
+          }}
+          onSuccess={() => {
+            setIsSendModalOpen(false);
+            setResponseToSend(null);
+          }}
+        />
+      )}
     </div>
   );
 }

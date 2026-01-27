@@ -47,6 +47,7 @@ export function ResponseArchiveView({ orgId }: ResponseArchiveViewProps) {
           folderId={selectedFolderId}
           selectedResponseId={selectedResponse?.id || null}
           onSelectResponse={handleResponseSelect}
+          orgId={orgId}
         />
       </div>
 

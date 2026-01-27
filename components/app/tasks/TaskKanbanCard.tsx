@@ -5,10 +5,11 @@
 
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
+import { SendTaskModal } from "@/components/app/messages/SendTaskModal";
 import { formatDistanceToNow } from "date-fns";
 import {
   MoreVertical,
@@ -16,6 +17,7 @@ import {
   Trash2,
   ArrowRight,
   ExternalLink,
+  Send,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,6 +56,8 @@ const TaskKanbanCardComponent = ({
   onUpdateAssignee,
   disabled,
 }: TaskKanbanCardProps) => {
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+
   const isOverdue =
     task.due_date &&
     task.status !== "completed" &&
@@ -94,6 +98,15 @@ const TaskKanbanCardComponent = ({
             <DropdownMenuItem onClick={handleClick}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsSendModalOpen(true);
+              }}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Send
             </DropdownMenuItem>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
@@ -247,6 +260,18 @@ const TaskKanbanCardComponent = ({
           size="sm"
         />
       </div>
+
+      {/* Send Task Modal */}
+      <SendTaskModal
+        task={task}
+        orgId={orgId}
+        isOpen={isSendModalOpen}
+        onClose={() => setIsSendModalOpen(false)}
+        onSuccess={() => {
+          setIsSendModalOpen(false);
+          // Optional: show success toast
+        }}
+      />
     </div>
   );
 };

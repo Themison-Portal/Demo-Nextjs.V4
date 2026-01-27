@@ -11,6 +11,7 @@ import { useTasks } from "@/hooks/client/useTasks";
 import { Button } from "@/components/ui/button";
 import { CreateTaskModal } from "@/components/app/tasks/CreateTaskModal";
 import { SaveResponseModal } from "./SaveResponseModal";
+import { SendResponseModal } from "@/components/app/messages/SendResponseModal";
 import {
   FileText,
   ArrowUp,
@@ -59,6 +60,7 @@ export function ChatInterface({
   const [isLoading, setIsLoading] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [selectedMessageContent, setSelectedMessageContent] = useState("");
   const [selectedQuestion, setSelectedQuestion] = useState("");
   const [selectedRawData, setSelectedRawData] = useState<
@@ -284,7 +286,10 @@ export function ChatInterface({
                       </button>
                       <button
                         onClick={() => {
-                          /* TODO: Send response */
+                          setSelectedMessageContent(message.content);
+                          setSelectedQuestion(message.question || "");
+                          setSelectedRawData(message.rawData);
+                          setIsSendModalOpen(true);
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
                       >
@@ -298,7 +303,7 @@ export function ChatInterface({
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        Export
+                        Download
                       </button>
                       <button
                         onClick={() => {
@@ -398,6 +403,28 @@ export function ChatInterface({
           console.log("Response saved successfully!");
         }}
       />
+
+      {/* Send Response Modal */}
+      {selectedRawData && (
+        <SendResponseModal
+          orgId={orgId}
+          trialId={trialId}
+          responseSnapshot={selectedRawData as any}
+          isOpen={isSendModalOpen}
+          onClose={() => {
+            setIsSendModalOpen(false);
+            setSelectedMessageContent("");
+            setSelectedQuestion("");
+            setSelectedRawData(undefined);
+          }}
+          onSuccess={() => {
+            setIsSendModalOpen(false);
+            setSelectedMessageContent("");
+            setSelectedQuestion("");
+            setSelectedRawData(undefined);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,8 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useTasks } from "@/hooks/client/useTasks";
 import { useTeamMembers } from "@/hooks/client/useTeamMembers";
 import { useTasksByStatus } from "@/hooks/ui/useTasksByStatus";
@@ -29,6 +30,8 @@ interface TasksViewProps {
 }
 
 export function TasksView({ orgId }: TasksViewProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [filters, setFilters] = useState<TaskFilters>({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskWithContext | null>(null);
@@ -53,6 +56,20 @@ export function TasksView({ orgId }: TasksViewProps) {
 
   // Group and sort tasks by status using custom hook
   const tasksByStatus = useTasksByStatus(tasks);
+
+  // Auto-open task from URL param (e.g., from message attachment)
+  useEffect(() => {
+    const taskId = searchParams.get('taskId');
+    if (taskId && allTasks.length > 0 && !editingTask) {
+      const task = allTasks.find((t) => t.id === taskId);
+      if (task) {
+        setEditingTask(task);
+        // Clear the taskId from URL after opening modal
+        const newUrl = ROUTES.APP.TASKS(orgId);
+        router.replace(newUrl);
+      }
+    }
+  }, [searchParams, allTasks, editingTask, orgId, router]);
 
   const handleCreateTask = async (input: any) => {
     await createTask(input);

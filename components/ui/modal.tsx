@@ -79,6 +79,7 @@ export function Modal({ isOpen, onClose, children, className, size = "md" }: Mod
         )}
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
         {children}
       </div>

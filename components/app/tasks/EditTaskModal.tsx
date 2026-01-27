@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Modal,
@@ -21,7 +21,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TaskAssigneeSelect } from "./TaskAssigneeSelect";
 import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_CATEGORY_OPTIONS } from "@/lib/constants/tasks";
 import { ROUTES } from "@/lib/routes";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Eye } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { TaskWithContext, UpdateTaskInput, TaskStatus, TaskPriority } from "@/services/tasks/types";
 import type { TeamMember } from "@/services/client/teamMembers";
 
@@ -48,6 +50,9 @@ export function EditTaskModal({
   orgId,
   teamMembers,
 }: EditTaskModalProps) {
+  const { user } = useAuth();
+  const { isAdmin, isStaff } = usePermissions(orgId);
+
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || "");
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -56,6 +61,24 @@ export function EditTaskModal({
   const [dueDate, setDueDate] = useState(task.due_date?.split("T")[0] || "");
   const [category, setCategory] = useState(task.category || "__none__");
   const [error, setError] = useState<string | null>(null);
+
+  // Determine if user can edit this task
+  // Based on RLS policy: assigned_to = auth.uid() OR has_critical_permission
+  const canEdit = useMemo(() => {
+    if (!user?.id) return false;
+
+    // User is the assignee
+    if (task.assigned_to === user.id) return true;
+
+    // User is org admin or staff (has critical permission)
+    if (isAdmin || isStaff) return true;
+
+    // TODO: Check if user has PI/CRC role in this trial
+    // For now, we don't have trial role info in the component
+    // This would require passing trial role or checking via API
+
+    return false;
+  }, [user?.id, task.assigned_to, isAdmin, isStaff]);
 
   // Reset form when task changes
   useEffect(() => {
@@ -98,7 +121,18 @@ export function EditTaskModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="2xl">
-      <ModalHeader>Edit Task</ModalHeader>
+      <ModalHeader>
+        <div className="flex items-center gap-2">
+          {canEdit ? (
+            "Edit Task"
+          ) : (
+            <>
+              <Eye className="h-4 w-4 text-gray-500" />
+              <span>View Task</span>
+            </>
+          )}
+        </div>
+      </ModalHeader>
       <ModalBody>
         <div className="space-y-4">
           {/* Title */}
@@ -111,7 +145,7 @@ export function EditTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter task title"
-              disabled={isLoading}
+              disabled={!canEdit || isLoading}
             />
           </div>
 
@@ -124,7 +158,7 @@ export function EditTaskModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter task description (optional)"
               rows={3}
-              disabled={isLoading}
+              disabled={!canEdit || isLoading}
             />
           </div>
 
@@ -179,7 +213,7 @@ export function EditTaskModal({
               <Select
                 value={status}
                 onValueChange={(value) => setStatus(value as TaskStatus)}
-                disabled={isLoading}
+                disabled={!canEdit || isLoading}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -199,7 +233,7 @@ export function EditTaskModal({
               <Select
                 value={priority}
                 onValueChange={(value) => setPriority(value as TaskPriority)}
-                disabled={isLoading}
+                disabled={!canEdit || isLoading}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -221,7 +255,7 @@ export function EditTaskModal({
             <Select
               value={category}
               onValueChange={setCategory}
-              disabled={isLoading}
+              disabled={!canEdit || isLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder="No category" />
@@ -244,7 +278,7 @@ export function EditTaskModal({
               value={assignedTo}
               teamMembers={teamMembers}
               onChange={setAssignedTo}
-              disabled={isLoading}
+              disabled={!canEdit || isLoading}
             />
           </div>
 
@@ -256,7 +290,7 @@ export function EditTaskModal({
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              disabled={isLoading}
+              disabled={!canEdit || isLoading}
             />
           </div>
 
@@ -269,20 +303,24 @@ export function EditTaskModal({
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button
-          variant="ghost"
-          onClick={onDelete}
-          disabled={isLoading || isDeleting}
-          className="mr-auto text-red-600 hover:text-red-700"
-        >
-          {isDeleting ? "Deleting..." : "Delete"}
-        </Button>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            onClick={onDelete}
+            disabled={isLoading || isDeleting}
+            className="mr-auto text-red-600 hover:text-red-700"
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        )}
         <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-          Cancel
+          {canEdit ? "Cancel" : "Close"}
         </Button>
-        <Button onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? "Saving..." : "Save Changes"}
-        </Button>
+        {canEdit && (
+          <Button onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
+        )}
       </ModalFooter>
     </Modal>
   );
