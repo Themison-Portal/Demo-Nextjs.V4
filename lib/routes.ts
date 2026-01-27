@@ -60,6 +60,9 @@ export const APP_ROUTES = {
   /** Task management */
   TASKS: (orgId: string) => `/${orgId}/tasks`,
 
+  /** Communication Hub */
+  MESSAGES: (orgId: string) => `/${orgId}/messages`,
+
   /** Organization management */
   ORGANIZATION: (orgId: string) => `/${orgId}/organization`,
 
