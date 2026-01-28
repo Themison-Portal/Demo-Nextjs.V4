@@ -9,7 +9,11 @@ import { withTrialMember } from "@/lib/api/middleware";
 import { responses } from "@/lib/api/middleware/types";
 import { RAG_CONFIG } from "@/lib/constants";
 import { DOCUMENT_CATEGORY } from "@/lib/constants/documents";
-import type { TrialDocument, RAGIndexResponse, DocumentCategory } from "@/services/documents";
+import type {
+  TrialDocument,
+  RAGIndexResponse,
+  DocumentCategory,
+} from "@/services/documents";
 
 // ============================================================================
 // GET - List documents
@@ -28,7 +32,10 @@ export const GET = withTrialMember(async (req, ctx, user) => {
 
   if (error) {
     console.error("[API] Error fetching documents:", error);
-    return Response.json({ error: "Failed to fetch documents" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to fetch documents" },
+      { status: 500 },
+    );
   }
 
   return Response.json({
@@ -93,7 +100,7 @@ export const POST = withTrialMember(async (req, ctx, user) => {
       console.error("[API] Storage upload error:", uploadError);
       return Response.json(
         { error: "Failed to upload file to storage" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -125,7 +132,7 @@ export const POST = withTrialMember(async (req, ctx, user) => {
       await supabase.storage.from("trial-documents").remove([storagePath]);
       return Response.json(
         { error: "Failed to create document record" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -143,17 +150,20 @@ export const POST = withTrialMember(async (req, ctx, user) => {
     } else {
       // Real RAG backend call
       try {
-        const ragResponse = await fetch(`${RAG_CONFIG.apiUrl}/index`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const ragResponse = await fetch(
+          `${RAG_CONFIG.apiUrl}/upload/upload-pdf`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-API-KEY": RAG_CONFIG.apiKey,
+            },
+            body: JSON.stringify({
+              document_id: document.id,
+              document_url: urlData.publicUrl,
+            }),
           },
-          body: JSON.stringify({
-            doc_id: document.id,
-            url: urlData.publicUrl,
-            api_key: RAG_CONFIG.apiKey,
-          }),
-        });
+        );
 
         if (!ragResponse.ok) {
           throw new Error(`RAG backend returned ${ragResponse.status}`);
@@ -198,7 +208,7 @@ export const POST = withTrialMember(async (req, ctx, user) => {
     console.error("[API] Unexpected error:", error);
     return Response.json(
       { error: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 });
