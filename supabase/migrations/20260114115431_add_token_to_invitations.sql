@@ -8,7 +8,7 @@ ADD COLUMN token TEXT;
 -- Step 2: Generate unique tokens for existing invitations (if any)
 -- Uses secure random bytes encoded as base64 (43 chars)
 UPDATE invitations
-SET token = encode(gen_random_bytes(32), 'base64')
+SET token = encode(extensions.gen_random_bytes(32), 'base64')
 WHERE token IS NULL;
 
 -- Step 3: Make token NOT NULL and UNIQUE
@@ -25,7 +25,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   -- Only generate if token is not provided
   IF NEW.token IS NULL THEN
-    NEW.token = encode(gen_random_bytes(32), 'base64');
+    NEW.token = encode(extensions.gen_random_bytes(32), 'base64');
   END IF;
   RETURN NEW;
 END;
