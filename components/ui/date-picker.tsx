@@ -41,13 +41,13 @@ export function DatePicker({
   };
 
   // Build disabled matcher for dates outside allowed range
-  const disabledDays: { before?: Date; after?: Date } | undefined =
-    minDate || maxDate
-      ? {
-          ...(minDate && { before: minDate }),
-          ...(maxDate && { after: maxDate }),
-        }
-      : undefined;
+  const disabledDays: { before?: Date; after?: Date } | undefined = React.useMemo(() => {
+    if (!minDate && !maxDate) return undefined;
+    const matcher: { before?: Date; after?: Date } = {};
+    if (minDate) matcher.before = minDate;
+    if (maxDate) matcher.after = maxDate;
+    return matcher;
+  }, [minDate, maxDate]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -70,7 +70,7 @@ export function DatePicker({
           mode="single"
           selected={value ?? undefined}
           onSelect={handleSelect}
-          disabled={disabledDays}
+          disabled={disabledDays as any}
           autoFocus
         />
       </PopoverContent>

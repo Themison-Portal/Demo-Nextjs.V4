@@ -141,8 +141,8 @@ export function getTrialPermissions(
   orgRole: OrgRole | null,
   trialRole: TrialRole | null
 ): TrialPermissions {
-  const isOrgAdmin = orgRole && ADMIN_ORG_ROLES.includes(orgRole);
-  const isCriticalRole = trialRole && CRITICAL_TRIAL_ROLES.includes(trialRole);
+  const isOrgAdmin = !!(orgRole && ADMIN_ORG_ROLES.includes(orgRole));
+  const isCriticalRole = !!(trialRole && CRITICAL_TRIAL_ROLES.includes(trialRole));
   const isTrialMember = !!trialRole;
 
   return {

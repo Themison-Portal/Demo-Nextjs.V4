@@ -16,7 +16,7 @@ interface TrialCardProps {
   location: string;
   role?: string;
   principalInvestigator?: string;
-  protocolNumber: string;
+  protocolNumber?: string | null;
 }
 
 export function TrialCard({
@@ -39,7 +39,7 @@ export function TrialCard({
           <div className="flex items-center justify-between bg-blue-600 px-6 py-8">
             <div className="space-y-1 flex flex-col">
               <h3 className="text-base font-semibold text-gray-100">{name}</h3>
-              <small className="text-white">{protocolNumber}</small>
+              <small className="text-white">{protocolNumber || "No protocol number"}</small>
             </div>
             <ChevronRight className=" h-4 w-4 text-gray-100 font-light" />
           </div>

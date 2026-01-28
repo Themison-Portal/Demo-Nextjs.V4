@@ -201,7 +201,7 @@ export function ResponsesList({
         <SendResponseModal
           orgId={orgId}
           trialId={responseToSend.trial_id}
-          responseSnapshot={responseToSend.raw_data}
+          responseSnapshot={responseToSend.raw_data as any}
           isOpen={isSendModalOpen}
           onClose={() => {
             setIsSendModalOpen(false);

@@ -227,7 +227,7 @@ function CustomCaption({ month, onMonthChange }: CustomCaptionProps) {
 
 function Calendar({ className, classNames, ...props }: CalendarProps) {
   const [month, setMonth] = React.useState<Date>(
-    props.defaultMonth || props.selected as Date || new Date()
+    props.defaultMonth || ('selected' in props ? props.selected as Date : undefined) || new Date()
   );
 
   return (

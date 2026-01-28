@@ -72,7 +72,9 @@ export function TrialsList({ orgId }: TrialsListProps) {
                 <CreateTrialModal
                   isOpen={isModalOpen}
                   onClose={() => setIsModalOpen(false)}
-                  onSubmit={createTrial}
+                  onSubmit={async (data) => {
+                    await createTrial(data);
+                  }}
                   isSubmitting={isCreating}
                 />
               </>
@@ -150,7 +152,9 @@ export function TrialsList({ orgId }: TrialsListProps) {
         <CreateTrialModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSubmit={createTrial}
+          onSubmit={async (data) => {
+            await createTrial(data);
+          }}
           isSubmitting={isCreating}
         />
       )}

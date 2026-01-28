@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "./getUser";
 import { createClient } from "@/lib/supabase/server";
 import { ROUTES } from "@/lib/routes";
-import type { AuthUser } from "./types";
+import type { AuthUser } from "./getUser";
 
 // ============================================================================
 // Staff Guard
@@ -111,9 +111,17 @@ export async function requireOrgAccess(orgId: string): Promise<OrgAccessResult> 
     redirect(ROUTES.PUBLIC.ERROR_WITH_MESSAGE("Unauthorized"));
   }
 
+  // Supabase returns organizations as array even with single relation
+  const orgArray = membership.organizations as any;
+  const org = (Array.isArray(orgArray) ? orgArray[0] : orgArray) as {
+    id: string;
+    name: string;
+    support_enabled: boolean;
+  };
+
   return {
     user,
-    org: membership.organizations as { id: string; name: string; support_enabled: boolean },
+    org,
   };
 }
 

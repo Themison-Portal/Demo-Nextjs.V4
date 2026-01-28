@@ -34,8 +34,8 @@ const statusVariants = {
 export function TaskCard({ task, orgId }: TaskCardProps) {
   const router = useRouter();
   const statusConfig = statusVariants[task.status];
-  const priorityColor = priorityColors[task.priority];
-  const dueDate = useFormattedTaskDate(task.due_date, task.status);
+  const priorityColor = task.priority ? priorityColors[task.priority] : null;
+  const dueDate = useFormattedTaskDate(task.due_date ?? null, task.status);
 
   // Only make clickable if task has patient and visit
   const isClickable = task.patient_id && task.visit_id && orgId;
@@ -99,7 +99,7 @@ export function TaskCard({ task, orgId }: TaskCardProps) {
 
       {/* Trial Name */}
       <div className="text-xs text-gray-500 shrink-0 max-w-[120px] truncate">
-        {task.trial.name}
+        {task.trial?.name || "Unknown Trial"}
       </div>
 
       {/* Status Badge */}

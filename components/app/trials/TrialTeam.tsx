@@ -16,7 +16,7 @@ import { AddTeamMemberModal } from "./AddTeamMemberModal";
 import { TeamMemberSidebar } from "./TeamMemberSidebar";
 import { InviteMemberModal } from "@/components/app/organization/InviteMemberModal";
 import { formatDate } from "@/lib/date";
-import type { TrialTeamMember } from "@/services/trials/types";
+import type { TrialTeamMember, TrialRole } from "@/services/trials/types";
 import type { OrgRole } from "@/lib/permissions/constants";
 
 interface TrialTeamProps {
@@ -61,7 +61,7 @@ export function TrialTeam({ orgId, trialId }: TrialTeamProps) {
 
   const handleAddMember = async (input: {
     org_member_id: string;
-    trial_role: string;
+    trial_role: TrialRole;
   }) => {
     await addTeamMember(input);
     setIsAddModalOpen(false);
@@ -241,9 +241,15 @@ export function TrialTeam({ orgId, trialId }: TrialTeamProps) {
           member={selectedMember}
           canManageTeam={canManageTeam}
           canAssignPI={canAssignPI}
-          onUpdateRole={updateRole}
-          onUpdateStatus={updateStatus}
-          onUpdateSettings={updateSettings}
+          onUpdateRole={async (orgMemberId, role) => {
+            await updateRole(orgMemberId, role);
+          }}
+          onUpdateStatus={async (orgMemberId, status) => {
+            await updateStatus(orgMemberId, status);
+          }}
+          onUpdateSettings={async (orgMemberId, settings) => {
+            await updateSettings(orgMemberId, settings);
+          }}
           onRemove={handleRemoveMember}
         />
       )}

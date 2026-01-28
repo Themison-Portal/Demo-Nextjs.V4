@@ -65,7 +65,9 @@ export const DELETE = withStaffPermission(async (req, ctx, user) => {
     );
   }
 
-  const userData = member.user as {
+  // Supabase returns user as array even with single relation
+  const userArray = member.user as any;
+  const userData = (Array.isArray(userArray) ? userArray[0] : userArray) as {
     id: string;
     email: string;
     first_name: string | null;

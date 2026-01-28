@@ -95,17 +95,25 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Supabase returns organizations as array even with single relation
+    const orgArray = invitation.organizations as any;
+    const org = (Array.isArray(orgArray) ? orgArray[0] : orgArray) as {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
+
     // Return validated invitation details
     return NextResponse.json({
       valid: true,
       invitation: {
         email: invitation.email,
         org_role: invitation.org_role,
-        organization: {
-          id: invitation.organizations.id,
-          name: invitation.organizations.name,
-          slug: invitation.organizations.slug,
-        }
+        organization: org ? {
+          id: org.id,
+          name: org.name,
+          slug: org.slug,
+        } : null
       }
     });
 

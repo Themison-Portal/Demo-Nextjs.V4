@@ -311,7 +311,9 @@ export function PatientOverview({
         <EnrollPatientModal
           isOpen={showEnrollModal}
           onClose={() => setShowEnrollModal(false)}
-          onSubmit={(input) => enrollPatient(patientId, input)}
+          onSubmit={async (input) => {
+            await enrollPatient(patientId, input);
+          }}
           isLoading={isEnrolling}
           patient={patient}
           orgId={orgId}
