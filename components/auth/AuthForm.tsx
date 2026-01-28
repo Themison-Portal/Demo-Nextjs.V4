@@ -22,6 +22,7 @@ interface AuthFormProps {
   prefilledEmail?: string; // For invitation-based signup
   readonlyEmail?: boolean; // For invitation-based signup
   invitationOrgName?: string; // For invitation-based signup
+  showSignupLink?: boolean; // Show "Don't have an account? Sign up" link (for signin mode)
 }
 
 interface SignupFormData {
@@ -45,6 +46,7 @@ export function AuthForm({
   prefilledEmail = "",
   readonlyEmail = false,
   invitationOrgName,
+  showSignupLink = false, // Default to false for signin mode
 }: AuthFormProps) {
   const [formData, setFormData] = useState<SignupFormData>({
     email: prefilledEmail,
@@ -184,9 +186,9 @@ export function AuthForm({
               Sign in
             </Link>
           </>
-        ) : mode !== "signin" ? (
+        ) : mode === "signin" && showSignupLink ? (
           <>
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href={ROUTES.CONSOLE.SIGNUP}
               className="text-primary hover:underline"
@@ -194,9 +196,7 @@ export function AuthForm({
               Sign up
             </Link>
           </>
-        ) : (
-          ""
-        )}
+        ) : null}
       </div>
     </form>
   );
