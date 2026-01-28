@@ -3,7 +3,7 @@
  * Main dashboard for clinic users
  *
  * Note: This fetch is cached by Next.js Request Memoization
- * The layout already fetched this org data, so this is a cache hit (0 DB queries)
+ * The layout already fetched this org data, so this is a cache hit
  */
 
 import { getUser } from "@/lib/auth/getUser";
