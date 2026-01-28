@@ -27,7 +27,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     .eq("id", orgId)
     .single();
 
-  const firstName = user?.firstName || user?.email.split("@")[0];
+  const firstName = user?.firstName || user?.email?.split("@")[0] || "User";
 
   return (
     <DashboardView orgId={orgId} userName={firstName} orgName={org?.name} />

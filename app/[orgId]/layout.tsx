@@ -28,14 +28,10 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 
   // Get user info for sidebar
   const user = await getUser();
-  const firstName = user?.firstName || user?.email.split("@")[0];
+  const firstName = user?.firstName || user?.email?.split("@")[0] || "User";
 
   return (
-    <AppMain
-      orgId={orgId}
-      userEmail={user?.email}
-      userFirstName={firstName}
-    >
+    <AppMain orgId={orgId} userEmail={user?.email} userFirstName={firstName}>
       {children}
     </AppMain>
   );
