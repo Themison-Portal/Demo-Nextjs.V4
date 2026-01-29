@@ -54,11 +54,6 @@ export const GET = withOrgMember(async (req, ctx, user) => {
       visit_name,
       scheduled_date
     ),
-    activity_types!left (
-      id,
-      name,
-      category
-    ),
     trials!inner (
       id,
       name
@@ -100,10 +95,7 @@ export const GET = withOrgMember(async (req, ctx, user) => {
     let filteredTasks = tasks || [];
     if (categoryFilter) {
       filteredTasks = filteredTasks.filter(
-        (task: any) => {
-          const category = task.category || task.activity_types?.category;
-          return category === categoryFilter;
-        }
+        (task: any) => task.category === categoryFilter
       );
     }
 
@@ -180,10 +172,7 @@ export const GET = withOrgMember(async (req, ctx, user) => {
   // Step 5: Apply category filter if provided
   if (categoryFilter) {
     finalTasks = finalTasks.filter(
-      (task: any) => {
-        const category = task.category || task.activity_types?.category;
-        return category === categoryFilter;
-      }
+      (task: any) => task.category === categoryFilter
     );
   }
 
@@ -321,13 +310,6 @@ function transformTasks(tasks: any[]): TaskWithContext[] {
       ? {
           visit_name: task.visits.visit_name,
           scheduled_date: task.visits.scheduled_date,
-        }
-      : null,
-    activity_type: task.activity_types
-      ? {
-          id: task.activity_types.id,
-          name: task.activity_types.name,
-          category: task.activity_types.category,
         }
       : null,
     trial: task.trials
