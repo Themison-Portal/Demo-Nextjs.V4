@@ -1,6 +1,6 @@
 /**
  * Visits Tab Component
- * Displays patient's visit schedule with expandable activities
+ * Displays patient's visit schedule with timeline visualization
  */
 
 "use client";
@@ -31,6 +31,9 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle,
+  Check,
+  Circle as CircleIcon,
+  Clock,
 } from "lucide-react";
 import type { VisitWithActivities } from "@/services/visits/types";
 
@@ -119,17 +122,29 @@ export function VisitsTab({ orgId, trialId, patientId }: VisitsTabProps) {
 
   return (
     <>
-      <div className="space-y-3">
-        {visits.map((visit) => (
-          <VisitCard
-            key={visit.id}
-            visit={visit}
-            isExpanded={expandedVisits.has(visit.id)}
-            onToggle={() => toggleVisit(visit.id)}
-            onCompleteVisit={() => setVisitToComplete(visit.id)}
-          />
-        ))}
-      </div>
+      <Card>
+        <CardContent className="px-6 py-6">
+          {/* Timeline Container */}
+          <div className="relative">
+            {/* Timeline vertical line */}
+            <div className="absolute left-[11px] top-0 bottom-0 w-0.5 bg-gray-200" />
+
+            {/* Visits */}
+            <div className="space-y-0">
+              {visits.map((visit, idx) => (
+                <VisitTimelineItem
+                  key={visit.id}
+                  visit={visit}
+                  isExpanded={expandedVisits.has(visit.id)}
+                  onToggle={() => toggleVisit(visit.id)}
+                  onCompleteVisit={() => setVisitToComplete(visit.id)}
+                  isLast={idx === visits.length - 1}
+                />
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Complete Visit Dialog */}
       <AlertDialog
@@ -159,24 +174,28 @@ export function VisitsTab({ orgId, trialId, patientId }: VisitsTabProps) {
   );
 }
 
-interface VisitCardProps {
+interface VisitTimelineItemProps {
   visit: VisitWithActivities;
   isExpanded: boolean;
   onToggle: () => void;
   onCompleteVisit: () => void;
+  isLast: boolean;
 }
 
-function VisitCard({
+function VisitTimelineItem({
   visit,
   isExpanded,
   onToggle,
   onCompleteVisit,
-}: VisitCardProps) {
-  const statusStyle = VISIT_STATUS_STYLES[visit.status];
+  isLast,
+}: VisitTimelineItemProps) {
   const completedActivities = visit.activities.filter(
     (a) => a.status === "completed"
   ).length;
   const totalActivities = visit.activities.length;
+  const completionRate = totalActivities > 0
+    ? Math.round((completedActivities / totalActivities) * 100)
+    : 0;
 
   // Check if all activities are done (completed or not_applicable)
   const allActivitiesDone = visit.activities.every(
@@ -185,69 +204,124 @@ function VisitCard({
   const canCompleteVisit =
     allActivitiesDone && visit.status !== "completed" && totalActivities > 0;
 
+  // Status color mapping
+  const statusColors = {
+    completed: "bg-green-500",
+    scheduled: "bg-blue-500",
+    rescheduled: "bg-yellow-500",
+    incompleted: "bg-orange-500",
+    suspended: "bg-gray-400",
+    missed: "bg-red-500",
+    cancelled: "bg-gray-300",
+  };
+
+  const statusColor = statusColors[visit.status] || "bg-gray-400";
+
+  // Check if there's a date discrepancy
+  const hasDateDiscrepancy = visit.actual_date && visit.actual_date !== visit.scheduled_date;
+
   return (
-    <Card className="p-0 rounded-md">
-      <CardContent className="px-0">
-        {/* Visit Header - Clickable to expand */}
+    <div className={`relative flex gap-6 ${!isLast ? "pb-8" : "pb-2"}`}>
+      {/* Timeline node */}
+      <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center">
+        {visit.status === "completed" ? (
+          <div className={`flex h-5 w-5 items-center justify-center rounded-full ${statusColor} ring-4 ring-white`}>
+            <Check className="h-3 w-3 text-white" />
+          </div>
+        ) : (
+          <div className={`h-3 w-3 rounded-full ${statusColor} ring-4 ring-white`} />
+        )}
+      </div>
+
+      {/* Visit content */}
+      <div className="flex-1 -mt-1">
         <button
           onClick={onToggle}
-          className={`w-full  px-6 py-2 flex items-center justify-between hover:bg-gray-100 transition-colors text-left ${
-            isExpanded ? "bg-gray-200" : ""
-          }`}
+          className="w-full text-left group"
         >
-          <div className="flex items-center gap-4 flex-1">
-            {/* Expand Icon */}
-            <div className="shrink-0">
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-base font-semibold text-gray-900 group-hover:text-gray-700">
+                  {visit.visit_name}
+                </h3>
+                {visit.is_day_zero && (
+                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                    Day 0
+                  </span>
+                )}
+                <span
+                  className={`text-xs px-2 py-0.5 rounded capitalize ${
+                    visit.status === "completed"
+                      ? "bg-green-50 text-green-700"
+                      : visit.status === "scheduled" || visit.status === "rescheduled"
+                      ? "bg-blue-50 text-blue-700"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {visit.status}
+                </span>
+              </div>
+
+              {/* Date info */}
+              <div className="flex items-center gap-3 text-sm text-gray-600">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {formatDate(visit.scheduled_date)}
+                </span>
+                {hasDateDiscrepancy && (
+                  <span className="flex items-center gap-1.5 text-orange-600">
+                    <Clock className="h-3.5 w-3.5" />
+                    Actual: {formatDate(visit.actual_date!)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Expand icon */}
+            <div className="shrink-0 pt-1">
               {isExpanded ? (
                 <ChevronDown className="h-5 w-5 text-gray-400" />
               ) : (
                 <ChevronRight className="h-5 w-5 text-gray-400" />
               )}
             </div>
-
-            {/* Visit Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-sm font-medium text-gray-900">
-                  {visit.visit_name}
-                </h3>
-                {visit.is_day_zero && (
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                    Day 0
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span>Scheduled: {formatDate(visit.scheduled_date)}</span>
-                {visit.actual_date && (
-                  <span>Actual: {formatDate(visit.actual_date)}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Status and Progress */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-600">
-                {completedActivities}/{totalActivities} activities
-              </span>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusStyle}`}
-              >
-                {visit.status}
-              </span>
-            </div>
           </div>
+
+          {/* Progress bar */}
+          {totalActivities > 0 && (
+            <div className="mt-3 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">
+                  {completedActivities} of {totalActivities} activities completed
+                </span>
+                <span className="text-gray-500 font-medium">
+                  {completionRate}%
+                </span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    visit.status === "completed"
+                      ? "bg-green-500"
+                      : "bg-blue-500"
+                  }`}
+                  style={{ width: `${completionRate}%` }}
+                />
+              </div>
+            </div>
+          )}
         </button>
 
-        {/* Visit Activities - Expandable */}
+        {/* Expanded activities */}
         {isExpanded && (
-          <div className="px-6 pb-4 border-t border-gray-100">
+          <div className="mt-4 space-y-3">
             {visit.activities.length === 0 ? (
-              <p className="py-4 text-sm text-gray-500 text-center">
+              <p className="text-sm text-gray-500 py-2">
                 No activities defined for this visit
               </p>
             ) : (
-              <div className="pt-3 space-y-2">
+              <div className="space-y-1">
                 {visit.activities.map((activity) => (
                   <ActivityRow key={activity.id} activity={activity} />
                 ))}
@@ -257,7 +331,7 @@ function VisitCard({
             {/* Visit Notes */}
             {visit.notes && (
               <div className="mt-4 pt-3 border-t border-gray-100">
-                <p className="text-xs font-medium text-gray-400 uppercase mb-1">
+                <p className="text-xs font-medium text-gray-500 uppercase mb-1.5">
                   Notes
                 </p>
                 <p className="text-sm text-gray-700">{visit.notes}</p>
@@ -282,8 +356,8 @@ function VisitCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -292,28 +366,53 @@ interface ActivityRowProps {
 }
 
 function ActivityRow({ activity }: ActivityRowProps) {
-  const statusStyle = VISIT_ACTIVITY_STATUS_STYLES[activity.status];
+  const isCompleted = activity.status === "completed";
+  const isNotApplicable = activity.status === "not_applicable";
 
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded hover:bg-gray-50">
-      <div className="flex-1">
-        <p className="text-sm text-gray-900">{activity.activity_name}</p>
+    <div className="flex items-start gap-3 py-2.5 px-3 rounded-md hover:bg-gray-50 transition-colors group">
+      {/* Status icon */}
+      <div className="shrink-0 pt-0.5">
+        {isCompleted ? (
+          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-green-100">
+            <Check className="h-3 w-3 text-green-600" />
+          </div>
+        ) : isNotApplicable ? (
+          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-100">
+            <span className="text-xs text-gray-500">—</span>
+          </div>
+        ) : (
+          <CircleIcon className="h-4 w-4 text-gray-300" />
+        )}
+      </div>
+
+      {/* Activity info */}
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm ${isCompleted ? "text-gray-700" : "text-gray-900"}`}>
+          {activity.activity_name}
+        </p>
         {activity.notes && (
           <p className="text-xs text-gray-500 mt-0.5">{activity.notes}</p>
         )}
-      </div>
-      <div className="flex items-center gap-3">
         {activity.completed_at && (
-          <span className="text-xs text-gray-500">
-            {formatDate(activity.completed_at)}
-          </span>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Completed {formatDate(activity.completed_at)}
+          </p>
         )}
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusStyle}`}
-        >
-          {activity.status}
-        </span>
       </div>
+
+      {/* Status badge - only show if not completed */}
+      {!isCompleted && (
+        <span
+          className={`text-xs px-2 py-0.5 rounded shrink-0 ${
+            isNotApplicable
+              ? "bg-gray-100 text-gray-600"
+              : "bg-blue-50 text-blue-700"
+          }`}
+        >
+          {activity.status === "not_applicable" ? "N/A" : "pending"}
+        </span>
+      )}
     </div>
   );
 }

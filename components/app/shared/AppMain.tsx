@@ -8,9 +8,12 @@
 import { AppSidebar } from "./AppSidebar";
 import { useOrganization } from "@/hooks/client/useOrganization";
 import { useTrialDetails } from "@/hooks/client/useTrialDetails";
+import { usePatientDetails } from "@/hooks/client/usePatientDetails";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { useMemo } from "react";
+import Link from "next/link";
+import { ROUTES } from "@/lib/routes";
 
 interface AppMainProps {
   orgId: string;
@@ -43,11 +46,30 @@ export function AppMain({
     return null;
   }, [pathname, searchParams]);
 
+  // Extract patientId from pathname if in patient route
+  const patientId = useMemo(() => {
+    // Check if in patient route (e.g., /trials/[trialId]/patients/[patientId])
+    const match = pathname.match(/\/patients\/([^\/]+)/);
+    return match ? match[1] : null;
+  }, [pathname]);
+
+  // Detect if in patients list route
+  const isInPatientsRoute = useMemo(() => {
+    return pathname.includes("/patients") && trialId;
+  }, [pathname, trialId]);
+
   // Fetch trial details if in trial route
   // Hook already handles enabled: !!trialId internally
   const { trial, isLoading: isLoadingTrial } = useTrialDetails(
     orgId,
     trialId || "",
+  );
+
+  // Fetch patient details if in patient route
+  const { patient, isLoading: isLoadingPatient } = usePatientDetails(
+    orgId,
+    trialId || "",
+    patientId || "",
   );
 
   return (
@@ -86,6 +108,33 @@ export function AppMain({
                     ) : (
                       <span className="text-gray-700 font-medium">
                         {trial?.name || "Trial"}
+                      </span>
+                    )}
+                  </>
+                )}
+
+                {/* Patients breadcrumb if in patients route */}
+                {isInPatientsRoute && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <Link
+                      href={ROUTES.APP.TRIAL_TAB(orgId, trialId!, "patients")}
+                      className="text-gray-700 font-medium hover:text-gray-900 transition-colors"
+                    >
+                      Patients
+                    </Link>
+                  </>
+                )}
+
+                {/* Patient number if viewing specific patient */}
+                {patientId && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    {isLoadingPatient ? (
+                      <div className="h-5 w-16 animate-pulse bg-gray-200 rounded" />
+                    ) : (
+                      <span className="text-gray-700 font-medium">
+                        {patient?.patient_number || "Patient"}
                       </span>
                     )}
                   </>
