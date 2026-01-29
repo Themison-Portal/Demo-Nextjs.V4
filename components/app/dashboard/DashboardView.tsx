@@ -1,6 +1,6 @@
 /**
  * Dashboard View Component
- * Main dashboard view for clinic users
+ * Main dashboard view for clinic users with analytics charts
  */
 
 "use client";
@@ -10,6 +10,11 @@ import { StatsGrid } from "./StatsGrid";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Plus, UserPlus } from "lucide-react";
 import { MyWorkload } from "@/components/app/tasks/MyWorkload";
+import { TimelineWorkloadChart } from "./charts/TimelineWorkloadChart";
+import { TaskStatusChart } from "./charts/TaskStatusChart";
+import { PatientStatusChart } from "./charts/PatientStatusChart";
+import { WorkloadChart } from "./charts/WorkloadChart";
+import { useDashboardStats } from "@/hooks/client/useDashboardStats";
 import { ROUTES } from "@/lib/routes";
 
 interface DashboardViewProps {
@@ -23,6 +28,8 @@ export function DashboardView({
   userName,
   orgName,
 }: DashboardViewProps) {
+  const { data: stats, isLoading } = useDashboardStats(orgId);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 w-full">
@@ -63,6 +70,16 @@ export function DashboardView({
           </Link>
         </div>
       </div>
+
+      {/* Analytics Charts Grid */}
+      {!isLoading && stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <TimelineWorkloadChart timeline={stats.timeline} />
+          <TaskStatusChart stats={stats.tasks} />
+          <PatientStatusChart stats={stats.patients} />
+          <WorkloadChart stats={stats.tasks.byAssignee} />
+        </div>
+      )}
 
       {/* My Workload Section */}
       <div className="mt-8">
