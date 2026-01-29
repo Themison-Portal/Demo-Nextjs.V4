@@ -84,8 +84,30 @@ export const APP_ROUTES = {
   /** Document AI - Generic entry point */
   DOCUMENT_AI: (orgId: string) => `/${orgId}/ai`,
 
+  /** Document AI Chat - With trial, document, and optional chat ID */
+  DOCUMENT_AI_CHAT: (
+    orgId: string,
+    trialId: string,
+    documentId: string,
+    chatId?: string,
+  ) =>
+    chatId
+      ? `/${orgId}/ai?trialId=${trialId}&documentId=${documentId}&chatId=${chatId}`
+      : `/${orgId}/ai?trialId=${trialId}&documentId=${documentId}`,
+
   /** Document AI Archive - Generic entry point */
   DOCUMENT_AI_ARCHIVE: (orgId: string) => `/${orgId}/ai/archive`,
+
+  /** Document AI Archive - With trial, document, and optional chat ID */
+  DOCUMENT_AI_ARCHIVE_CHAT: (
+    orgId: string,
+    trialId: string,
+    documentId: string,
+    chatId?: string,
+  ) =>
+    chatId
+      ? `/${orgId}/ai/archive?trialId=${trialId}&documentId=${documentId}&chatId=${chatId}`
+      : `/${orgId}/ai/archive?trialId=${trialId}&documentId=${documentId}`,
 } as const;
 
 // ============================================================================

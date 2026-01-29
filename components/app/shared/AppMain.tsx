@@ -8,7 +8,7 @@
 import { AppSidebar } from "./AppSidebar";
 import { useOrganization } from "@/hooks/client/useOrganization";
 import { useTrialDetails } from "@/hooks/client/useTrialDetails";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 
@@ -26,13 +26,22 @@ export function AppMain({
   userFirstName,
 }: AppMainProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { organization, isLoading } = useOrganization(orgId);
 
-  // Extract trialId from pathname if in trial route
+  // Extract trialId from pathname if in trial route, or from query params if in Document AI
   const trialId = useMemo(() => {
+    // Check if in trial route (e.g., /trials/[trialId])
     const match = pathname.match(/\/trials\/([^\/]+)/);
-    return match ? match[1] : null;
-  }, [pathname]);
+    if (match) return match[1];
+
+    // Check if in Document AI route with trialId query param (e.g., /ai?trialId=...)
+    if (pathname.includes("/ai")) {
+      return searchParams.get("trialId");
+    }
+
+    return null;
+  }, [pathname, searchParams]);
 
   // Fetch trial details if in trial route
   // Hook already handles enabled: !!trialId internally

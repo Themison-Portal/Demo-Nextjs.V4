@@ -14,6 +14,7 @@ import { useCreateFolder } from "@/hooks/client/useArchive";
 
 interface CreateFolderModalProps {
   orgId: string;
+  trialId: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (folderId: string) => void;
@@ -21,6 +22,7 @@ interface CreateFolderModalProps {
 
 export function CreateFolderModal({
   orgId,
+  trialId,
   isOpen,
   onClose,
   onSuccess,
@@ -35,6 +37,7 @@ export function CreateFolderModal({
     try {
       const newFolder = await createFolder.mutateAsync({
         org_id: orgId,
+        trial_id: trialId,
         name: folderName.trim(),
       });
 

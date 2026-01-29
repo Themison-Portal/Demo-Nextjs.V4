@@ -13,9 +13,13 @@ import type { SavedResponse } from "@/types/archive";
 
 interface ResponseArchiveViewProps {
   orgId: string;
+  trialId?: string;
 }
 
-export function ResponseArchiveView({ orgId }: ResponseArchiveViewProps) {
+export function ResponseArchiveView({
+  orgId,
+  trialId,
+}: ResponseArchiveViewProps) {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedResponse, setSelectedResponse] = useState<SavedResponse | null>(
     null,
@@ -36,6 +40,7 @@ export function ResponseArchiveView({ orgId }: ResponseArchiveViewProps) {
       <div className="w-64 border-r border-gray-200 overflow-y-auto">
         <FoldersList
           orgId={orgId}
+          trialId={trialId}
           selectedFolderId={selectedFolderId}
           onSelectFolder={handleFolderSelect}
         />

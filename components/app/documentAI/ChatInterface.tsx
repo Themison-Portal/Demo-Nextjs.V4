@@ -10,6 +10,11 @@ import dynamic from "next/dynamic";
 import { useTrialDocuments } from "@/hooks/client/useTrialDocuments";
 import { useTasks } from "@/hooks/client/useTasks";
 import { useDocumentQuery } from "@/hooks/client/useDocumentQuery";
+import {
+  useChatSession,
+  useCreateChatSession,
+  useCreateChatMessage,
+} from "@/hooks/client/useChats";
 import { Button } from "@/components/ui/button";
 import { CreateTaskModal } from "@/components/app/tasks/CreateTaskModal";
 import { SaveResponseModal } from "./SaveResponseModal";
@@ -64,18 +69,28 @@ interface ChatInterfaceProps {
   orgId: string;
   trialId: string;
   documentId: string;
+  chatId?: string; // Optional: Load existing chat
   onChangeDocument: () => void;
+  onChatCreated?: (chatId: string) => void; // Optional: Callback when new chat is created
 }
 
 export function ChatInterface({
   orgId,
   trialId,
   documentId,
+  chatId,
   onChangeDocument,
+  onChatCreated,
 }: ChatInterfaceProps) {
   const { documents } = useTrialDocuments(orgId, trialId);
   const { createTask, isCreating } = useTasks(orgId);
   const { queryDocument: queryDoc } = useDocumentQuery();
+  const { data: chatSession } = useChatSession(chatId || null);
+  const { mutateAsync: createChatSession } = useCreateChatSession();
+  const { mutateAsync: createChatMessage } = useCreateChatMessage();
+  const [currentChatId, setCurrentChatId] = useState<string | null>(
+    chatId || null,
+  );
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -106,6 +121,33 @@ export function ChatInterface({
     ? DOCUMENT_CATEGORY_STYLES[document.category]
     : null;
 
+  // Load existing chat messages
+  useEffect(() => {
+    if (chatSession?.messages) {
+      const loadedMessages: Message[] = chatSession.messages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        question:
+          msg.role === "assistant" ? msg.raw_data?.question?.text : undefined,
+        sources: msg.raw_data?.sources,
+        rawData: msg.raw_data
+          ? {
+              question: msg.raw_data.question || {},
+              answer: msg.raw_data.answer || {},
+            }
+          : undefined,
+        timestamp: new Date(msg.created_at),
+      }));
+      setMessages(loadedMessages);
+    } else if (!chatId) {
+      // Clear messages and close PDF viewer when starting new chat (no chatId)
+      setMessages([]);
+      setCurrentChatId(null);
+      setIsSourcesPanelOpen(false);
+    }
+  }, [chatSession, chatId]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -123,28 +165,67 @@ export function ChatInterface({
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = {
+    const questionText = input.trim();
+    const isFirstMessage = messages.length === 0;
+
+    // Create temp user message for UI
+    const tempUserMessage: Message = {
       id: `user-${Date.now()}`,
       role: "user",
-      content: input.trim(),
+      content: questionText,
       timestamp: new Date(),
     };
 
-    const questionText = input.trim();
-
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, tempUserMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      // Query RAG backend via hook
+      // Create chat session if this is the first message
+      let chatSessionId = currentChatId;
+      if (isFirstMessage && !chatSessionId) {
+        const title = questionText.length > 50
+          ? `${questionText.substring(0, 47)}...`
+          : questionText;
+
+        const newSession = await createChatSession({
+          org_id: orgId,
+          trial_id: trialId,
+          document_id: documentId,
+          document_name: document?.file_name || "Unknown",
+          title,
+        });
+
+        chatSessionId = newSession.id;
+        setCurrentChatId(chatSessionId);
+        onChatCreated?.(chatSessionId);
+      }
+
+      // Save user message to DB
+      if (chatSessionId) {
+        const savedUserMsg = await createChatMessage({
+          chat_session_id: chatSessionId,
+          role: "user",
+          content: questionText,
+        });
+
+        // Update temp message with real ID
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempUserMessage.id ? { ...m, id: savedUserMsg.id } : m,
+          ),
+        );
+      }
+
+      // Query RAG backend
       const result = await queryDoc({
         query: questionText,
         documentId,
         documentName: document?.file_name || "Unknown",
       });
 
-      const assistantMessage: Message = {
+      // Create temp assistant message for UI
+      const tempAssistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
         content: result.response,
@@ -163,7 +244,36 @@ export function ChatInterface({
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, tempAssistantMessage]);
+
+      // Save assistant message to DB
+      if (chatSessionId) {
+        const savedAssistantMsg = await createChatMessage({
+          chat_session_id: chatSessionId,
+          role: "assistant",
+          content: result.response,
+          raw_data: {
+            sources: result.sources,
+            question: {
+              text: questionText,
+              timestamp: new Date().toISOString(),
+            },
+            answer: {
+              text: result.response,
+              sources: result.sources,
+            },
+          },
+        });
+
+        // Update temp message with real ID
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempAssistantMessage.id
+              ? { ...m, id: savedAssistantMsg.id }
+              : m,
+          ),
+        );
+      }
     } catch (error) {
       console.error("Error querying document:", error);
 
@@ -314,7 +424,7 @@ export function ChatInterface({
                       <MessageContent
                         content={message.content}
                         sources={message.sources}
-                        onCitationClick={(source, index) => {
+                        onCitationClick={(_source, index) => {
                           setSelectedSources(message.sources || []);
                           setSelectedSourceIndex(index);
                           setIsSourcesPanelOpen(true);
@@ -404,8 +514,14 @@ export function ChatInterface({
                   </div>
                   <div className="flex gap-1 items-center py-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    />
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    />
                   </div>
                 </div>
               )}

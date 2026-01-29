@@ -92,6 +92,7 @@ export function SaveResponseModal({
         <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
           <ModalFoldersList
             orgId={orgId}
+            trialId={trialId}
             selectedFolderId={selectedFolderId}
             onSelectFolder={(folderId) => {
               setSelectedFolderId(folderId);

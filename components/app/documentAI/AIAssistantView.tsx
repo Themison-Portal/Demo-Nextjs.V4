@@ -24,6 +24,7 @@ interface AIAssistantViewProps {
   orgId: string;
   trialId: string;
   documentId?: string;
+  chatId?: string; // Optional chat ID to load existing chat
   activeTab?: ValidTab;
 }
 
@@ -31,6 +32,7 @@ export function AIAssistantView({
   orgId,
   trialId,
   documentId,
+  chatId,
   activeTab = "assistant",
 }: AIAssistantViewProps) {
   const router = useRouter();
@@ -40,33 +42,45 @@ export function AIAssistantView({
     selectedTrialId: string,
     selectedDocumentId: string,
   ) => {
-    // Navigate to AI page with selected document
+    // Navigate to AI page with selected document (no chatId = new chat)
     router.push(
-      ROUTES.APP.AI_ASSISTANT(orgId, selectedTrialId, selectedDocumentId),
+      ROUTES.APP.DOCUMENT_AI_CHAT(orgId, selectedTrialId, selectedDocumentId),
     );
     setIsSelectorOpen(false);
   };
 
-  // Tabs configuration
+  const handleChatCreated = (newChatId: string) => {
+    // Update URL with new chat ID
+    if (documentId && trialId) {
+      router.replace(
+        ROUTES.APP.DOCUMENT_AI_CHAT(orgId, trialId, documentId, newChatId),
+      );
+    }
+  };
+
+  // Tabs configuration - Preserve chatId when navigating between tabs
   const tabs: TabItem[] = [
     {
       label: "AI Assistant",
       value: "assistant",
-      href: trialId
-        ? documentId
-          ? ROUTES.APP.AI_ASSISTANT(orgId, trialId, documentId)
-          : `/${orgId}/trials/${trialId}/ai`
-        : ROUTES.APP.DOCUMENT_AI(orgId),
+      href:
+        trialId && documentId
+          ? ROUTES.APP.DOCUMENT_AI_CHAT(orgId, trialId, documentId, chatId)
+          : ROUTES.APP.DOCUMENT_AI(orgId),
       icon: <Bot className="h-4 w-4" />,
     },
     {
       label: "Response Archive",
       value: "archive",
-      href: trialId
-        ? documentId
-          ? ROUTES.APP.AI_ASSISTANT_ARCHIVE(orgId, trialId, documentId)
-          : `/${orgId}/trials/${trialId}/ai/archive`
-        : ROUTES.APP.DOCUMENT_AI_ARCHIVE(orgId),
+      href:
+        trialId && documentId
+          ? ROUTES.APP.DOCUMENT_AI_ARCHIVE_CHAT(
+              orgId,
+              trialId,
+              documentId,
+              chatId,
+            )
+          : ROUTES.APP.DOCUMENT_AI_ARCHIVE(orgId),
       icon: <Archive className="h-4 w-4" />,
     },
   ];
@@ -92,11 +106,13 @@ export function AIAssistantView({
             orgId={orgId}
             trialId={trialId}
             documentId={documentId}
+            chatId={chatId}
             onChangeDocument={() => setIsSelectorOpen(true)}
+            onChatCreated={handleChatCreated}
           />
         );
       case "archive":
-        return <ResponseArchiveView orgId={orgId} />;
+        return <ResponseArchiveView orgId={orgId} trialId={trialId} />;
       default:
         return null;
     }

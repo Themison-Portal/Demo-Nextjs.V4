@@ -12,6 +12,7 @@ import { ROUTES } from "@/lib/routes";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useThreads } from "@/hooks/client/useThreads";
 import { useAuth } from "@/hooks/useAuth";
+import { ChatHistorySection } from "@/components/app/documentAI/ChatHistorySection";
 import Image from "next/image";
 import {
   LayoutDashboard,
@@ -147,6 +148,11 @@ export function AppSidebar({
           icon={<Building2 className="h-4 w-4" />}
           active={pathname?.startsWith(ROUTES.APP.ORGANIZATION(orgId))}
         />
+
+        {/* Chat History Section - Right after Organization */}
+        <div className="border-t border-gray-200 mt-2 pt-2 h-auto">
+          <ChatHistorySection orgId={orgId} />
+        </div>
       </nav>
 
       {/* User info */}

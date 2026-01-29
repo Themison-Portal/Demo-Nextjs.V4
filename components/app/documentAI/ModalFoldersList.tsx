@@ -13,23 +13,29 @@ import { cn } from "@/lib/utils";
 
 interface ModalFoldersListProps {
   orgId: string;
+  trialId: string;
   selectedFolderId: string | null;
   onSelectFolder: (folderId: string) => void;
 }
 
 export function ModalFoldersList({
   orgId,
+  trialId,
   selectedFolderId,
   onSelectFolder,
 }: ModalFoldersListProps) {
-  const { data: folders = [], isLoading } = useArchiveFolders(orgId);
+  const { data: allFolders = [], isLoading } = useArchiveFolders(orgId);
   const createFolder = useCreateFolder();
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+
+  // Filter folders by current trial
+  const folders = allFolders.filter((f) => f.trial_id === trialId);
 
   const handleCreateFolder = async (name: string) => {
     try {
       const newFolder = await createFolder.mutateAsync({
         org_id: orgId,
+        trial_id: trialId,
         name,
       });
       setIsCreatingNew(false);

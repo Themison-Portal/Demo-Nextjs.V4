@@ -48,6 +48,7 @@ export async function createArchiveFolder(
     .insert({
       user_id: user.id,
       org_id: input.org_id,
+      trial_id: input.trial_id,
       name: input.name,
     })
     .select()
