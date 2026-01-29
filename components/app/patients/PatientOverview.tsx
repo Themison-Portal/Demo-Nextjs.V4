@@ -249,7 +249,7 @@ export function PatientOverview({
                     {stats.pendingTasksCount}
                   </p>
                   <Link
-                    href={ROUTES.APP.TASKS(orgId, { patient_id: patientId })}
+                    href={`${ROUTES.APP.TASKS(orgId)}?patient_id=${patientId}`}
                     className="text-xs text-blue-600 hover:text-blue-700 hover:underline inline-block"
                   >
                     View all →
@@ -363,7 +363,7 @@ export function PatientOverview({
                   </h2>
                   {patientTasks.length > 0 && (
                     <Link
-                      href={ROUTES.APP.TASKS(orgId, { patient_id: patientId })}
+                      href={`${ROUTES.APP.TASKS(orgId)}?patient_id=${patientId}`}
                       className="text-[10px] text-gray-500 hover:text-gray-700 uppercase tracking-wide"
                     >
                       View all
@@ -375,7 +375,7 @@ export function PatientOverview({
                     {patientTasks.slice(0, 5).map((task) => (
                       <div key={task.id} className="border-l-2 border-gray-200 pl-3">
                         <Link
-                          href={ROUTES.APP.TASKS(orgId, { task_id: task.id })}
+                          href={`${ROUTES.APP.TASKS(orgId)}?task_id=${task.id}`}
                           className="block group"
                         >
                           <p className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors">

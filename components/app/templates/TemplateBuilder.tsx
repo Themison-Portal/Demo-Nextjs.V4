@@ -14,8 +14,11 @@ import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useVisitTemplate } from "@/hooks/client/useVisitTemplate";
 import { useActivityTypes } from "@/hooks/client/useActivityTypes";
-import { CalendarDays, Users, Save, Plus } from "lucide-react";
+import { useTrialDetails } from "@/hooks/client/useTrialDetails";
+import { CalendarDays, Users, Save, Plus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast";
+import { simulateAIExtraction } from "@/lib/mock-visit-templates";
 import type {
   VisitScheduleTemplate,
   VisitTemplate,
@@ -41,6 +44,7 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
     trialId
   );
   const { activities } = useActivityTypes(orgId, trialId);
+  const { trial } = useTrialDetails(orgId, trialId);
 
   // Initialize form with template data
   useEffect(() => {
@@ -68,6 +72,23 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
     };
     setVisits([...visits, newVisit]);
     setHasChanges(true);
+  };
+
+  const handleAIExtraction = async () => {
+    if (!trial) return;
+
+    toast.promise(
+      simulateAIExtraction(trial.name).then((extractedTemplate) => {
+        setVisits(extractedTemplate.visits);
+        setAssignees(extractedTemplate.assignees || {});
+        setHasChanges(true);
+      }),
+      {
+        loading: "Analyzing protocol document...",
+        success: "Visit schedule extracted successfully",
+        error: "Failed to extract data from protocol",
+      }
+    );
   };
 
   const handleUpdateVisit = (index: number, updatedVisit: VisitTemplate) => {
@@ -112,26 +133,26 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
   const handleSave = async () => {
     // Validation
     if (visits.length === 0) {
-      alert("Must add at least one visit");
+      toast.error("Must add at least one visit");
       return;
     }
 
     const dayZeroCount = visits.filter((v) => v.is_day_zero).length;
     if (dayZeroCount !== 1) {
-      alert("Must mark exactly one visit as Day 0");
+      toast.error("Must mark exactly one visit as Day 0");
       return;
     }
 
     const emptyNames = visits.some((v) => !v.name.trim());
     if (emptyNames) {
-      alert("All visit names are required");
+      toast.error("All visit names are required");
       return;
     }
 
     const duplicateNames =
       new Set(visits.map((v) => v.name)).size !== visits.length;
     if (duplicateNames) {
-      alert("Visit names must be unique");
+      toast.error("Visit names must be unique");
       return;
     }
 
@@ -142,15 +163,21 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
       assignees,
     };
 
-    try {
-      await updateTemplate(newTemplate);
-      setHasChanges(false);
-      alert("Template saved successfully");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      alert("Error saving template: " + errorMessage);
-    }
+    // Use toast.promise for automatic loading/success/error handling
+    toast.promise(
+      updateTemplate(newTemplate).then(() => {
+        setHasChanges(false);
+      }),
+      {
+        loading: "Saving template...",
+        success: "Template saved successfully",
+        error: (err) => {
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error";
+          return `Failed to save: ${errorMessage}`;
+        },
+      }
+    );
   };
 
   // Get all unique activity IDs from visits
@@ -234,54 +261,97 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
       </div>
 
       {/* Tab Content */}
-      <Card className="p-6 border-0">
+      <div>
         {activeTab === "schedule" ? (
           <div className="space-y-4">
             {visits.length === 0 ? (
-              <div className="text-center py-12">
+              <Card className="p-12 text-center border border-gray-200">
                 <CalendarDays className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">No visits configured</p>
-                <Button onClick={handleAddVisit} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add First Visit
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {visits.map((visit, index) => (
-                    <VisitRow
-                      key={index}
-                      visit={visit}
-                      index={index}
-                      activities={activities}
-                      onUpdate={(updated) => handleUpdateVisit(index, updated)}
-                      onDelete={() => handleDeleteVisit(index)}
-                      orgId={orgId}
-                      trialId={trialId}
-                    />
-                  ))}
+                <p className="text-sm text-gray-500 mb-4">No visits configured</p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button
+                    onClick={handleAIExtraction}
+                    className="gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Extract with AI
+                  </Button>
+                  <span className="text-xs text-gray-400">or</span>
+                  <Button onClick={handleAddVisit} variant="outline" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Manually
+                  </Button>
                 </div>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {/* Table */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-[auto_2fr_1fr_1fr_1fr_1.5fr_auto] px-6 py-3 bg-gray-50 border-b border-gray-200">
+                    <div className="text-xs font-medium text-gray-600 pr-3">
+                      Baseline?
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 px-3">
+                      Name
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 px-3">
+                      Days from Day 0
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 px-3">
+                      Window (before)
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 px-3">
+                      Window (after)
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 px-3">
+                      Activities
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 pl-3 w-8">
+
+                    </div>
+                  </div>
+
+                  {/* Table Body */}
+                  <div>
+                    {visits.map((visit, index) => (
+                      <VisitRow
+                        key={index}
+                        visit={visit}
+                        index={index}
+                        activities={activities}
+                        onUpdate={(updated) => handleUpdateVisit(index, updated)}
+                        onDelete={() => handleDeleteVisit(index)}
+                        orgId={orgId}
+                        trialId={trialId}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Add Button */}
                 <Button
                   onClick={handleAddVisit}
-                  variant="outline"
-                  className="w-full gap-2"
+                  variant="ghost"
+                  className="w-full gap-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-gray-200 border-dashed"
                 >
                   <Plus className="h-4 w-4" />
                   Add Another Visit
                 </Button>
-              </>
+              </div>
             )}
           </div>
         ) : (
-          <AssigneeTab
-            activityIds={allActivityIds}
-            activities={activities}
-            assignees={assignees}
-            onUpdateAssignees={handleUpdateAssignees}
-          />
+          <Card className="p-6 border border-gray-200">
+            <AssigneeTab
+              activityIds={allActivityIds}
+              activities={activities}
+              assignees={assignees}
+              onUpdateAssignees={handleUpdateAssignees}
+            />
+          </Card>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useTrialDetails } from "@/hooks/client/useTrialDetails";
 import { useOrganization } from "@/hooks/client/useOrganization";
 import { useTrialPermissions } from "@/hooks/useTrialPermissions";
+import { useTrialDocuments } from "@/hooks/client/useTrialDocuments";
 import { ROUTES } from "@/lib/routes";
 import { parseLocalDate } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,6 +62,10 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
 
   // Get organization members for PI selection
   const { members: orgMembers } = useOrganization(orgId);
+
+  // Get trial documents
+  const { documents } = useTrialDocuments(orgId, trialId);
+  const hasDocuments = documents.length > 0;
 
   // Get trial-level permissions
   const {
@@ -178,12 +183,27 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
             <h3 className="text-xs font-medium text-gray-400 uppercase mb-3">
               Quick Actions
             </h3>
+
+            {!hasDocuments && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-900 font-medium">
+                  Upload a document to unlock Document Assistant for this trial
+                </p>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 className="cursor-pointer"
-                disabled
+                disabled={!hasDocuments}
+                style={{ opacity: hasDocuments ? 1 : 0.4, filter: hasDocuments ? 'none' : 'blur(0.5px)' }}
+                onClick={() => {
+                  if (hasDocuments) {
+                    window.location.href = ROUTES.APP.DOCUMENT_AI(orgId);
+                  }
+                }}
               >
                 <Sparkles className="h-4 w-4" />
                 AI Assistant
@@ -192,7 +212,13 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                 variant="outline"
                 size="sm"
                 className="cursor-pointer"
-                disabled
+                disabled={!hasDocuments}
+                style={{ opacity: hasDocuments ? 1 : 0.4, filter: hasDocuments ? 'none' : 'blur(0.5px)' }}
+                onClick={() => {
+                  if (hasDocuments) {
+                    window.location.href = ROUTES.APP.TRIAL_TAB(orgId, trialId, "documentation");
+                  }
+                }}
               >
                 <FileText className="h-4 w-4" />
                 View Protocol
@@ -203,15 +229,12 @@ export function TrialOverview({ orgId, trialId }: TrialOverviewProps) {
                   Manage Team
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                size="sm"
-                className="cursor-pointer"
-                disabled
-              >
-                <Upload className="h-4 w-4" />
-                Upload Document
-              </Button>
+              <Link href={ROUTES.APP.TRIAL_TAB(orgId, trialId, "documentation")}>
+                <Button variant="outline" size="sm" className="cursor-pointer">
+                  <Upload className="h-4 w-4" />
+                  Upload Document
+                </Button>
+              </Link>
               <Link href={ROUTES.APP.TRIAL_TAB(orgId, trialId, "patients")}>
                 <Button variant="outline" size="sm" className="cursor-pointer">
                   <UserPlus className="h-4 w-4" />

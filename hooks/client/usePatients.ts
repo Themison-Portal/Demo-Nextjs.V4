@@ -8,6 +8,7 @@ import {
   deletePatient,
   enrollPatient,
 } from '@/services/client/patients';
+import { toast } from '@/lib/toast';
 import type {
   CreatePatientInput,
   UpdatePatientInput,
@@ -30,6 +31,7 @@ export function usePatients(orgId: string, trialId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
+      toast.success("Patient created successfully");
     },
   });
 
@@ -58,6 +60,7 @@ export function usePatients(orgId: string, trialId: string) {
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['client', 'patient', orgId, trialId, variables.patientId] });
       queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
+      toast.success("Patient enrolled successfully");
     },
   });
 
