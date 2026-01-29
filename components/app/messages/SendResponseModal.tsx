@@ -25,6 +25,7 @@ import {
 import { useTeamMembers } from '@/hooks/client/useTeamMembers'
 import { useCreateThread, useValidateTrialAccess } from '@/hooks/client/useThreads'
 import { useAuth } from '@/hooks/useAuth'
+import { toast } from '@/lib/toast'
 import { X, FileText } from 'lucide-react'
 import type { ResponseSnapshot } from '@/services/messages/types'
 
@@ -130,10 +131,19 @@ export function SendResponseModal({
         },
       })
 
+      toast.success(
+        "Response sent",
+        `Response sent to ${toUsers.length} recipient${toUsers.length > 1 ? 's' : ''}`
+      )
+
       onSuccess?.()
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to send response')
+      toast.error(
+        "Failed to send response",
+        err.message || 'An error occurred'
+      )
     }
   }
 
@@ -180,7 +190,7 @@ export function SendResponseModal({
 
           {/* To Recipients */}
           <div>
-            <Label>To *</Label>
+            <Label className="mb-2">To *</Label>
             <div className="space-y-2">
               <Select onValueChange={handleAddToUser} value="">
                 <SelectTrigger>
@@ -219,7 +229,7 @@ export function SendResponseModal({
 
           {/* CC Recipients */}
           <div>
-            <Label>CC (optional)</Label>
+            <Label className="mb-2">CC (optional)</Label>
             <div className="space-y-2">
               <Select onValueChange={handleAddCcUser} value="">
                 <SelectTrigger>
@@ -258,7 +268,7 @@ export function SendResponseModal({
 
           {/* Message */}
           <div>
-            <Label>Message (optional)</Label>
+            <Label className="mb-2">Message (optional)</Label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}

@@ -12,6 +12,7 @@ import {
   updateTrialTeamMemberStatus,
   removeTrialTeamMember,
 } from '@/services/client/trials';
+import { toast } from '@/lib/toast';
 import type { AddTrialTeamMemberInput, TrialRole } from '@/services/trials/types';
 
 export function useTrialTeam(orgId: string, trialId: string) {
@@ -34,6 +35,10 @@ export function useTrialTeam(orgId: string, trialId: string) {
       queryClient.invalidateQueries({ queryKey });
       // Invalidate trial details (PI might have changed)
       queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
+      toast.success("Team member added", "The member has been added to the trial team");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to add team member", error.message || "Please try again");
     },
   });
 

@@ -5,11 +5,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { withOrgMember } from "@/lib/api/middleware";
-import type { Database } from "@/lib/supabase/database.types";
 
-type TrialStatus = Database["public"]["Tables"]["trials"]["Row"]["status"];
-type PatientStatus = Database["public"]["Tables"]["patients"]["Row"]["status"];
-type TaskStatus = Database["public"]["Tables"]["tasks"]["Row"]["status"];
+type TrialStatus = "active" | "paused" | "completed" | "terminated";
+type PatientStatus = "screening" | "enrolled" | "completed" | "withdrawn" | "screen_failed";
+type TaskStatus = "todo" | "in_progress" | "completed" | "blocked";
 
 export interface DashboardStats {
   trials: {

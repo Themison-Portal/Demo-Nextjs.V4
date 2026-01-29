@@ -52,13 +52,14 @@ export function MyWorkload({ orgId }: MyWorkloadProps) {
     tasks,
     excludeCompleted: true,
     initialStatusFilter: "all",
-    initialDateFilter: "today",
+    initialDateFilter: "all",
   });
 
-  const { groups: groupedTasks, expandedGroups, toggleGroup } = useTaskGroups(
-    filteredTasks,
-    dateFilter === "all"
-  );
+  const {
+    groups: groupedTasks,
+    expandedGroups,
+    toggleGroup,
+  } = useTaskGroups(filteredTasks, dateFilter === "all");
 
   // Destructure filter options from hook
   const { trials, activityTypes, patients } = filterOptions;

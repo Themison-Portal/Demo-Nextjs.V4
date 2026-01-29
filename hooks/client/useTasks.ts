@@ -8,6 +8,7 @@ import {
   updateTask,
   deleteTask,
 } from '@/services/client/tasks';
+import { toast } from '@/lib/toast';
 import type {
   TaskFilters,
   CreateTaskInput,
@@ -75,11 +76,15 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (input: CreateTaskInput) => createTask(orgId, input),
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate all task queries for this org
       queryClient.invalidateQueries({
         queryKey: ['client', 'tasks', orgId],
       });
+      toast.success("Task created", data.title);
+    },
+    onError: (error: any) => {
+      toast.error("Failed to create task", error.message || "Please try again");
     },
   });
 
@@ -87,7 +92,7 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
   const updateMutation = useMutation({
     mutationFn: ({ taskId, input }: { taskId: string; input: UpdateTaskInput }) =>
       updateTask(orgId, taskId, input),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       // Invalidate task queries
       queryClient.invalidateQueries({
         queryKey: ['client', 'tasks', orgId],
@@ -96,6 +101,16 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
       queryClient.invalidateQueries({
         queryKey: ['patient-visits'],
       });
+
+      // Show success toast for status changes (especially completion)
+      if (variables.input.status === 'completed') {
+        toast.success("Task completed", "Great work!");
+      } else if (variables.input.status) {
+        toast.success("Task updated", `Status changed to ${variables.input.status.replace('_', ' ')}`);
+      }
+    },
+    onError: (error: any) => {
+      toast.error("Failed to update task", error.message || "Please try again");
     },
   });
 
@@ -106,6 +121,10 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
       queryClient.invalidateQueries({
         queryKey: ['client', 'tasks', orgId],
       });
+      toast.success("Task deleted", "The task has been removed");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to delete task", error.message || "Please try again");
     },
   });
 

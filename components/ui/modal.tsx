@@ -66,7 +66,10 @@ export function Modal({ isOpen, onClose, children, className, size = "md" }: Mod
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
         aria-hidden="true"
       />
 
@@ -97,7 +100,10 @@ export function ModalHeader({
       <h2 className="text-lg font-semibold text-gray-900">{children}</h2>
       {showCloseButton && onClose && (
         <button
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
           className="text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="Close modal"
         >

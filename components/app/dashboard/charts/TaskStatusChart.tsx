@@ -12,7 +12,7 @@ import { AlertCircle } from "lucide-react";
 import type { DashboardStats } from "@/services/dashboard/types";
 
 // Custom tooltip component
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const entry = payload[0];
     return (

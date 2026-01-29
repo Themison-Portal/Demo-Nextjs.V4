@@ -20,13 +20,13 @@ import {
 import type { DashboardStats } from "@/services/dashboard/types";
 
 // Custom tooltip component
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    const total = payload.reduce((sum, entry) => sum + (entry.value || 0), 0);
+    const total = payload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0);
     return (
       <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
         <p className="font-medium text-sm mb-2">{label}</p>
-        {payload.map((entry, index) => (
+        {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-xs">
             <div
               className="w-2 h-2 rounded-full"

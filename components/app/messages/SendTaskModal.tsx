@@ -25,6 +25,7 @@ import {
 import { useTeamMembers } from '@/hooks/client/useTeamMembers'
 import { useCreateThread, useValidateTrialAccess } from '@/hooks/client/useThreads'
 import { useAuth } from '@/hooks/useAuth'
+import { toast } from '@/lib/toast'
 import { X } from 'lucide-react'
 import type { TaskWithContext } from '@/services/tasks/types'
 
@@ -130,10 +131,19 @@ export function SendTaskModal({
         },
       })
 
+      toast.success(
+        "Task sent",
+        `Task sent to ${toUsers.length} recipient${toUsers.length > 1 ? 's' : ''}`
+      )
+
       onSuccess?.()
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to send task')
+      toast.error(
+        "Failed to send task",
+        err.message || 'An error occurred'
+      )
     }
   }
 
@@ -165,7 +175,7 @@ export function SendTaskModal({
 
           {/* To Recipients */}
           <div>
-            <Label>To *</Label>
+            <Label className="mb-2">To *</Label>
             <div className="space-y-2">
               <Select onValueChange={handleAddToUser} value="">
                 <SelectTrigger>
@@ -204,7 +214,7 @@ export function SendTaskModal({
 
           {/* CC Recipients */}
           <div>
-            <Label>CC (optional)</Label>
+            <Label className="mb-2">CC (optional)</Label>
             <div className="space-y-2">
               <Select onValueChange={handleAddCcUser} value="">
                 <SelectTrigger>
@@ -243,7 +253,7 @@ export function SendTaskModal({
 
           {/* Message */}
           <div>
-            <Label>Message (optional)</Label>
+            <Label className="mb-2">Message (optional)</Label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
