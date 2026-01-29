@@ -14,11 +14,10 @@ export async function POST(request: NextRequest) {
     // Sign out from Supabase
     await supabase.auth.signOut();
 
-    // Redirect to console signin
-    // if coming from app -> redirect to /signin
-    return NextResponse.redirect(new URL(ROUTES.CONSOLE.SIGNIN, request.url));
+    // Redirect to public home page
+    return NextResponse.redirect(new URL(ROUTES.PUBLIC.HOME, request.url));
   } catch (error) {
     console.error("Error signing out:", error);
-    return NextResponse.redirect(new URL(ROUTES.CONSOLE.SIGNIN, request.url));
+    return NextResponse.redirect(new URL(ROUTES.PUBLIC.HOME, request.url));
   }
 }

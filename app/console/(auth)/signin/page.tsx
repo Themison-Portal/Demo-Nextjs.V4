@@ -39,6 +39,7 @@ export default function SigninPage() {
         onSubmit={handleSubmit}
         isPending={isPending}
         error={isError ? error?.message || "Invalid email or password. Please try again." : null}
+        showSignupLink={true}
       />
     </AuthCard>
   );

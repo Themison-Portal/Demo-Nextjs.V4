@@ -73,7 +73,7 @@ export async function requireOrgAccess(orgId: string): Promise<OrgAccessResult> 
   const user = await getUser();
 
   if (!user) {
-    redirect(ROUTES.CONSOLE.SIGNIN);
+    redirect(ROUTES.PUBLIC.HOME);
   }
 
   const supabase = await createClient();
