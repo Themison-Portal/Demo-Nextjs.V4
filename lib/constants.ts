@@ -118,6 +118,10 @@ export const isProduction = process.env.NODE_ENV === "production";
 export const RAG_CONFIG = {
   apiUrl: process.env.RAG_API_URL || "https://core-backend-v2-improvements.onrender.com",
   apiKey: process.env.RAG_API_KEY || "",
+  // Mock RAG processing when in development or when API URL is localhost
+  isLocalMock:
+    isDevelopment ||
+    (process.env.RAG_API_URL || "").includes("localhost"),
   // Mock document for development (NODE_ENV=development)
   mockDocument: {
     id: "8d820eb8-bf60-4186-bfa5-9044d585d404",
