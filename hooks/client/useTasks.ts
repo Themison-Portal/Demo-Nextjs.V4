@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useCallback } from "react";
+import { useCallback } from "react";
 import {
   getTasks,
   createTask,
@@ -11,69 +11,29 @@ import {
 import { toast } from "@/lib/toast";
 import type {
   TaskFilters,
+  TaskWithContext,
   CreateTaskInput,
   UpdateTaskInput,
 } from "@/services/tasks/types";
 
+const EMPTY_TASKS: TaskWithContext[] = [];
+
 /**
  * Flexible hook for tasks with CRUD operations
- * Fetches all tasks once and filters on the client for better performance
+ * All filters are sent to the backend for server-side filtering
  * @param orgId - Organization ID
  * @param filters - Optional filters (trial_id, patient_id, assigned_to, status, priority, category)
  */
 export function useTasks(orgId: string, filters?: TaskFilters) {
   const queryClient = useQueryClient();
 
-  // Only include assigned_to filter in backend query (needed for "me" filter)
-  // All other filters are applied client-side
-  const backendFilters = filters?.assigned_to
-    ? { assigned_to: filters.assigned_to }
-    : undefined;
-
-  // Query for fetching tasks
+  // Query for fetching tasks - all filters handled by backend
   const { data, isLoading, error } = useQuery({
-    queryKey: ["client", "tasks", orgId, backendFilters],
-    queryFn: () => getTasks(orgId, backendFilters),
+    queryKey: ["client", "tasks", orgId, filters],
+    queryFn: () => getTasks(orgId, filters),
     refetchOnWindowFocus: true,
     staleTime: 30000, // 30 seconds
   });
-
-  // Apply client-side filters
-  const filteredTasks = useMemo(() => {
-    if (!data?.tasks) return [];
-
-    let result = data.tasks;
-
-    // Filter by trial
-    if (filters?.trial_id) {
-      result = result.filter((task) => task.trial_id === filters.trial_id);
-    }
-
-    // Filter by patient
-    if (filters?.patient_id) {
-      result = result.filter((task) => task.patient_id === filters.patient_id);
-    }
-
-    // Filter by status
-    if (filters?.status) {
-      result = result.filter((task) => task.status === filters.status);
-    }
-
-    // Filter by priority
-    if (filters?.priority) {
-      result = result.filter((task) => task.priority === filters.priority);
-    }
-
-    // Filter by category (manual or activity_type category)
-    if (filters?.category) {
-      result = result.filter((task) => {
-        const taskCategory = task.category || task.activity_type?.category;
-        return taskCategory === filters.category;
-      });
-    }
-
-    return result;
-  }, [data?.tasks, filters]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -156,9 +116,9 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
   );
 
   return {
-    tasks: filteredTasks,
-    allTasks: data?.tasks || [], // All tasks without client-side filters (for filter options)
-    total: filteredTasks.length,
+    tasks: data?.tasks ?? EMPTY_TASKS,
+    allTasks: data?.tasks ?? EMPTY_TASKS,
+    total: data?.total || 0,
     isLoading,
     error,
     createTask: createTaskFn,
