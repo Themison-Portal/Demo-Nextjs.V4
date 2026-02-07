@@ -407,17 +407,19 @@ export function TasksView({ orgId }: TasksViewProps) {
       </DndContext>
 
       {/* Modals */}
-      <CreateTaskModal
-        isOpen={isCreateModalOpen}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setCreateModalStatus(null);
-        }}
-        onSubmit={handleCreateTask}
-        isLoading={isCreating}
-        orgId={orgId}
-        initialStatus={createModalStatus || undefined}
-      />
+      {isCreateModalOpen && (
+        <CreateTaskModal
+          isOpen={isCreateModalOpen}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setCreateModalStatus(null);
+          }}
+          onSubmit={handleCreateTask}
+          isLoading={isCreating}
+          orgId={orgId}
+          initialStatus={createModalStatus || undefined}
+        />
+      )}
 
       {editingTask && (
         <EditTaskModal
