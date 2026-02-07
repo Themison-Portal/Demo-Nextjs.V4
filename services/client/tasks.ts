@@ -10,7 +10,7 @@ import type {
  */
 export async function getTasks(
   orgId: string,
-  filters?: TaskFilters
+  filters?: TaskFilters,
 ): Promise<TasksResponse> {
   const params = new URLSearchParams();
 
@@ -34,7 +34,8 @@ export async function getTasks(
     throw new Error(error.error || "Failed to fetch tasks");
   }
 
-  return response.json();
+  const data = await response.json();
+  return data;
 }
 
 /**
@@ -42,7 +43,7 @@ export async function getTasks(
  */
 export async function createTask(
   orgId: string,
-  input: CreateTaskInput
+  input: CreateTaskInput,
 ): Promise<any> {
   const response = await fetch(`/api/client/${orgId}/tasks`, {
     method: "POST",
@@ -67,7 +68,7 @@ export async function createTask(
 export async function updateTask(
   orgId: string,
   taskId: string,
-  input: UpdateTaskInput
+  input: UpdateTaskInput,
 ): Promise<any> {
   const response = await fetch(`/api/client/${orgId}/tasks/${taskId}`, {
     method: "PATCH",
@@ -91,7 +92,7 @@ export async function updateTask(
  */
 export async function deleteTask(
   orgId: string,
-  taskId: string
+  taskId: string,
 ): Promise<{ success: boolean }> {
   const response = await fetch(`/api/client/${orgId}/tasks/${taskId}`, {
     method: "DELETE",

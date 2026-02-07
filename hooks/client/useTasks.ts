@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useCallback } from "react";
 import {
   getTasks,
   createTask,
   updateTask,
   deleteTask,
-} from '@/services/client/tasks';
-import { toast } from '@/lib/toast';
+} from "@/services/client/tasks";
+import { toast } from "@/lib/toast";
 import type {
   TaskFilters,
   CreateTaskInput,
   UpdateTaskInput,
-} from '@/services/tasks/types';
+} from "@/services/tasks/types";
 
 /**
  * Flexible hook for tasks with CRUD operations
@@ -26,11 +26,13 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
 
   // Only include assigned_to filter in backend query (needed for "me" filter)
   // All other filters are applied client-side
-  const backendFilters = filters?.assigned_to ? { assigned_to: filters.assigned_to } : undefined;
+  const backendFilters = filters?.assigned_to
+    ? { assigned_to: filters.assigned_to }
+    : undefined;
 
   // Query for fetching tasks
   const { data, isLoading, error } = useQuery({
-    queryKey: ['client', 'tasks', orgId, backendFilters],
+    queryKey: ["client", "tasks", orgId, backendFilters],
     queryFn: () => getTasks(orgId, backendFilters),
     refetchOnWindowFocus: true,
     staleTime: 30000, // 30 seconds
@@ -44,27 +46,27 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
 
     // Filter by trial
     if (filters?.trial_id) {
-      result = result.filter(task => task.trial_id === filters.trial_id);
+      result = result.filter((task) => task.trial_id === filters.trial_id);
     }
 
     // Filter by patient
     if (filters?.patient_id) {
-      result = result.filter(task => task.patient_id === filters.patient_id);
+      result = result.filter((task) => task.patient_id === filters.patient_id);
     }
 
     // Filter by status
     if (filters?.status) {
-      result = result.filter(task => task.status === filters.status);
+      result = result.filter((task) => task.status === filters.status);
     }
 
     // Filter by priority
     if (filters?.priority) {
-      result = result.filter(task => task.priority === filters.priority);
+      result = result.filter((task) => task.priority === filters.priority);
     }
 
     // Filter by category (manual or activity_type category)
     if (filters?.category) {
-      result = result.filter(task => {
+      result = result.filter((task) => {
         const taskCategory = task.category || task.activity_type?.category;
         return taskCategory === filters.category;
       });
@@ -79,7 +81,7 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
     onSuccess: (data) => {
       // Invalidate all task queries for this org
       queryClient.invalidateQueries({
-        queryKey: ['client', 'tasks', orgId],
+        queryKey: ["client", "tasks", orgId],
       });
       toast.success("Task created", data.title);
     },
@@ -90,23 +92,31 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ taskId, input }: { taskId: string; input: UpdateTaskInput }) =>
-      updateTask(orgId, taskId, input),
+    mutationFn: ({
+      taskId,
+      input,
+    }: {
+      taskId: string;
+      input: UpdateTaskInput;
+    }) => updateTask(orgId, taskId, input),
     onSuccess: (data, variables) => {
       // Invalidate task queries
       queryClient.invalidateQueries({
-        queryKey: ['client', 'tasks', orgId],
+        queryKey: ["client", "tasks", orgId],
       });
       // Invalidate patient-visits queries (to refresh visit activities status)
       queryClient.invalidateQueries({
-        queryKey: ['patient-visits'],
+        queryKey: ["patient-visits"],
       });
 
       // Show success toast for status changes (especially completion)
-      if (variables.input.status === 'completed') {
+      if (variables.input.status === "completed") {
         toast.success("Task completed", "Great work!");
       } else if (variables.input.status) {
-        toast.success("Task updated", `Status changed to ${variables.input.status.replace('_', ' ')}`);
+        toast.success(
+          "Task updated",
+          `Status changed to ${variables.input.status.replace("_", " ")}`,
+        );
       }
     },
     onError: (error: any) => {
@@ -119,7 +129,7 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
     mutationFn: (taskId: string) => deleteTask(orgId, taskId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['client', 'tasks', orgId],
+        queryKey: ["client", "tasks", orgId],
       });
       toast.success("Task deleted", "The task has been removed");
     },
@@ -131,18 +141,18 @@ export function useTasks(orgId: string, filters?: TaskFilters) {
   // Memoize mutation functions to prevent unnecessary re-renders
   const createTaskFn = useCallback(
     (input: CreateTaskInput) => createMutation.mutateAsync(input),
-    [createMutation.mutateAsync]
+    [createMutation.mutateAsync],
   );
 
   const updateTaskFn = useCallback(
     (taskId: string, input: UpdateTaskInput) =>
       updateMutation.mutateAsync({ taskId, input }),
-    [updateMutation.mutateAsync]
+    [updateMutation.mutateAsync],
   );
 
   const deleteTaskFn = useCallback(
     (taskId: string) => deleteMutation.mutateAsync(taskId),
-    [deleteMutation.mutateAsync]
+    [deleteMutation.mutateAsync],
   );
 
   return {

@@ -1,16 +1,20 @@
 /**
  * Task Status Column
- * A single column in the kanban board
+ * A single column in the kanban board.
+ * Each column has its own SortableContext + useDroppable for cross-column DnD.
  */
 
 "use client";
 
-import { useCallback } from "react";
-import { TaskKanbanCard } from "./TaskKanbanCard";
+import { useMemo } from "react";
+import { SortableTaskCard } from "./TaskKanbanCard";
+import { TaskCardSkeleton } from "./TaskCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import type { TaskStatus, TaskWithContext } from "@/services/tasks/types";
 import type { TeamMember } from "@/services/client/teamMembers";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 interface TaskStatusColumnProps {
   status: TaskStatus;
@@ -20,10 +24,12 @@ interface TaskStatusColumnProps {
   orgId: string;
   onAddTask: () => void;
   onEditTask: (task: TaskWithContext) => void;
+  onSendTask?: (task: TaskWithContext) => void;
   onDeleteTask: (taskId: string) => void;
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
   onUpdateAssignee: (taskId: string, userId: string | null) => void;
   isUpdating: boolean;
+  isLoading?: boolean;
   bgColor?: string;
   bgColorHeader?: string;
   textColorHeader?: string;
@@ -37,16 +43,27 @@ export function TaskStatusColumn({
   orgId,
   onAddTask,
   onEditTask,
+  onSendTask,
   onDeleteTask,
   onUpdateStatus,
   onUpdateAssignee,
   isUpdating,
+  isLoading = false,
   bgColor,
   bgColorHeader,
   textColorHeader,
 }: TaskStatusColumnProps) {
+  // Make column droppable (needed for dropping into empty columns)
+  const { setNodeRef } = useDroppable({
+    id: status,
+  });
+
+  // Memoize task IDs to prevent SortableContext from re-rendering children unnecessarily
+  const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+
   return (
     <div
+      ref={setNodeRef}
       className={`flex flex-col w-full h-full rounded-lg border border-gray-200 ${
         bgColor ? bgColor : "bg-white"
       }`}
@@ -73,24 +90,36 @@ export function TaskStatusColumn({
 
       {/* Tasks List */}
       <div className="flex-1 overflow-y-auto px-2 space-y-2 mt-2">
-        {tasks.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-xs text-gray-400">No tasks</p>
-          </div>
+        {isLoading ? (
+          // Show skeleton loaders while loading
+          <>
+            {[...Array(4)].map((_, i) => (
+              <TaskCardSkeleton key={i} />
+            ))}
+          </>
         ) : (
-          tasks.map((task) => (
-            <TaskKanbanCard
-              key={task.id}
-              task={task}
-              teamMembers={teamMembers}
-              orgId={orgId}
-              onEdit={onEditTask}
-              onDelete={onDeleteTask}
-              onUpdateStatus={onUpdateStatus}
-              onUpdateAssignee={onUpdateAssignee}
-              disabled={isUpdating}
-            />
-          ))
+          <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+            {tasks.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-xs text-gray-400">No tasks</p>
+              </div>
+            ) : (
+              tasks.map((task) => (
+                <SortableTaskCard
+                  key={task.id}
+                  task={task}
+                  teamMembers={teamMembers}
+                  orgId={orgId}
+                  onEdit={onEditTask}
+                  onSend={onSendTask}
+                  onDelete={onDeleteTask}
+                  onUpdateStatus={onUpdateStatus}
+                  onUpdateAssignee={onUpdateAssignee}
+                  disabled={isUpdating}
+                />
+              ))
+            )}
+          </SortableContext>
         )}
       </div>
 

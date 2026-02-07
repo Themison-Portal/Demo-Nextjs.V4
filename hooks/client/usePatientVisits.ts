@@ -19,6 +19,7 @@ export function usePatientVisits(
   const { data, isLoading, error } = useQuery({
     queryKey: ["patient-visits", orgId, trialId, patientId],
     queryFn: () => getPatientVisits(orgId, trialId, patientId),
+    enabled: !!orgId && !!trialId && !!patientId && patientId !== "__none__",
     staleTime: 30000, // 30 seconds
   });
 
