@@ -1,13 +1,16 @@
 /**
  * Individual Trial Document API Route
- * PATCH: Update document metadata (e.g., category)
+ * PATCH: Update document metadata (category, status)
  */
 
 import { createClient } from "@/lib/supabase/server";
 import { withTrialMember } from "@/lib/api/middleware";
 import { responses } from "@/lib/api/middleware/types";
-import { DOCUMENT_CATEGORY } from "@/lib/constants/documents";
-import type { DocumentCategory } from "@/services/documents";
+import { DOCUMENT_CATEGORY, DOCUMENT_STATUS } from "@/lib/constants/documents";
+import type { DocumentCategory, DocumentStatus } from "@/services/documents";
+
+const VALID_CATEGORIES = Object.values(DOCUMENT_CATEGORY);
+const VALID_STATUSES = Object.values(DOCUMENT_STATUS);
 
 // ============================================================================
 // PATCH - Update document metadata
@@ -19,25 +22,34 @@ export const PATCH = withTrialMember(async (req, ctx, user) => {
 
   try {
     const body = await req.json();
-    const { category } = body;
+    const { category, status, processing_error } = body;
 
-    if (!category) {
-      return responses.badRequest("Category is required");
+    if (!category && !status) {
+      return responses.badRequest("At least one field is required (category or status)");
     }
 
-    // Validate category is valid
-    const validCategories = Object.values(DOCUMENT_CATEGORY);
-    if (!validCategories.includes(category as DocumentCategory)) {
-      return responses.badRequest("Invalid category");
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (category) {
+      if (!VALID_CATEGORIES.includes(category as DocumentCategory)) {
+        return responses.badRequest("Invalid category");
+      }
+      updateData.category = category;
     }
 
-    // Update document
+    if (status) {
+      if (!VALID_STATUSES.includes(status as DocumentStatus)) {
+        return responses.badRequest("Invalid status");
+      }
+      updateData.status = status;
+      updateData.processing_error = processing_error || null;
+    }
+
     const { data: document, error } = await supabase
       .from("trial_documents")
-      .update({
-        category,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", documentId)
       .is("deleted_at", null)
       .select()

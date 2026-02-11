@@ -84,6 +84,39 @@ export async function getDocumentProcessingStatus(
 }
 
 /**
+ * Update document status (after RAG processing completes)
+ */
+export async function updateDocumentStatus(
+  orgId: string,
+  trialId: string,
+  documentId: string,
+  status: string,
+  processingError?: string
+): Promise<{ document: TrialDocument }> {
+  const response = await fetch(
+    `/api/client/${orgId}/trials/${trialId}/documents/${documentId}`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status,
+        processing_error: processingError,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to update document status");
+  }
+
+  return response.json();
+}
+
+/**
  * Update document category
  */
 export async function updateDocumentCategory(

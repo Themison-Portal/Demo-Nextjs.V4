@@ -12,6 +12,7 @@ import {
   uploadDocument,
   updateDocumentCategory,
   getDocumentProcessingStatus,
+  updateDocumentStatus,
 } from '@/services/client/documents';
 import type { DocumentProcessingStatus } from '@/services/documents';
 
@@ -36,6 +37,9 @@ export function useTrialDocuments(orgId: string, trialId: string) {
   const [processingStatuses, setProcessingStatuses] = useState<
     Map<string, SmoothedProcessingStatus>
   >(new Map());
+
+  // Track documents that already fired terminal callback (prevent duplicate toasts)
+  const notifiedTerminalRef = useRef<Set<string>>(new Set());
 
   // Callback to notify consumers about status changes
   const statusChangeCallbackRef = useRef<
@@ -71,7 +75,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
       }
-      // Clean up stale statuses
       setProcessingStatuses((prev) => {
         if (prev.size === 0) return prev;
         return new Map();
@@ -98,19 +101,30 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
             next.set(docId, {
               ...status,
-              // Snap to real progress if it's ahead, otherwise keep smooth value
               displayProgress: Math.max(currentDisplay, realProgress),
             });
 
             if (status.status === 'completed' || status.status === 'failed') {
-              shouldRefetch = true;
-              statusChangeCallbackRef.current?.(docId, status);
+              // Only notify once per document
+              if (!notifiedTerminalRef.current.has(docId)) {
+                notifiedTerminalRef.current.add(docId);
+                shouldRefetch = true;
+
+                // Update DB via PATCH (proper REST)
+                const dbStatus = status.status === 'completed' ? 'ready' : 'error';
+                updateDocumentStatus(orgId, trialId, docId, dbStatus, status.error)
+                  .catch((err) => console.error('[Hook] Failed to update document status:', err));
+
+                statusChangeCallbackRef.current?.(docId, status);
+              }
+
               setTimeout(() => {
                 setProcessingStatuses((p) => {
                   const cleaned = new Map(p);
                   cleaned.delete(docId);
                   return cleaned;
                 });
+                notifiedTerminalRef.current.delete(docId);
               }, 1000);
             }
           }
@@ -124,7 +138,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
       }
     };
 
-    // Poll immediately, then every interval
     pollStatuses();
     pollingRef.current = setInterval(pollStatuses, POLLING_INTERVAL);
 
@@ -154,7 +167,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
         next.forEach((status, docId) => {
           const realProgress = status.progress || 0;
-          // Ceiling: don't creep more than 15% past the real value, and cap at 95%
           const ceiling = Math.min(realProgress + 15, 95);
 
           if (status.displayProgress < ceiling) {
@@ -195,23 +207,16 @@ export function useTrialDocuments(orgId: string, trialId: string) {
   });
 
   return {
-    // Data
     documents,
     total: data?.total || 0,
-
-    // Loading states
     isLoading,
     error,
-
-    // Actions
     refetch,
     uploadDocument: uploadMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
     uploadError: uploadMutation.error,
     updateCategory: updateCategoryMutation.mutateAsync,
     isUpdatingCategory: updateCategoryMutation.isPending,
-
-    // Processing polling
     processingStatuses,
     onProcessingStatusChange,
   };

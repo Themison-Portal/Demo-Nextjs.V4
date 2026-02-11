@@ -4,7 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { RAG_CONFIG } from "@/lib/constants";
 import type { DocumentProcessingStatus } from "@/services/documents";
 
@@ -71,28 +70,6 @@ export async function GET(
       }
 
       status = await response.json();
-    }
-
-    // Update DB when terminal status
-    if (status.status === "completed" || status.status === "failed") {
-      const supabase = await createClient();
-
-      const updateData =
-        status.status === "completed"
-          ? { status: "ready" as const, processing_error: null }
-          : {
-              status: "error" as const,
-              processing_error: status.error || "Processing failed",
-            };
-
-      const { error: updateError } = await supabase
-        .from("trial_documents")
-        .update(updateData)
-        .eq("id", documentId);
-
-      if (updateError) {
-        console.error("[API] Failed to update document status:", updateError);
-      }
     }
 
     return NextResponse.json(status);
