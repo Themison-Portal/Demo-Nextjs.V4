@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { withTrialMember, responses } from "@/lib/api/middleware";
 import { getTrialPermissions } from "@/lib/permissions/constants";
-import type { EnrollmentPreview } from "@/services/patients/types";
+import { previewEnrollment } from "@/services/visits/hydration";
 
 // GET: Preview enrollment (what visits/activities would be created)
 export const GET = withTrialMember(async (req, ctx, user) => {
@@ -80,23 +80,15 @@ export const GET = withTrialMember(async (req, ctx, user) => {
     );
   }
 
-  // Call preview function
-  const { data: preview, error: previewError } = await supabase.rpc(
-    "preview_enrollment",
-    {
-      p_patient_id: patientId,
-      p_trial_id: trialId,
-      p_baseline_date: baselineDate,
-    }
-  );
-
-  if (previewError) {
-    console.error("[API] Error generating enrollment preview:", previewError);
+  // Generate preview using TS function (no DB inserts)
+  try {
+    const preview = await previewEnrollment(patientId, trialId, baselineDate);
+    return Response.json(preview);
+  } catch (err) {
+    console.error("[API] Error generating enrollment preview:", err);
     return Response.json(
       { error: "Failed to generate enrollment preview" },
       { status: 500 }
     );
   }
-
-  return Response.json(preview as EnrollmentPreview);
 });
