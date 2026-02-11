@@ -219,7 +219,7 @@ export function DocumentsList({ orgId, trialId }: DocumentsListProps) {
                       <div className="mt-1 w-full bg-gray-200 rounded-full h-1">
                         <div
                           className="bg-amber-500 h-1 rounded-full transition-all duration-300 ease-out"
-                          style={{ width: `${processingStatus.displayProgress}%` }}
+                          style={{ width: `${processingStatus.progress || 0}%` }}
                         />
                       </div>
                     )}

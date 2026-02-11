@@ -17,12 +17,6 @@ import {
 import type { DocumentProcessingStatus } from "@/services/documents";
 
 const POLLING_INTERVAL = 5000;
-const SMOOTH_TICK_MS = 3000;
-const SMOOTH_INCREMENT = 0.8;
-
-export interface SmoothedProcessingStatus extends DocumentProcessingStatus {
-  displayProgress: number;
-}
 
 /**
  * Hook for fetching documents for a trial
@@ -35,7 +29,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
   // Reactive state for processing statuses (triggers re-renders)
   const [processingStatuses, setProcessingStatuses] = useState<
-    Map<string, SmoothedProcessingStatus>
+    Map<string, DocumentProcessingStatus>
   >(new Map());
 
   // Track documents that already fired terminal callback (prevent duplicate toasts)
@@ -82,7 +76,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         processingDocs.map((doc) => getDocumentProcessingStatus(doc.id)),
       );
 
-      // Collect terminal statuses BEFORE state update
       const terminalDocs: {
         docId: string;
         status: DocumentProcessingStatus;
@@ -95,13 +88,8 @@ export function useTrialDocuments(orgId: string, trialId: string) {
           if (result.status === "fulfilled") {
             const status = result.value;
             const docId = processingDocs[index].id;
-            const realProgress = status.progress || 0;
-            const currentDisplay = prev.get(docId)?.displayProgress || 0;
 
-            next.set(docId, {
-              ...status,
-              displayProgress: currentDisplay,
-            });
+            next.set(docId, status);
 
             if (status.status === "completed" || status.status === "failed") {
               if (!notifiedTerminalRef.current.has(docId)) {
@@ -171,38 +159,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
       .sort()
       .join(","),
   ]);
-
-  // Smooth progress: slowly increment displayProgress between polls
-  useEffect(() => {
-    if (processingStatuses.size === 0) return;
-
-    const tick = setInterval(() => {
-      setProcessingStatuses((prev) => {
-        let changed = false;
-        const next = new Map(prev);
-
-        next.forEach((status, docId) => {
-          const realProgress = status.progress || 0;
-          const ceiling = Math.min(realProgress + 15, 95);
-
-          if (status.displayProgress < ceiling) {
-            changed = true;
-            next.set(docId, {
-              ...status,
-              displayProgress: Math.min(
-                status.displayProgress + SMOOTH_INCREMENT,
-                ceiling,
-              ),
-            });
-          }
-        });
-
-        return changed ? next : prev;
-      });
-    }, SMOOTH_TICK_MS);
-
-    return () => clearInterval(tick);
-  }, [processingStatuses.size]);
 
   // Mutation: upload document
   const uploadMutation = useMutation({

@@ -31,7 +31,7 @@ import { DOCUMENT_CATEGORY_OPTIONS } from "@/lib/constants/documents";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import type { TrialDocument } from "@/services/documents";
-import type { SmoothedProcessingStatus } from "@/hooks/client/useTrialDocuments";
+import type { DocumentProcessingStatus } from "@/services/documents";
 
 interface DocumentSidebarProps {
   orgId: string;
@@ -42,7 +42,7 @@ interface DocumentSidebarProps {
     category: string;
   }) => Promise<any>;
   isUpdating: boolean;
-  processingStatus?: SmoothedProcessingStatus;
+  processingStatus?: DocumentProcessingStatus;
 }
 
 export function DocumentSidebar({
@@ -135,11 +135,11 @@ export function DocumentSidebar({
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
                   className="bg-amber-500 h-1.5 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${processingStatus.displayProgress}%` }}
+                  style={{ width: `${processingStatus.progress || 0}%` }}
                 />
               </div>
               <p className="text-xs text-gray-500">
-                {Math.round(processingStatus.displayProgress)}%
+                {Math.round(processingStatus.progress || 0)}%
               </p>
             </div>
           )}
