@@ -113,6 +113,7 @@ export function ChatInterface({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const document = documents.find((d) => d.id === documentId);
+  const isDocumentReady = document?.status === "ready";
   const categoryLabel = document?.category
     ? DOCUMENT_CATEGORY_OPTIONS.find((c) => c.value === document.category)
         ?.label
@@ -356,8 +357,24 @@ export function ChatInterface({
           style={{ height: "calc(100% - 100px)" }}
         >
           {messages.length === 0 ? (
-            // Welcome message
+            // Welcome message or processing state
             <div className="flex items-center justify-center h-full">
+              {!isDocumentReady ? (
+                <div className="text-center max-w-lg space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
+                    <RotateCw className="w-8 h-8 text-amber-600 animate-spin" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Analyzing Document...
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      This document is being analyzed by AI. You&apos;ll be able
+                      to ask questions once processing is complete.
+                    </p>
+                  </div>
+                </div>
+              ) : (
               <div className="text-center max-w-lg space-y-4">
                 <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
                   <Sparkles className="w-8 h-8 text-blue-600" />
@@ -394,6 +411,7 @@ export function ChatInterface({
                   </div>
                 </div>
               </div>
+              )}
             </div>
           ) : (
             // Messages
@@ -539,14 +557,18 @@ export function ChatInterface({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about eligibility criteria, medical tests, visit checklists..."
-                disabled={isLoading}
+                placeholder={
+                  isDocumentReady
+                    ? "Ask about eligibility criteria, medical tests, visit checklists..."
+                    : "Document is being analyzed... Please wait."
+                }
+                disabled={isLoading || !isDocumentReady}
                 rows={3}
                 className="w-full  h-full p-4 resize-none rounded-2xl border border-gray-300 bg-white  pr-12 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 overflow-hidden"
               />
               <button
                 type="submit"
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || !isDocumentReady}
                 className="absolute right-4 bottom-9 w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
               >
                 <ArrowUp className="w-4 h-4 text-white" />

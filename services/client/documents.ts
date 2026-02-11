@@ -8,6 +8,7 @@ import type {
   TrialDocument,
   GetDocumentsResponse,
   UploadDocumentResponse,
+  DocumentProcessingStatus,
 } from "../documents/types";
 
 /**
@@ -58,6 +59,25 @@ export async function uploadDocument(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Failed to upload document");
+  }
+
+  return response.json();
+}
+
+/**
+ * Check document processing status (RAG polling)
+ */
+export async function getDocumentProcessingStatus(
+  documentId: string
+): Promise<DocumentProcessingStatus> {
+  const response = await fetch(`/api/rag/upload/status/${documentId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to check processing status");
   }
 
   return response.json();

@@ -61,7 +61,14 @@ export const DOCUMENT_STATUS = {
 
 export const DOCUMENT_STATUS_STYLES: Record<DocumentStatus, string> = {
   uploading: "bg-gray-100 text-gray-700",
-  processing: "bg-yellow-100 text-yellow-700",
+  processing: "bg-amber-50 text-amber-700",
   ready: "bg-green-100 text-green-700",
   error: "bg-red-100 text-red-700",
+};
+
+export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
+  uploading: "Uploading...",
+  processing: "Analyzing with AI...",
+  ready: "Ready",
+  error: "Error",
 };

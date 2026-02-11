@@ -11,7 +11,6 @@ import { RAG_CONFIG } from "@/lib/constants";
 import { DOCUMENT_CATEGORY } from "@/lib/constants/documents";
 import type {
   TrialDocument,
-  RAGIndexResponse,
   DocumentCategory,
 } from "@/services/documents";
 
@@ -136,19 +135,10 @@ export const POST = withTrialMember(async (req, ctx, user) => {
       );
     }
 
-    // Call RAG backend (or mock if localhost)
-    let ragSuccess = false;
-    let ragError: string | undefined;
-
+    // Call RAG backend async (don't wait for processing to finish)
     if (RAG_CONFIG.isLocalMock) {
-      // Mock RAG processing for development
-      console.log("[API] RAG_API_URL is 'localhost', mocking RAG processing");
-      ragSuccess = true;
-
-      // Simulate processing delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log("[API] RAG_API_URL is 'localhost', mocking RAG async upload");
     } else {
-      // Real RAG backend call
       try {
         const ragResponse = await fetch(
           `${RAG_CONFIG.apiUrl}/upload/upload-pdf`,
@@ -166,43 +156,38 @@ export const POST = withTrialMember(async (req, ctx, user) => {
         );
 
         if (!ragResponse.ok) {
-          throw new Error(`RAG backend returned ${ragResponse.status}`);
-        }
+          // RAG rejected the request — mark as error
+          const ragError = `RAG backend returned ${ragResponse.status}`;
+          console.error("[API] RAG backend error:", ragError);
+          await supabase
+            .from("trial_documents")
+            .update({ status: "error", processing_error: ragError })
+            .eq("id", document.id);
 
-        const ragData: RAGIndexResponse = await ragResponse.json();
-        ragSuccess = ragData.status === "succeeded";
-        ragError = ragData.error;
+          return Response.json({
+            document: { ...document, status: "error", processing_error: ragError },
+            message: "Document uploaded but RAG processing failed to start",
+          });
+        }
       } catch (error) {
+        const ragError = error instanceof Error ? error.message : "Unknown error";
         console.error("[API] RAG backend error:", error);
-        ragError = error instanceof Error ? error.message : "Unknown error";
+        await supabase
+          .from("trial_documents")
+          .update({ status: "error", processing_error: ragError })
+          .eq("id", document.id);
+
+        return Response.json({
+          document: { ...document, status: "error", processing_error: ragError },
+          message: "Document uploaded but RAG processing failed to start",
+        });
       }
     }
 
-    // Update document status based on RAG result
-    const { error: updateError } = await supabase
-      .from("trial_documents")
-      .update({
-        status: ragSuccess ? "ready" : "error",
-        processing_error: ragError || null,
-      })
-      .eq("id", document.id);
-
-    if (updateError) {
-      console.error("[API] Failed to update document status:", updateError);
-    }
-
-    // Fetch updated document
-    const { data: updatedDocument } = await supabase
-      .from("trial_documents")
-      .select("*")
-      .eq("id", document.id)
-      .single();
-
+    // Return immediately — client will poll for processing status
     return Response.json({
-      document: updatedDocument || document,
-      message: ragSuccess
-        ? "Document uploaded and processed successfully"
-        : "Document uploaded but processing failed",
+      document,
+      message: "Document uploaded successfully. Processing started.",
     });
   } catch (error) {
     console.error("[API] Unexpected error:", error);

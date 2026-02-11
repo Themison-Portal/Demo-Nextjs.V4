@@ -77,6 +77,22 @@ export interface RAGQueryResponse {
 }
 
 // ============================================================================
+// DOCUMENT PROCESSING STATUS (RAG Polling)
+// ============================================================================
+
+export interface DocumentProcessingStatus {
+  document_id: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  stage?: string;
+  progress?: number;
+  chunks_count?: number;
+  error?: string;
+  started_at?: string;
+  updated_at?: string;
+  completed_at?: string;
+}
+
+// ============================================================================
 // API RESPONSE TYPES
 // ============================================================================
 
