@@ -3,21 +3,21 @@
  * TanStack Query hook for trial documents with RAG processing polling
  */
 
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getTrialDocuments,
   uploadDocument,
   updateDocumentCategory,
   getDocumentProcessingStatus,
   updateDocumentStatus,
-} from '@/services/client/documents';
-import type { DocumentProcessingStatus } from '@/services/documents';
+} from "@/services/client/documents";
+import type { DocumentProcessingStatus } from "@/services/documents";
 
 const POLLING_INTERVAL = 5000;
-const SMOOTH_TICK_MS = 400;
+const SMOOTH_TICK_MS = 3000;
 const SMOOTH_INCREMENT = 0.8;
 
 export interface SmoothedProcessingStatus extends DocumentProcessingStatus {
@@ -30,7 +30,7 @@ export interface SmoothedProcessingStatus extends DocumentProcessingStatus {
  */
 export function useTrialDocuments(orgId: string, trialId: string) {
   const queryClient = useQueryClient();
-  const queryKey = ['client', 'trial-documents', trialId];
+  const queryKey = ["client", "trial-documents", trialId];
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Reactive state for processing statuses (triggers re-renders)
@@ -50,15 +50,10 @@ export function useTrialDocuments(orgId: string, trialId: string) {
     (callback: (docId: string, status: DocumentProcessingStatus) => void) => {
       statusChangeCallbackRef.current = callback;
     },
-    []
+    [],
   );
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: () => getTrialDocuments(orgId, trialId),
     enabled: !!orgId && !!trialId,
@@ -68,7 +63,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
   // Poll processing status for documents in "processing" state
   useEffect(() => {
-    const processingDocs = documents.filter((d) => d.status === 'processing');
+    const processingDocs = documents.filter((d) => d.status === "processing");
 
     if (processingDocs.length === 0) {
       if (pollingRef.current) {
@@ -84,16 +79,20 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
     const pollStatuses = async () => {
       const results = await Promise.allSettled(
-        processingDocs.map((doc) => getDocumentProcessingStatus(doc.id))
+        processingDocs.map((doc) => getDocumentProcessingStatus(doc.id)),
       );
 
-      let shouldRefetch = false;
+      // Collect terminal statuses BEFORE state update
+      const terminalDocs: {
+        docId: string;
+        status: DocumentProcessingStatus;
+      }[] = [];
 
       setProcessingStatuses((prev) => {
         const next = new Map(prev);
 
         results.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
+          if (result.status === "fulfilled") {
             const status = result.value;
             const docId = processingDocs[index].id;
             const realProgress = status.progress || 0;
@@ -104,28 +103,11 @@ export function useTrialDocuments(orgId: string, trialId: string) {
               displayProgress: Math.max(currentDisplay, realProgress),
             });
 
-            if (status.status === 'completed' || status.status === 'failed') {
-              // Only notify once per document
+            if (status.status === "completed" || status.status === "failed") {
               if (!notifiedTerminalRef.current.has(docId)) {
                 notifiedTerminalRef.current.add(docId);
-                shouldRefetch = true;
-
-                // Update DB via PATCH (proper REST)
-                const dbStatus = status.status === 'completed' ? 'ready' : 'error';
-                updateDocumentStatus(orgId, trialId, docId, dbStatus, status.error)
-                  .catch((err) => console.error('[Hook] Failed to update document status:', err));
-
-                statusChangeCallbackRef.current?.(docId, status);
+                terminalDocs.push({ docId, status });
               }
-
-              setTimeout(() => {
-                setProcessingStatuses((p) => {
-                  const cleaned = new Map(p);
-                  cleaned.delete(docId);
-                  return cleaned;
-                });
-                notifiedTerminalRef.current.delete(docId);
-              }, 1000);
             }
           }
         });
@@ -133,8 +115,35 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         return next;
       });
 
-      if (shouldRefetch) {
-        queryClient.invalidateQueries({ queryKey });
+      // Handle terminal docs OUTSIDE state callback: await PATCH, then invalidate
+      if (terminalDocs.length > 0) {
+        await Promise.all(
+          terminalDocs.map(async ({ docId, status }) => {
+            const dbStatus = status.status === "completed" ? "ready" : "error";
+            try {
+              await updateDocumentStatus(
+                orgId,
+                trialId,
+                docId,
+                dbStatus,
+                status.error,
+              );
+            } catch (err) {
+              console.error("[Hook] Failed to update document status:", err);
+            }
+            statusChangeCallbackRef.current?.(docId, status);
+          }),
+        );
+
+        // Now the DB is updated — safe to refetch
+        await queryClient.invalidateQueries({ queryKey });
+
+        // Clean up processing statuses after refetch
+        setProcessingStatuses((p) => {
+          const cleaned = new Map(p);
+          terminalDocs.forEach(({ docId }) => cleaned.delete(docId));
+          return cleaned;
+        });
       }
     };
 
@@ -150,10 +159,10 @@ export function useTrialDocuments(orgId: string, trialId: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     documents
-      .filter((d) => d.status === 'processing')
+      .filter((d) => d.status === "processing")
       .map((d) => d.id)
       .sort()
-      .join(','),
+      .join(","),
   ]);
 
   // Smooth progress: slowly increment displayProgress between polls
@@ -175,7 +184,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
               ...status,
               displayProgress: Math.min(
                 status.displayProgress + SMOOTH_INCREMENT,
-                ceiling
+                ceiling,
               ),
             });
           }
@@ -199,8 +208,13 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
   // Mutation: update document category
   const updateCategoryMutation = useMutation({
-    mutationFn: ({ documentId, category }: { documentId: string; category: string }) =>
-      updateDocumentCategory(orgId, trialId, documentId, category),
+    mutationFn: ({
+      documentId,
+      category,
+    }: {
+      documentId: string;
+      category: string;
+    }) => updateDocumentCategory(orgId, trialId, documentId, category),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
     },
