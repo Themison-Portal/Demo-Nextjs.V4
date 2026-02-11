@@ -49,11 +49,11 @@ export async function GET(
         progress: stages[stageIndex].progress,
       };
 
-      mockProgress.set(documentId, current + 1);
-
-      if (isCompleted) {
-        mockProgress.delete(documentId);
+      if (!isCompleted) {
+        mockProgress.set(documentId, current + 1);
       }
+      // Keep the entry in the map after completion so subsequent polls
+      // keep returning "completed" instead of restarting from 0
     } else {
       // Real RAG backend call
       const response = await fetch(

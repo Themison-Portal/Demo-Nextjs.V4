@@ -30,7 +30,8 @@ import { formatDate } from "@/lib/date";
 import { DOCUMENT_CATEGORY_OPTIONS } from "@/lib/constants/documents";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
-import type { TrialDocument, DocumentProcessingStatus } from "@/services/documents";
+import type { TrialDocument } from "@/services/documents";
+import type { SmoothedProcessingStatus } from "@/hooks/client/useTrialDocuments";
 
 interface DocumentSidebarProps {
   orgId: string;
@@ -41,7 +42,7 @@ interface DocumentSidebarProps {
     category: string;
   }) => Promise<any>;
   isUpdating: boolean;
-  processingStatus?: DocumentProcessingStatus;
+  processingStatus?: SmoothedProcessingStatus;
 }
 
 export function DocumentSidebar({
@@ -129,16 +130,16 @@ export function DocumentSidebar({
             <StatusIcon className={cn("h-4 w-4", isProcessing && "animate-spin")} />
             <span className="text-sm font-medium">{status.label}</span>
           </div>
-          {isProcessing && processingStatus?.progress != null && (
+          {isProcessing && processingStatus && (
             <div className="mt-2 space-y-1">
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
-                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
-                  style={{ width: `${processingStatus.progress}%` }}
+                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${processingStatus.displayProgress}%` }}
                 />
               </div>
               <p className="text-xs text-gray-500">
-                {processingStatus.stage === "done" ? "Finishing up..." : `${processingStatus.progress}%`}
+                {Math.round(processingStatus.displayProgress)}%
               </p>
             </div>
           )}

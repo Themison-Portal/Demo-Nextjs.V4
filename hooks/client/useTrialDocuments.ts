@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getTrialDocuments,
@@ -16,6 +16,12 @@ import {
 import type { DocumentProcessingStatus } from '@/services/documents';
 
 const POLLING_INTERVAL = 5000;
+const SMOOTH_TICK_MS = 400;
+const SMOOTH_INCREMENT = 0.8;
+
+export interface SmoothedProcessingStatus extends DocumentProcessingStatus {
+  displayProgress: number;
+}
 
 /**
  * Hook for fetching documents for a trial
@@ -24,8 +30,24 @@ const POLLING_INTERVAL = 5000;
 export function useTrialDocuments(orgId: string, trialId: string) {
   const queryClient = useQueryClient();
   const queryKey = ['client', 'trial-documents', trialId];
-  const processingStatusesRef = useRef<Map<string, DocumentProcessingStatus>>(new Map());
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Reactive state for processing statuses (triggers re-renders)
+  const [processingStatuses, setProcessingStatuses] = useState<
+    Map<string, SmoothedProcessingStatus>
+  >(new Map());
+
+  // Callback to notify consumers about status changes
+  const statusChangeCallbackRef = useRef<
+    ((docId: string, status: DocumentProcessingStatus) => void) | null
+  >(null);
+
+  const onProcessingStatusChange = useCallback(
+    (callback: (docId: string, status: DocumentProcessingStatus) => void) => {
+      statusChangeCallbackRef.current = callback;
+    },
+    []
+  );
 
   const {
     data,
@@ -40,18 +62,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
   const documents = data?.documents || [];
 
-  // Callback to notify consumers about status changes
-  const statusChangeCallbackRef = useRef<
-    ((docId: string, status: DocumentProcessingStatus) => void) | null
-  >(null);
-
-  const onProcessingStatusChange = useCallback(
-    (callback: (docId: string, status: DocumentProcessingStatus) => void) => {
-      statusChangeCallbackRef.current = callback;
-    },
-    []
-  );
-
   // Poll processing status for documents in "processing" state
   useEffect(() => {
     const processingDocs = documents.filter((d) => d.status === 'processing');
@@ -61,6 +71,11 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
       }
+      // Clean up stale statuses
+      setProcessingStatuses((prev) => {
+        if (prev.size === 0) return prev;
+        return new Map();
+      });
       return;
     }
 
@@ -71,20 +86,37 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
       let shouldRefetch = false;
 
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          const status = result.value;
-          const docId = processingDocs[index].id;
+      setProcessingStatuses((prev) => {
+        const next = new Map(prev);
 
-          processingStatusesRef.current.set(docId, status);
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            const status = result.value;
+            const docId = processingDocs[index].id;
+            const realProgress = status.progress || 0;
+            const currentDisplay = prev.get(docId)?.displayProgress || 0;
 
-          if (status.status === 'completed' || status.status === 'failed') {
-            shouldRefetch = true;
-            statusChangeCallbackRef.current?.(docId, status);
-            // Clean up completed/failed entries after refetch
-            setTimeout(() => processingStatusesRef.current.delete(docId), 1000);
+            next.set(docId, {
+              ...status,
+              // Snap to real progress if it's ahead, otherwise keep smooth value
+              displayProgress: Math.max(currentDisplay, realProgress),
+            });
+
+            if (status.status === 'completed' || status.status === 'failed') {
+              shouldRefetch = true;
+              statusChangeCallbackRef.current?.(docId, status);
+              setTimeout(() => {
+                setProcessingStatuses((p) => {
+                  const cleaned = new Map(p);
+                  cleaned.delete(docId);
+                  return cleaned;
+                });
+              }, 1000);
+            }
           }
-        }
+        });
+
+        return next;
       });
 
       if (shouldRefetch) {
@@ -102,7 +134,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         pollingRef.current = null;
       }
     };
-    // Re-create interval when the set of processing doc IDs changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     documents
@@ -111,6 +142,39 @@ export function useTrialDocuments(orgId: string, trialId: string) {
       .sort()
       .join(','),
   ]);
+
+  // Smooth progress: slowly increment displayProgress between polls
+  useEffect(() => {
+    if (processingStatuses.size === 0) return;
+
+    const tick = setInterval(() => {
+      setProcessingStatuses((prev) => {
+        let changed = false;
+        const next = new Map(prev);
+
+        next.forEach((status, docId) => {
+          const realProgress = status.progress || 0;
+          // Ceiling: don't creep more than 15% past the real value, and cap at 95%
+          const ceiling = Math.min(realProgress + 15, 95);
+
+          if (status.displayProgress < ceiling) {
+            changed = true;
+            next.set(docId, {
+              ...status,
+              displayProgress: Math.min(
+                status.displayProgress + SMOOTH_INCREMENT,
+                ceiling
+              ),
+            });
+          }
+        });
+
+        return changed ? next : prev;
+      });
+    }, SMOOTH_TICK_MS);
+
+    return () => clearInterval(tick);
+  }, [processingStatuses.size]);
 
   // Mutation: upload document
   const uploadMutation = useMutation({
@@ -148,7 +212,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
     isUpdatingCategory: updateCategoryMutation.isPending,
 
     // Processing polling
-    processingStatuses: processingStatusesRef.current,
+    processingStatuses,
     onProcessingStatusChange,
   };
 }
