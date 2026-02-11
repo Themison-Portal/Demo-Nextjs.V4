@@ -100,7 +100,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
             next.set(docId, {
               ...status,
-              displayProgress: Math.max(currentDisplay, realProgress),
+              displayProgress: currentDisplay,
             });
 
             if (status.status === "completed" || status.status === "failed") {
@@ -115,8 +115,13 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         return next;
       });
 
-      // Handle terminal docs OUTSIDE state callback: await PATCH, then invalidate
+      // Handle terminal docs: stop polling immediately, then await PATCH
       if (terminalDocs.length > 0) {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+
         await Promise.all(
           terminalDocs.map(async ({ docId, status }) => {
             const dbStatus = status.status === "completed" ? "ready" : "error";
@@ -130,6 +135,8 @@ export function useTrialDocuments(orgId: string, trialId: string) {
               );
             } catch (err) {
               console.error("[Hook] Failed to update document status:", err);
+              // Allow retry on next poll cycle
+              notifiedTerminalRef.current.delete(docId);
             }
             statusChangeCallbackRef.current?.(docId, status);
           }),
