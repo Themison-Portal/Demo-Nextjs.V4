@@ -511,11 +511,10 @@ export async function recalculateVisitSchedule(
     // Update tasks linked to this visit
     const { count } = await supabase
       .from("tasks")
-      .update({ due_date: scheduledDateStr })
+      .update({ due_date: scheduledDateStr }, { count: "exact" })
       .eq("visit_id", visit.id)
       .eq("patient_id", patientId)
-      .is("deleted_at", null)
-      .select("*", { count: "exact", head: true });
+      .is("deleted_at", null);
 
     tasksUpdated += count ?? 0;
   }
