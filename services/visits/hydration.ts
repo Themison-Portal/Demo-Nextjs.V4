@@ -515,7 +515,7 @@ export async function recalculateVisitSchedule(
       .eq("visit_id", visit.id)
       .eq("patient_id", patientId)
       .is("deleted_at", null)
-      .select("id", { count: "exact", head: true });
+      .select("*", { count: "exact", head: true });
 
     tasksUpdated += count ?? 0;
   }
