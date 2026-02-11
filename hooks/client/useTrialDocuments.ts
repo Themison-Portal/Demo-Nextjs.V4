@@ -76,30 +76,35 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         processingDocs.map((doc) => getDocumentProcessingStatus(doc.id)),
       );
 
+      // Detect terminal docs from raw results (outside setState)
       const terminalDocs: {
         docId: string;
         status: DocumentProcessingStatus;
       }[] = [];
 
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          const status = result.value;
+          const docId = processingDocs[index].id;
+
+          if (
+            (status.status === "completed" || status.status === "failed") &&
+            !notifiedTerminalRef.current.has(docId)
+          ) {
+            notifiedTerminalRef.current.add(docId);
+            terminalDocs.push({ docId, status });
+          }
+        }
+      });
+
+      // Update state with raw statuses
       setProcessingStatuses((prev) => {
         const next = new Map(prev);
-
         results.forEach((result, index) => {
           if (result.status === "fulfilled") {
-            const status = result.value;
-            const docId = processingDocs[index].id;
-
-            next.set(docId, status);
-
-            if (status.status === "completed" || status.status === "failed") {
-              if (!notifiedTerminalRef.current.has(docId)) {
-                notifiedTerminalRef.current.add(docId);
-                terminalDocs.push({ docId, status });
-              }
-            }
+            next.set(processingDocs[index].id, result.value);
           }
         });
-
         return next;
       });
 
