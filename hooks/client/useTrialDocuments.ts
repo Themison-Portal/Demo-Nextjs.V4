@@ -25,15 +25,13 @@ const POLLING_INTERVAL = 5000;
 export function useTrialDocuments(orgId: string, trialId: string) {
   const queryClient = useQueryClient();
   const queryKey = ["client", "trial-documents", trialId];
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledRef = useRef(false);
 
   // Reactive state for processing statuses (triggers re-renders)
   const [processingStatuses, setProcessingStatuses] = useState<
     Map<string, DocumentProcessingStatus>
   >(new Map());
-
-  // Track documents that already fired terminal callback (prevent duplicate toasts)
-  const notifiedTerminalRef = useRef<Set<string>>(new Set());
 
   // Callback to notify consumers about status changes
   const statusChangeCallbackRef = useRef<
@@ -55,15 +53,11 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
   const documents = data?.documents || [];
 
-  // Poll processing status for documents in "processing" state
+  // Poll processing status using recursive setTimeout (no concurrency)
   useEffect(() => {
     const processingDocs = documents.filter((d) => d.status === "processing");
 
     if (processingDocs.length === 0) {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
       setProcessingStatuses((prev) => {
         if (prev.size === 0) return prev;
         return new Map();
@@ -71,53 +65,46 @@ export function useTrialDocuments(orgId: string, trialId: string) {
       return;
     }
 
-    const pollStatuses = async () => {
+    cancelledRef.current = false;
+
+    const poll = async () => {
+      if (cancelledRef.current) return;
+
       const results = await Promise.allSettled(
         processingDocs.map((doc) => getDocumentProcessingStatus(doc.id)),
       );
 
-      // Detect terminal docs from raw results (outside setState)
-      const terminalDocs: {
-        docId: string;
-        status: DocumentProcessingStatus;
-      }[] = [];
+      if (cancelledRef.current) return;
 
+      // Check each result for terminal status
+      let hasTerminal = false;
+
+      const statusMap = new Map<string, DocumentProcessingStatus>();
       results.forEach((result, index) => {
         if (result.status === "fulfilled") {
-          const status = result.value;
           const docId = processingDocs[index].id;
-
+          statusMap.set(docId, result.value);
           if (
-            (status.status === "completed" || status.status === "failed") &&
-            !notifiedTerminalRef.current.has(docId)
+            result.value.status === "completed" ||
+            result.value.status === "failed"
           ) {
-            notifiedTerminalRef.current.add(docId);
-            terminalDocs.push({ docId, status });
+            hasTerminal = true;
           }
         }
       });
 
-      // Update state with raw statuses
-      setProcessingStatuses((prev) => {
-        const next = new Map(prev);
-        results.forEach((result, index) => {
-          if (result.status === "fulfilled") {
-            next.set(processingDocs[index].id, result.value);
-          }
-        });
-        return next;
-      });
+      // Update UI with latest statuses
+      setProcessingStatuses(statusMap);
 
-      // Handle terminal docs: stop polling immediately, then await PATCH
-      if (terminalDocs.length > 0) {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-        }
-
-        await Promise.all(
-          terminalDocs.map(async ({ docId, status }) => {
-            const dbStatus = status.status === "completed" ? "ready" : "error";
+      if (hasTerminal) {
+        // Terminal detected — PATCH each terminal doc, then refetch
+        const patchPromises = Array.from(statusMap.entries())
+          .filter(
+            ([, s]) => s.status === "completed" || s.status === "failed",
+          )
+          .map(async ([docId, status]) => {
+            const dbStatus =
+              status.status === "completed" ? "ready" : "error";
             try {
               await updateDocumentStatus(
                 orgId,
@@ -128,32 +115,33 @@ export function useTrialDocuments(orgId: string, trialId: string) {
               );
             } catch (err) {
               console.error("[Hook] Failed to update document status:", err);
-              // Allow retry on next poll cycle
-              notifiedTerminalRef.current.delete(docId);
             }
             statusChangeCallbackRef.current?.(docId, status);
-          }),
-        );
+          });
 
-        // Now the DB is updated — safe to refetch
-        await queryClient.invalidateQueries({ queryKey });
+        await Promise.all(patchPromises);
 
-        // Clean up processing statuses after refetch
-        setProcessingStatuses((p) => {
-          const cleaned = new Map(p);
-          terminalDocs.forEach(({ docId }) => cleaned.delete(docId));
-          return cleaned;
-        });
+        if (!cancelledRef.current) {
+          await queryClient.invalidateQueries({ queryKey });
+        }
+        // Don't schedule next poll — useEffect will re-run if needed
+        return;
+      }
+
+      // Not terminal — schedule next poll
+      if (!cancelledRef.current) {
+        timeoutRef.current = setTimeout(poll, POLLING_INTERVAL);
       }
     };
 
-    pollStatuses();
-    pollingRef.current = setInterval(pollStatuses, POLLING_INTERVAL);
+    // Start first poll
+    poll();
 
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
+      cancelledRef.current = true;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
