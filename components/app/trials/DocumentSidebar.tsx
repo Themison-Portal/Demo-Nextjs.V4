@@ -24,12 +24,13 @@ import {
   Sparkles,
   ChevronDown,
   Check,
+  Loader2,
 } from "lucide-react";
 import { formatDate } from "@/lib/date";
 import { DOCUMENT_CATEGORY_OPTIONS } from "@/lib/constants/documents";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
-import type { TrialDocument } from "@/services/documents";
+import type { TrialDocument, DocumentProcessingStatus } from "@/services/documents";
 
 interface DocumentSidebarProps {
   orgId: string;
@@ -40,6 +41,7 @@ interface DocumentSidebarProps {
     category: string;
   }) => Promise<any>;
   isUpdating: boolean;
+  processingStatus?: DocumentProcessingStatus;
 }
 
 export function DocumentSidebar({
@@ -48,6 +50,7 @@ export function DocumentSidebar({
   document,
   onUpdateCategory,
   isUpdating,
+  processingStatus,
 }: DocumentSidebarProps) {
   const [selectedCategory, setSelectedCategory] = useState(
     document.category || "",
@@ -75,13 +78,13 @@ export function DocumentSidebar({
   const statusConfig = {
     uploading: {
       icon: Clock,
-      label: "Uploading",
+      label: "Uploading...",
       color: "text-gray-500",
     },
     processing: {
-      icon: Clock,
-      label: "Processing",
-      color: "text-yellow-600",
+      icon: Loader2,
+      label: "Analyzing with AI...",
+      color: "text-amber-600",
     },
     ready: {
       icon: CheckCircle,
@@ -97,6 +100,7 @@ export function DocumentSidebar({
 
   const status = statusConfig[document.status];
   const StatusIcon = status.icon;
+  const isProcessing = document.status === "processing";
 
   return (
     <Card className="sticky top-6 w-80 h-auto shrink-0 rounded-xl">
@@ -122,9 +126,22 @@ export function DocumentSidebar({
             Status
           </label>
           <div className={`flex items-center gap-2 ${status.color}`}>
-            <StatusIcon className="h-4 w-4" />
+            <StatusIcon className={cn("h-4 w-4", isProcessing && "animate-spin")} />
             <span className="text-sm font-medium">{status.label}</span>
           </div>
+          {isProcessing && processingStatus?.progress != null && (
+            <div className="mt-2 space-y-1">
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${processingStatus.progress}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                {processingStatus.stage === "done" ? "Finishing up..." : `${processingStatus.progress}%`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Category */}
