@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   transformBboxes,
@@ -210,7 +211,7 @@ function PdfViewerComponent({
                       pageNumber={pageNum}
                       width={PAGE_WIDTH}
                       onLoadSuccess={onPageLoaded}
-                      renderTextLayer={false}
+                      renderTextLayer={true}
                       renderAnnotationLayer={false}
                     />
 
