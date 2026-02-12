@@ -102,6 +102,10 @@ export function ChatInterface({
   const [selectedQuestion, setSelectedQuestion] = useState("");
   const [selectedSources, setSelectedSources] = useState<RagSource[]>([]);
   const [selectedSourceIndex, setSelectedSourceIndex] = useState<number>();
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
+    null,
+  );
+  const [highlightAllBboxes, setHighlightAllBboxes] = useState(false);
   const [selectedRawData, setSelectedRawData] = useState<
     | {
         question: Record<string, any>;
@@ -121,6 +125,15 @@ export function ChatInterface({
   const categoryStyle = document?.category
     ? DOCUMENT_CATEGORY_STYLES[document.category]
     : null;
+
+  // Reset sources panel when switching chats
+  useEffect(() => {
+    setIsSourcesPanelOpen(false);
+    setSelectedSources([]);
+    setSelectedSourceIndex(undefined);
+    setSelectedMessageId(null);
+    setHighlightAllBboxes(false);
+  }, [chatId]);
 
   // Load existing chat messages
   useEffect(() => {
@@ -142,10 +155,8 @@ export function ChatInterface({
       }));
       setMessages(loadedMessages);
     } else if (!chatId) {
-      // Clear messages and close PDF viewer when starting new chat (no chatId)
       setMessages([]);
       setCurrentChatId(null);
-      setIsSourcesPanelOpen(false);
     }
   }, [chatSession, chatId]);
 
@@ -185,9 +196,10 @@ export function ChatInterface({
       // Create chat session if this is the first message
       let chatSessionId = currentChatId;
       if (isFirstMessage && !chatSessionId) {
-        const title = questionText.length > 50
-          ? `${questionText.substring(0, 47)}...`
-          : questionText;
+        const title =
+          questionText.length > 50
+            ? `${questionText.substring(0, 47)}...`
+            : questionText;
 
         const newSession = await createChatSession({
           org_id: orgId,
@@ -307,13 +319,13 @@ export function ChatInterface({
 
   return (
     <div
-      className={`relative h-[calc(100vh-20vh)] ${isSourcesPanelOpen ? "p-0" : "px-40"} flex gap-6`}
+      className={`relative h-[calc(100vh-19vh)] ${isSourcesPanelOpen ? "p-0" : "px-40"} flex gap-6`}
     >
       {/* Main Chat Area */}
       <div
         className={cn(
           "transition-all duration-300 flex flex-col h-full",
-          isSourcesPanelOpen ? "w-[55%]" : "w-full",
+          isSourcesPanelOpen ? "w-[50%]" : "w-full",
         )}
       >
         {/* Document Info Header */}
@@ -375,42 +387,42 @@ export function ChatInterface({
                   </div>
                 </div>
               ) : (
-              <div className="text-center max-w-lg space-y-4">
-                <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
-                  <Sparkles className="w-8 h-8 text-blue-600" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Ready to Answer Your Questions
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Ask anything about this document. Get instant answers about
-                    eligibility criteria, medical tests, visit schedules, and
-                    more.
-                  </p>
-                </div>
-                {/* Example queries */}
-                <div className="pt-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-                    Try asking
-                  </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {[
-                      "What are the inclusion criteria for male patients 50-65?",
-                      "What medical tests are required?",
-                      "Generate a worksheet for the schedule of activities",
-                    ].map((query) => (
-                      <button
-                        key={query}
-                        onClick={() => setInput(query)}
-                        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-full transition-colors"
-                      >
-                        {query}
-                      </button>
-                    ))}
+                <div className="text-center max-w-lg space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Ready to Answer Your Questions
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Ask anything about this document. Get instant answers
+                      about eligibility criteria, medical tests, visit
+                      schedules, and more.
+                    </p>
+                  </div>
+                  {/* Example queries */}
+                  <div className="pt-2">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                      Try asking
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {[
+                        "What are the inclusion criteria for male patients 50-65?",
+                        "What medical tests are required?",
+                        "Generate a worksheet for the schedule of activities",
+                      ].map((query) => (
+                        <button
+                          key={query}
+                          onClick={() => setInput(query)}
+                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-full transition-colors"
+                        >
+                          {query}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
               )}
             </div>
           ) : (
@@ -442,9 +454,22 @@ export function ChatInterface({
                       <MessageContent
                         content={message.content}
                         sources={message.sources}
-                        onCitationClick={(_source, index) => {
+                        activeSourceIndex={
+                          selectedMessageId === message.id
+                            ? selectedSourceIndex
+                            : undefined
+                        }
+                        activeSourcePage={
+                          selectedMessageId === message.id &&
+                          selectedSourceIndex !== undefined
+                            ? selectedSources[selectedSourceIndex]?.page
+                            : undefined
+                        }
+                        onCitationClick={(_source, index, fromInline) => {
                           setSelectedSources(message.sources || []);
                           setSelectedSourceIndex(index);
+                          setSelectedMessageId(message.id);
+                          setHighlightAllBboxes(!!fromInline);
                           setIsSourcesPanelOpen(true);
                         }}
                       />
@@ -511,7 +536,9 @@ export function ChatInterface({
                           <button
                             onClick={() => {
                               setSelectedSources(message.sources || []);
-                              setSelectedSourceIndex(0); // Start with first source
+                              setSelectedSourceIndex(0);
+                              setSelectedMessageId(message.id);
+                              setHighlightAllBboxes(false);
                               setIsSourcesPanelOpen(true);
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
@@ -583,17 +610,17 @@ export function ChatInterface({
 
       {/* PDF/Sources Panel - Right Side */}
       {isSourcesPanelOpen && (
-        <div className="w-[45%] h-full transition-all duration-300">
+        <div className="w-[50%] h-full transition-all duration-400">
           <PdfViewer
             url={pdfUrl}
-            source={
-              selectedSourceIndex !== undefined
-                ? selectedSources[selectedSourceIndex]
-                : undefined
-            }
+            sources={selectedSources}
+            selectedSourceIndex={selectedSourceIndex}
+            highlightAll={highlightAllBboxes}
             onClose={() => {
               setIsSourcesPanelOpen(false);
               setSelectedSourceIndex(undefined);
+              setSelectedMessageId(null);
+              setHighlightAllBboxes(false);
             }}
           />
         </div>

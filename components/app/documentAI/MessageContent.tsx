@@ -11,12 +11,17 @@
 
 import { Fragment } from "react";
 import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/utils";
 import type { RagSource } from "@/services/rag/types";
 
 interface MessageContentProps {
   content: string;
   sources?: RagSource[];
-  onCitationClick: (source: RagSource, index: number) => void;
+  onCitationClick: (source: RagSource, index: number, fromInline?: boolean) => void;
+  /** Page number of the currently selected source (highlights all citations on this page) */
+  activeSourcePage?: number;
+  /** Index of the currently selected source (highlights in sources list) */
+  activeSourceIndex?: number;
 }
 
 /**
@@ -129,7 +134,7 @@ function extractText(children: any): string {
   return '';
 }
 
-export function MessageContent({ content, sources = [], onCitationClick }: MessageContentProps) {
+export function MessageContent({ content, sources = [], onCitationClick, activeSourcePage, activeSourceIndex }: MessageContentProps) {
   // Custom components for markdown rendering
   const components = {
     // Paragraphs with citation parsing
@@ -158,13 +163,17 @@ export function MessageContent({ content, sources = [], onCitationClick }: Messa
                         key={pageIdx}
                         onClick={() => {
                           if (pageSource && pageSourceIndex !== -1) {
-                            onCitationClick(pageSource, pageSourceIndex);
+                            onCitationClick(pageSource, pageSourceIndex, true);
                           } else if (part.source && part.index !== undefined) {
-                            // Fallback to original source
-                            onCitationClick(part.source, part.index);
+                            onCitationClick(part.source, part.index, true);
                           }
                         }}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 hover:border-blue-300 transition-colors align-baseline"
+                        className={cn(
+                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium rounded border transition-colors align-baseline",
+                          activeSourcePage === pageNum
+                            ? "text-blue-700 bg-blue-100 border-blue-400 ring-1 ring-blue-300"
+                            : "text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
+                        )}
                         title={`View ${pageSource?.section || ''} on page ${pageNum}`}
                       >
                         p. {pageNum}
@@ -229,13 +238,17 @@ export function MessageContent({ content, sources = [], onCitationClick }: Messa
                         key={pageIdx}
                         onClick={() => {
                           if (pageSource && pageSourceIndex !== -1) {
-                            onCitationClick(pageSource, pageSourceIndex);
+                            onCitationClick(pageSource, pageSourceIndex, true);
                           } else if (part.source && part.index !== undefined) {
-                            // Fallback to original source
-                            onCitationClick(part.source, part.index);
+                            onCitationClick(part.source, part.index, true);
                           }
                         }}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 hover:border-blue-300 transition-colors align-baseline"
+                        className={cn(
+                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium rounded border transition-colors align-baseline",
+                          activeSourcePage === pageNum
+                            ? "text-blue-700 bg-blue-100 border-blue-400 ring-1 ring-blue-300"
+                            : "text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
+                        )}
                         title={`View ${pageSource?.section || ''} on page ${pageNum}`}
                       >
                         p. {pageNum}
@@ -280,7 +293,12 @@ export function MessageContent({ content, sources = [], onCitationClick }: Messa
                               onCitationClick(part.source, part.index);
                             }
                           }}
-                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 hover:border-blue-300 transition-colors align-baseline"
+                          className={cn(
+                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium rounded border transition-colors align-baseline",
+                          activeSourcePage === pageNum
+                            ? "text-blue-700 bg-blue-100 border-blue-400 ring-1 ring-blue-300"
+                            : "text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
+                        )}
                           title={`View ${pageSource?.section || ''} on page ${pageNum}`}
                         >
                           p. {pageNum}
@@ -324,7 +342,12 @@ export function MessageContent({ content, sources = [], onCitationClick }: Messa
               <button
                 key={index}
                 onClick={() => onCitationClick(source, index)}
-                className="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors border border-gray-100 hover:border-gray-200"
+                className={cn(
+                  "w-full text-left p-2 rounded transition-colors border",
+                  activeSourceIndex === index
+                    ? "border-blue-300 bg-blue-50"
+                    : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                )}
               >
                 <div className="flex items-start gap-2">
                   <span className="flex-shrink-0 w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600">

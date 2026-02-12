@@ -11,7 +11,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { transformBboxes, type TransformedBbox } from "@/lib/pdf/transform-bboxes";
+import {
+  transformBboxes,
+  type TransformedBbox,
+} from "@/lib/pdf/transform-bboxes";
 import type { RagSource } from "@/services/rag/types";
 
 // Configure PDF.js worker
@@ -21,16 +24,34 @@ if (typeof window !== "undefined") {
 
 const PAGE_WIDTH = 600;
 
+interface HighlightBbox extends TransformedBbox {
+  isSelected: boolean;
+}
+
 interface PdfViewerProps {
   url: string;
-  source?: RagSource;
+  sources?: RagSource[];
+  selectedSourceIndex?: number;
+  /** When true, all bboxes on the page get equal highlight (inline citation click) */
+  highlightAll?: boolean;
   onClose: () => void;
 }
 
-function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
+function PdfViewerComponent({
+  url,
+  sources = [],
+  selectedSourceIndex,
+  highlightAll = false,
+  onClose,
+}: PdfViewerProps) {
+  const selectedSource =
+    selectedSourceIndex !== undefined
+      ? sources[selectedSourceIndex]
+      : undefined;
+
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [bboxes, setBboxes] = useState<TransformedBbox[]>([]);
+  const [bboxes, setBboxes] = useState<HighlightBbox[]>([]);
 
   // Viewports cached per page — populated once by onLoadSuccess, read by effect
   const pageViewports = useRef<Map<number, any>>(new Map());
@@ -39,27 +60,40 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
   // Incremented when the source page's viewport becomes available
   const [viewportReady, setViewportReady] = useState(0);
 
-  // Single effect: recalculate bboxes + scroll when source changes OR viewport becomes available
+  // Recalculate bboxes for ALL sources on the selected page + scroll
   useEffect(() => {
-    if (!source?.page) {
+    if (!selectedSource?.page) {
       setBboxes([]);
       return;
     }
 
-    const viewport = pageViewports.current.get(source.page);
+    const targetPage = selectedSource.page;
+    const viewport = pageViewports.current.get(targetPage);
     if (!viewport) return; // Will re-run when viewportReady increments
 
-    if (source.bboxes && source.bboxes.length > 0) {
-      setBboxes(transformBboxes(viewport, source.bboxes));
-    } else {
-      setBboxes([]);
-    }
+    // Collect bboxes from ALL sources on this page
+    // highlightAll = true (inline click) → all equal; false (source click) → differential
+    const allBboxes: HighlightBbox[] = [];
+    sources.forEach((src, idx) => {
+      if (src.page === targetPage && src.bboxes?.length) {
+        const transformed = transformBboxes(viewport, src.bboxes);
+        for (const bbox of transformed) {
+          allBboxes.push({ ...bbox, isSelected: highlightAll || idx === selectedSourceIndex });
+        }
+      }
+    });
 
-    const pageEl = pageRefs.current.get(source.page);
+    // Render non-selected first, selected on top
+    if (!highlightAll) {
+      allBboxes.sort((a, b) => Number(a.isSelected) - Number(b.isSelected));
+    }
+    setBboxes(allBboxes);
+
+    const pageEl = pageRefs.current.get(targetPage);
     if (pageEl) {
       pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [source, viewportReady]);
+  }, [sources, selectedSourceIndex, highlightAll, viewportReady]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
@@ -70,7 +104,7 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
     const scale = PAGE_WIDTH / page.getViewport({ scale: 1 }).width;
     pageViewports.current.set(page.pageNumber, page.getViewport({ scale }));
 
-    if (source?.page === page.pageNumber) {
+    if (selectedSource?.page === page.pageNumber) {
       setViewportReady((prev) => prev + 1);
     }
   }
@@ -89,7 +123,7 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
           }
         }
       },
-      { root: container, threshold: 0.5 }
+      { root: container, threshold: 0.5 },
     );
 
     pageRefs.current.forEach((el) => observer.observe(el));
@@ -115,7 +149,7 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
         pageRefs.current.delete(pageNum);
       }
     },
-    []
+    [],
   );
 
   return (
@@ -124,10 +158,12 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 truncate">
-            {source?.name || "Document"}
+            {selectedSource?.name || "Document"}
           </h3>
-          {source?.section && (
-            <p className="text-xs text-gray-500 truncate">{source.section}</p>
+          {selectedSource?.section && (
+            <p className="text-xs text-gray-500 truncate">
+              {selectedSource.section}
+            </p>
           )}
         </div>
         <button
@@ -161,7 +197,7 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
           <div className="flex flex-col items-center gap-4">
             {Array.from({ length: numPages }, (_, i) => i + 1).map(
               (pageNum) => {
-                const isSourcePage = source?.page === pageNum;
+                const isSourcePage = selectedSource?.page === pageNum;
 
                 return (
                   <div
@@ -178,18 +214,22 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
                       renderAnnotationLayer={false}
                     />
 
-                    {/* Bbox Highlights Overlay - Only on source page */}
+                    {/* Bbox Highlights Overlay - All sources on this page */}
                     {isSourcePage && bboxes.length > 0 && (
                       <div className="absolute top-0 left-0 pointer-events-none">
                         {bboxes.map((bbox, index) => (
                           <div
                             key={index}
-                            className="absolute bg-yellow-300/40 border border-yellow-400"
+                            className={
+                              bbox.isSelected
+                                ? "absolute bg-yellow-300/40 border-2 border-yellow-300 shadow-sm"
+                                : "absolute bg-yellow-200/20 border border-yellow-300/50"
+                            }
                             style={{
                               left: `${bbox.left}px`,
-                              top: `${bbox.top}px`,
+                              top: `${bbox.top - 3}px`,
                               width: `${bbox.width}px`,
-                              height: `${bbox.height}px`,
+                              height: `${bbox.height + 5}px`,
                             }}
                           />
                         ))}
@@ -197,7 +237,7 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
                     )}
                   </div>
                 );
-              }
+              },
             )}
           </div>
         </Document>
