@@ -11,12 +11,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { transformBboxes, type TransformedBbox } from "@/lib/pdf/transform-bboxes";
 import type { RagSource } from "@/services/rag/types";
 
 // Configure PDF.js worker
 if (typeof window !== "undefined") {
   pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
+
+const PAGE_WIDTH = 600;
 
 interface PdfViewerProps {
   url: string;
@@ -27,95 +30,48 @@ interface PdfViewerProps {
 function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageWidth] = useState<number>(600);
-  const [transformedBboxes, setTransformedBboxes] = useState<
-    Array<{ left: number; top: number; width: number; height: number }>
-  >([]);
+  const [bboxes, setBboxes] = useState<TransformedBbox[]>([]);
 
-  // Store viewports per page so we can recalculate bboxes on source change
+  // Viewports cached per page — populated once by onLoadSuccess, read by effect
   const pageViewports = useRef<Map<number, any>>(new Map());
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const hasScrolledToSource = useRef(false);
+  // Incremented when the source page's viewport becomes available
+  const [viewportReady, setViewportReady] = useState(0);
 
-  // Recalculate bboxes and scroll when source changes
+  // Single effect: recalculate bboxes + scroll when source changes OR viewport becomes available
   useEffect(() => {
-    hasScrolledToSource.current = false;
-
     if (!source?.page) {
-      setTransformedBboxes([]);
+      setBboxes([]);
       return;
     }
 
-    // Recalculate bboxes using stored viewport
     const viewport = pageViewports.current.get(source.page);
-    if (viewport && source.bboxes && source.bboxes.length > 0) {
-      const transformed = source.bboxes.map((bbox: number[]) => {
-        const [l, t, r, b] = bbox;
-        const rect = viewport.convertToViewportRectangle([l, t, r, b]);
+    if (!viewport) return; // Will re-run when viewportReady increments
 
-        return {
-          left: Math.min(rect[0], rect[2]),
-          top: Math.min(rect[1], rect[3]),
-          width: Math.abs(rect[2] - rect[0]),
-          height: Math.abs(rect[3] - rect[1]),
-        };
-      });
-      setTransformedBboxes(transformed);
+    if (source.bboxes && source.bboxes.length > 0) {
+      setBboxes(transformBboxes(viewport, source.bboxes));
     } else {
-      setTransformedBboxes([]);
+      setBboxes([]);
     }
 
-    // Scroll to source page
     const pageEl = pageRefs.current.get(source.page);
     if (pageEl) {
       pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      hasScrolledToSource.current = true;
     }
-  }, [source]);
+  }, [source, viewportReady]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
   }
 
-  // Store viewport for every page as it loads
+  // Cache viewport for every page. Signal when the source page is ready.
   function onPageLoaded(page: any) {
-    const viewport = page.getViewport({ scale: 1 });
-    const scale = pageWidth / viewport.width;
-    const finalViewport = page.getViewport({ scale });
-    pageViewports.current.set(page.pageNumber, finalViewport);
+    const scale = PAGE_WIDTH / page.getViewport({ scale: 1 }).width;
+    pageViewports.current.set(page.pageNumber, page.getViewport({ scale }));
 
-    // If this is the source page and bboxes haven't been calculated yet,
-    // calculate them now (handles initial load)
-    if (
-      source?.page === page.pageNumber &&
-      source.bboxes &&
-      source.bboxes.length > 0 &&
-      transformedBboxes.length === 0
-    ) {
-      const transformed = source.bboxes.map((bbox: number[]) => {
-        const [l, t, r, b] = bbox;
-        const rect = finalViewport.convertToViewportRectangle([l, t, r, b]);
-
-        return {
-          left: Math.min(rect[0], rect[2]),
-          top: Math.min(rect[1], rect[3]),
-          width: Math.abs(rect[2] - rect[0]),
-          height: Math.abs(rect[3] - rect[1]),
-        };
-      });
-      setTransformedBboxes(transformed);
-
-      // Scroll after first render
-      requestAnimationFrame(() => {
-        if (!hasScrolledToSource.current && source?.page) {
-          const pageEl = pageRefs.current.get(source.page);
-          if (pageEl) {
-            pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
-            hasScrolledToSource.current = true;
-          }
-        }
-      });
+    if (source?.page === page.pageNumber) {
+      setViewportReady((prev) => prev + 1);
     }
   }
 
@@ -148,15 +104,8 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
     }
   }, []);
 
-  const goToPreviousPage = () => {
-    const prev = Math.max(1, currentPage - 1);
-    scrollToPage(prev);
-  };
-
-  const goToNextPage = () => {
-    const next = Math.min(numPages, currentPage + 1);
-    scrollToPage(next);
-  };
+  const goToPreviousPage = () => scrollToPage(Math.max(1, currentPage - 1));
+  const goToNextPage = () => scrollToPage(Math.min(numPages, currentPage + 1));
 
   const setPageRef = useCallback(
     (pageNum: number) => (el: HTMLDivElement | null) => {
@@ -223,16 +172,16 @@ function PdfViewerComponent({ url, source, onClose }: PdfViewerProps) {
                   >
                     <Page
                       pageNumber={pageNum}
-                      width={pageWidth}
+                      width={PAGE_WIDTH}
                       onLoadSuccess={onPageLoaded}
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
                     />
 
                     {/* Bbox Highlights Overlay - Only on source page */}
-                    {isSourcePage && transformedBboxes.length > 0 && (
+                    {isSourcePage && bboxes.length > 0 && (
                       <div className="absolute top-0 left-0 pointer-events-none">
-                        {transformedBboxes.map((bbox, index) => (
+                        {bboxes.map((bbox, index) => (
                           <div
                             key={index}
                             className="absolute bg-yellow-300/40 border border-yellow-400"
