@@ -214,7 +214,7 @@ export function DocumentSidebar({
               asChild
             >
               <Link
-                href={ROUTES.APP.AI_ASSISTANT(orgId, trialId, document.id)}
+                href={ROUTES.APP.DOCUMENT_AI_CHAT(orgId, trialId, document.id)}
                 className="w-full flex items-center justify-center"
               >
                 <Sparkles className="h-4 w-4" />

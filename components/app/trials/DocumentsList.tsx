@@ -236,7 +236,7 @@ export function DocumentsList({ orgId, trialId }: DocumentsListProps) {
                   <div className="col-span-1 flex justify-end">
                     {hoveredRowId === doc.id && doc.status === "ready" && (
                       <Link
-                        href={ROUTES.APP.AI_ASSISTANT(orgId, trialId, doc.id)}
+                        href={ROUTES.APP.DOCUMENT_AI_CHAT(orgId, trialId, doc.id)}
                         onClick={(e) => e.stopPropagation()}
                         className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-blue-100 text-blue-600 transition-colors"
                         aria-label="Ask AI Assistant"

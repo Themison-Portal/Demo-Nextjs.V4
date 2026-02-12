@@ -135,58 +135,59 @@ function extractText(children: any): string {
 }
 
 export function MessageContent({ content, sources = [], onCitationClick, activeSourcePage, activeSourceIndex }: MessageContentProps) {
+  /** Render parsed citation parts as text + clickable page buttons */
+  function renderCitationParts(parts: ReturnType<typeof parseCitations>) {
+    return parts.map((part, idx) => (
+      <Fragment key={idx}>
+        {part.type === "text" ? (
+          part.content
+        ) : (
+          <span className="inline-flex items-center gap-1">
+            {part.pages && part.pages.map((pageNum, pageIdx) => {
+              const pageSourceIndex = sources.findIndex(
+                (s) => s.name === part.source?.name && s.page === pageNum
+              );
+              const pageSource = pageSourceIndex !== -1 ? sources[pageSourceIndex] : part.source;
+
+              return (
+                <button
+                  key={pageIdx}
+                  onClick={() => {
+                    if (pageSource && pageSourceIndex !== -1) {
+                      onCitationClick(pageSource, pageSourceIndex, true);
+                    } else if (part.source && part.index !== undefined) {
+                      onCitationClick(part.source, part.index, true);
+                    }
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium rounded border transition-colors align-baseline",
+                    activeSourcePage === pageNum
+                      ? "text-blue-700 bg-blue-100 border-blue-400 ring-1 ring-blue-300"
+                      : "text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
+                  )}
+                  title={`View ${pageSource?.section || ''} on page ${pageNum}`}
+                >
+                  p. {pageNum}
+                </button>
+              );
+            })}
+          </span>
+        )}
+      </Fragment>
+    ));
+  }
+
+  /** Parse children text and render with citation buttons */
+  function withCitations(children: any) {
+    const text = extractText(children);
+    return renderCitationParts(parseCitations(text, sources));
+  }
+
   // Custom components for markdown rendering
   const components = {
-    // Paragraphs with citation parsing
-    p: ({ children }: any) => {
-      const text = extractText(children);
-      const parts = parseCitations(text, sources);
-
-      return (
-        <p className="mb-3 last:mb-0">
-          {parts.map((part, idx) => (
-            <Fragment key={idx}>
-              {part.type === "text" ? (
-                part.content
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  {/* Render separate button for each page with spacing */}
-                  {part.pages && part.pages.map((pageNum, pageIdx) => {
-                    // Find source for this specific page
-                    const pageSourceIndex = sources.findIndex(
-                      (s) => s.name === part.source?.name && s.page === pageNum
-                    );
-                    const pageSource = pageSourceIndex !== -1 ? sources[pageSourceIndex] : part.source;
-
-                    return (
-                      <button
-                        key={pageIdx}
-                        onClick={() => {
-                          if (pageSource && pageSourceIndex !== -1) {
-                            onCitationClick(pageSource, pageSourceIndex, true);
-                          } else if (part.source && part.index !== undefined) {
-                            onCitationClick(part.source, part.index, true);
-                          }
-                        }}
-                        className={cn(
-                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium rounded border transition-colors align-baseline",
-                          activeSourcePage === pageNum
-                            ? "text-blue-700 bg-blue-100 border-blue-400 ring-1 ring-blue-300"
-                            : "text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
-                        )}
-                        title={`View ${pageSource?.section || ''} on page ${pageNum}`}
-                      >
-                        p. {pageNum}
-                      </button>
-                    );
-                  })}
-                </span>
-              )}
-            </Fragment>
-          ))}
-        </p>
-      );
-    },
+    p: ({ children }: any) => (
+      <p className="mb-3 last:mb-0">{withCitations(children)}</p>
+    ),
     // Headings
     h1: ({ children }: any) => (
       <h1 className="text-xl font-bold mb-3 mt-4">{children}</h1>
@@ -213,107 +214,18 @@ export function MessageContent({ content, sources = [], onCitationClick, activeS
     ol: ({ children }: any) => (
       <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>
     ),
-    li: ({ children }: any) => {
-      const text = extractText(children);
-      const parts = parseCitations(text, sources);
-
-      return (
-        <li className="ml-4">
-          {parts.map((part, idx) => (
-            <Fragment key={idx}>
-              {part.type === "text" ? (
-                part.content
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  {/* Render separate button for each page with spacing */}
-                  {part.pages && part.pages.map((pageNum, pageIdx) => {
-                    // Find source for this specific page
-                    const pageSourceIndex = sources.findIndex(
-                      (s) => s.name === part.source?.name && s.page === pageNum
-                    );
-                    const pageSource = pageSourceIndex !== -1 ? sources[pageSourceIndex] : part.source;
-
-                    return (
-                      <button
-                        key={pageIdx}
-                        onClick={() => {
-                          if (pageSource && pageSourceIndex !== -1) {
-                            onCitationClick(pageSource, pageSourceIndex, true);
-                          } else if (part.source && part.index !== undefined) {
-                            onCitationClick(part.source, part.index, true);
-                          }
-                        }}
-                        className={cn(
-                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium rounded border transition-colors align-baseline",
-                          activeSourcePage === pageNum
-                            ? "text-blue-700 bg-blue-100 border-blue-400 ring-1 ring-blue-300"
-                            : "text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
-                        )}
-                        title={`View ${pageSource?.section || ''} on page ${pageNum}`}
-                      >
-                        p. {pageNum}
-                      </button>
-                    );
-                  })}
-                </span>
-              )}
-            </Fragment>
-          ))}
-        </li>
-      );
-    },
+    li: ({ children }: any) => (
+      <li className="ml-4">{withCitations(children)}</li>
+    ),
     // Strong/Bold
     strong: ({ children }: any) => {
       const text = extractText(children);
       const parts = parseCitations(text, sources);
 
-      // If there are citations in bold text, parse them
       if (parts.some(p => p.type === 'citation')) {
-        return (
-          <strong className="font-bold">
-            {parts.map((part, idx) => (
-              <Fragment key={idx}>
-                {part.type === "text" ? (
-                  part.content
-                ) : (
-                  <span className="inline-flex items-center gap-1">
-                    {part.pages && part.pages.map((pageNum, pageIdx) => {
-                      const pageSourceIndex = sources.findIndex(
-                        (s) => s.name === part.source?.name && s.page === pageNum
-                      );
-                      const pageSource = pageSourceIndex !== -1 ? sources[pageSourceIndex] : part.source;
-
-                      return (
-                        <button
-                          key={pageIdx}
-                          onClick={() => {
-                            if (pageSource && pageSourceIndex !== -1) {
-                              onCitationClick(pageSource, pageSourceIndex);
-                            } else if (part.source && part.index !== undefined) {
-                              onCitationClick(part.source, part.index);
-                            }
-                          }}
-                          className={cn(
-                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium rounded border transition-colors align-baseline",
-                          activeSourcePage === pageNum
-                            ? "text-blue-700 bg-blue-100 border-blue-400 ring-1 ring-blue-300"
-                            : "text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
-                        )}
-                          title={`View ${pageSource?.section || ''} on page ${pageNum}`}
-                        >
-                          p. {pageNum}
-                        </button>
-                      );
-                    })}
-                  </span>
-                )}
-              </Fragment>
-            ))}
-          </strong>
-        );
+        return <strong className="font-bold">{renderCitationParts(parts)}</strong>;
       }
 
-      // No citations, just render bold
       return <strong className="font-bold">{children}</strong>;
     },
     // Code

@@ -73,14 +73,6 @@ export const APP_ROUTES = {
   /** Client settings */
   SETTINGS: (orgId: string) => `/${orgId}/settings`,
 
-  /** AI Assistant with document context */
-  AI_ASSISTANT: (orgId: string, trialId: string, documentId: string) =>
-    `/${orgId}/trials/${trialId}/ai?documentId=${documentId}`,
-
-  /** AI Assistant Archive */
-  AI_ASSISTANT_ARCHIVE: (orgId: string, trialId: string, documentId: string) =>
-    `/${orgId}/trials/${trialId}/ai/archive?documentId=${documentId}`,
-
   /** Document AI - Generic entry point */
   DOCUMENT_AI: (orgId: string) => `/${orgId}/ai`,
 
