@@ -1,42 +1,63 @@
 /**
  * Get User Utility
- * Server-side utility to get authenticated user
- * ALWAYS validates JWT against Supabase (secure)
+ * Server-side helper to retrieve the authenticated user.
+ *
+ * This does NOT validate JWT locally.
+ * It delegates authentication to the FastAPI backend (/me endpoint),
+ * which verifies the Auth0 JWT and resolves membership.
  */
 
-import { createClient } from "@/lib/supabase/server";
-
 export interface AuthUser {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  isStaff: boolean;
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    isStaff: boolean;
+    organizationId?: string;
+    organizationName?: string;
+    memberId?: string;
+    role?: string;
 }
 
 /**
- * Get authenticated user from request
- * Returns null if not authenticated
- * IMPORTANT: This validates the JWT every time (secure)
+ * Fetch the authenticated user from the backend.
  *
- * Note: isStaff comes from user_metadata.role in JWT (no extra query needed)
+ * Returns:
+ *   - AuthUser object if authenticated
+ *   - null if not authenticated or token is invalid
+ *
+ * Security Model:
+ *   - JWT is stored in an httpOnly cookie
+ *   - This function sends cookies automatically (credentials: "include")
+ *   - FastAPI validates the JWT via Auth0
+ *   - Frontend never verifies or decodes tokens directly
  */
 export async function getUser(): Promise<AuthUser | null> {
-  const supabase = await createClient();
+    try {
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/me`,
+            {
+                credentials: "include", // sends httpOnly cookie
+                cache: "no-store",      // prevent caching authenticated responses
+            }
+        );
 
-  // ALWAYS use getUser() not getSession()
-  // getUser() validates JWT against Supabase
-  const { data: { user }, error } = await supabase.auth.getUser();
+        if (!response.ok) return null;
 
-  if (error || !user) {
-    return null;
-  }
+        const data = await response.json();
 
-  return {
-    id: user.id,
-    email: user.email!,
-    firstName: user.user_metadata?.first_name,
-    lastName: user.user_metadata?.last_name,
-    isStaff: user.user_metadata?.role === "staff",
-  };
+        return {
+            id: data.member.id,
+            email: data.member.email,
+            firstName: data.profile?.first_name,
+            lastName: data.profile?.last_name,
+            isStaff: data.member.default_role === "staff",
+            organizationId: data.organization?.id,
+            organizationName: data.organization?.name,
+            memberId: data.member?.id,
+            role: data.member?.default_role,
+        };
+    } catch {
+        return null;
+    }
 }

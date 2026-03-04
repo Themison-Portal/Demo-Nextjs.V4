@@ -1,111 +1,78 @@
 /**
  * Validate Invitation Token
- * Server-side validation of invitation tokens for signup flow
+ * Server-side validation via FastAPI backend
  */
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
-
 export interface InvitationValidationResult {
-  valid: true;
-  invitation: {
-    id: string;
-    email: string;
-    org_id: string;
-    org_role: string;
-    organization: {
-      id: string;
-      name: string;
+    valid: true;
+    invitation: {
+        id: string;
+        email: string;
+        org_id: string;
+        org_role: string;
+        organization: {
+            id: string;
+            name: string;
+        };
+        name?: string;
+        expires_at?: string;
     };
-  };
 }
 
 export interface InvitationValidationError {
-  valid: false;
-  error: "no_token" | "not_found" | "not_pending" | "expired" | "user_exists";
-  details?: string;
+    valid: false;
+    error: "no_token" | "not_found" | "not_pending" | "expired" | "user_exists";
+    details?: string;
 }
 
 export type InvitationValidation = InvitationValidationResult | InvitationValidationError;
 
 export async function validateInvitationToken(
-  token: string | null
+    token: string | null
 ): Promise<InvitationValidation> {
-  // No token provided
-  if (!token) {
-    return { valid: false, error: "no_token" };
-  }
+    if (!token) {
+        return { valid: false, error: "no_token" };
+    }
 
-  // Fetch invitation
-  const { data: invitation, error } = await supabaseAdmin
-    .from("invitations")
-    .select(
-      `
-      id,
-      email,
-      org_id,
-      org_role,
-      status,
-      expires_at,
-      organizations!inner (
-        id,
-        name
-      )
-    `
-    )
-    .eq("token", token)
-    .single();
+    try {
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/invitations/validate/${token}`,
+            {
+                credentials: "include", // send cookies if needed
+                cache: "no-store",
+            }
+        );
 
-  // Type assertion for organizations
-  const org = invitation?.organizations as { id: string; name: string } | undefined;
+        if (!response.ok) {
+            if (response.status === 404) {
+                return { valid: false, error: "not_found" };
+            } else if (response.status === 400) {
+                const data = await response.json();
+                // Expect backend to include details about status/expired/etc.
+                return { valid: false, error: data.detail === "expired" ? "expired" : "not_pending", details: data.detail };
+            }
+            throw new Error("Unexpected response from server");
+        }
 
-  // Invalid token
-  if (error || !invitation || !org) {
-    return { valid: false, error: "not_found" };
-  }
+        const invitation = await response.json();
 
-  // Check status
-  if (invitation.status !== "pending") {
-    return {
-      valid: false,
-      error: "not_pending",
-      details: `Status: ${invitation.status}`,
-    };
-  }
-
-  // Check expiration
-  const expiresAt = new Date(invitation.expires_at);
-  const now = new Date();
-
-  if (expiresAt < now) {
-    // Mark as expired
-    await supabaseAdmin
-      .from("invitations")
-      .update({ status: "expired" })
-      .eq("id", invitation.id);
-
-    return { valid: false, error: "expired" };
-  }
-
-  // Check if user already exists
-  const { data: existingUser } = await supabaseAdmin
-    .from("users")
-    .select("id, email")
-    .eq("email", invitation.email)
-    .single();
-
-  if (existingUser) {
-    return { valid: false, error: "user_exists" };
-  }
-
-  // Valid invitation
-  return {
-    valid: true,
-    invitation: {
-      id: invitation.id,
-      email: invitation.email,
-      org_id: invitation.org_id,
-      org_role: invitation.org_role,
-      organization: org,
-    },
-  };
+        return {
+            valid: true,
+            invitation: {
+                id: invitation.id,
+                email: invitation.email,
+                org_id: invitation.organization_id,
+                org_role: invitation.initial_role,
+                organization: {
+                    id: invitation.organization.id,
+                    name: invitation.organization.name,
+                },
+                name: invitation.name,
+                expires_at: invitation.expires_at,
+            },
+        };
+    } catch (err: any) {
+        console.error("Failed to validate invitation token:", err);
+        return { valid: false, error: "not_found" };
+    }
 }
