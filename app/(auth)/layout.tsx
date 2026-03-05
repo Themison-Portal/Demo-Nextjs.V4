@@ -6,40 +6,30 @@
 
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/getUser";
-import { createClient } from "@/lib/supabase/server";
 import { ROUTES } from "@/lib/routes";
 
 export default async function AuthLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }) {
-  const user = await getUser();
+    const user = await getUser();
 
-  // Not authenticated → allow access to signin/signup
-  if (!user) {
-    return <>{children}</>;
-  }
+    // Not authenticated → allow access to signin/signup
+    if (!user) {
+        return <>{children}</>;
+    }
 
-  // Staff user → redirect to console
-  if (user.isStaff) {
-    redirect(ROUTES.CONSOLE.HOME);
-  }
+    // Staff user → redirect to console
+    if (user.isStaff) {
+        redirect(ROUTES.CONSOLE.HOME);
+    }
 
-  // Client user → redirect to their organization dashboard
-  const supabase = await createClient();
-  const { data: membership } = await supabase
-    .from("organization_members")
-    .select("org_id")
-    .eq("user_id", user.id)
-    .is("deleted_at", null)
-    .single();
+    // Client user → redirect to their organization dashboard
+    if (user.organizationId) {
+        redirect(ROUTES.APP.DASHBOARD(user.organizationId));
+    }
 
-  if (membership?.org_id) {
-    redirect(ROUTES.APP.DASHBOARD(membership.org_id));
-  }
-
-  // Fallback: user has no organization (shouldn't happen)
-  // Sign them out and show signin
-  redirect(ROUTES.PUBLIC.ERROR_WITH_MESSAGE("No organization found"));
+    // Fallback: user has no organization
+    redirect(ROUTES.PUBLIC.ERROR_WITH_MESSAGE("No organization found"));
 }
