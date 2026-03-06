@@ -1,26 +1,36 @@
-import { getAuth0Client } from "@/lib/auth0";
+import type {
+    Trial,
+    TrialTeamMember,
+    VisitScheduleTemplate,
+} from "./../services/trials/types";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_URL!;
+if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
 
-async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const auth0 = await getAuth0Client();
-    if (!auth0) throw new Error("Failed to initialize Auth0 client");
-
-    const token = await auth0.getTokenSilently();
+async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const isFormData = options.body instanceof FormData;
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            ...options?.headers,
+            ...(isFormData ? {} : { "Content-Type": "application/json" }),
+            ...(options.headers || {}),
         },
     });
 
     if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`API error: ${response.status} - ${text}`);
+        let errorMessage = `API error: ${response.status}`;
+        try {
+            const errorJson = await response.json();
+            errorMessage = errorJson?.detail || errorJson?.error || errorMessage;
+        } catch {
+            const text = await response.text();
+            if (text) errorMessage = text;
+        }
+        throw new Error(errorMessage);
     }
+
+    if (response.status === 204) return {} as T;
 
     return response.json();
 }
@@ -29,29 +39,32 @@ export const apiClient = {
     // -----------------------
     // Organization
     // -----------------------
-    getOrganization: async (orgId: string) =>
-        fetchApi<any>(`/organization/${orgId}`),
-    updateOrganization: async (orgId: string, payload: { name?: string; settings?: any }) =>
-        fetchApi<any>(`/organization/${orgId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    getOrganization: async () => fetchApi("/organizations/me"),
+    updateOrganization: async (payload: { name?: string; settings?: any }) =>
+        fetchApi("/organizations/me", { method: "PUT", body: JSON.stringify(payload) }),
+    getOrganizationMetrics: async () => fetchApi("/organizations/me/metrics"),
 
     // -----------------------
     // Invitations
     // -----------------------
     getInvitations: async (status?: string) =>
-        fetchApi<any[]>(`/invitations${status ? `?status=${status}` : ""}`),
+        fetchApi(`/invitations${status ? `?status=${status}` : ""}`),
     createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; initial_role: string }[] }) =>
-        fetchApi<any[]>("/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
+        fetchApi("/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
     validateInvitationToken: async (token: string) =>
-        fetchApi<any>(`/invitations/validate/${token}`),
-    getInvitationCounts: async () =>
-        fetchApi<{ pending: number; accepted: number; expired: number; total: number }>("/invitations/count"),
+        fetchApi(`/invitations/validate/${token}`),
+    getInvitationCounts: async () => fetchApi("/invitations/count"),
+    inviteMember: async (orgId: string, payload: { email: string; org_role: string }) =>
+        fetchApi(`/organizations/members`, { method: "POST", body: JSON.stringify({ ...payload, org_id: orgId }) }),
 
     // -----------------------
     // Members
     // -----------------------
-    getCurrentUser: async () => fetchApi<any>("/me"),
-    getMyTrialAssignments: async () => fetchApi<any[]>("/me/trial-assignments"),
-    getMembers: async () => fetchApi<any[]>("/members"),
+    getCurrentUser: async () => fetchApi("/me"),
+    getMyTrialAssignments: async () => fetchApi("/me/trial-assignments"),
+    getMembers: async () => fetchApi("/members"),
+    getTrialTeamMembers: async (trialId: string) =>
+        fetchApi<TrialTeamMember[]>(`/trials/${trialId}/team-members`),
     updateMember: async (memberId: string, payload: any) =>
         fetchApi(`/members/${memberId}`, { method: "PUT", body: JSON.stringify(payload) }),
     deleteMember: async (memberId: string) =>
@@ -60,94 +73,58 @@ export const apiClient = {
     // -----------------------
     // Trials
     // -----------------------
-    getTrials: async () => fetchApi<any[]>(`/trials`),
-    getTrialById: async (trialId: string) => fetchApi<any>(`/trials/${trialId}`),
+    getTrials: async () => fetchApi(`/trials`),
+    getTrialById: async (trialId: string) => fetchApi(`/trials/${trialId}`),
+
 
     // -----------------------
     // Patients
     // -----------------------
-    getPatients: async () => fetchApi<any[]>(`/patients`),
-    getPatientById: async (patientId: string) => fetchApi<any>(`/patients/${patientId}`),
+    getPatients: async () => fetchApi(`/patients`),
+    getPatientById: async (patientId: string) => fetchApi(`/patients/${patientId}`),
+    createPatient: async (payload: any) => fetchApi("/patients", { method: "POST", body: JSON.stringify(payload) }),
+    updatePatient: async (patientId: string, payload: any) =>
+        fetchApi(`/patients/${patientId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Visits
     // -----------------------
-    getVisits: async (trialIds: string[] = [], patientIds: string[] = []) => {
-        const params = [
-            ...trialIds.map(id => `trial_id=${id}`),
-            ...patientIds.map(id => `patient_id=${id}`)
-        ].join("&");
-        return fetchApi<any[]>(`/patient-visits${params ? "?" + params : ""}`);
-    },
+    getPatientVisits: async (patientId: string) => fetchApi(`/patients/${patientId}/visits`),
+    updateVisit: async (visitId: string, payload: any) =>
+        fetchApi(`/visits/${visitId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Tasks
     // -----------------------
-    getTasks: async (trialIds: string[] = []) => {
-        const params = trialIds.map(id => `trial_ids=${id}`).join("&");
-        return fetchApi<any[]>(`/tasks${params ? "?" + params : ""}`);
-    },
     createTask: async (payload: {
         trial_id: string;
-        title: string;
-        description?: string;
-        status?: string;
-        priority?: string;
-        assigned_to?: string;
-        due_date?: string;
-        patient_id?: string;
-        visit_id?: string;
-        activity_type_id?: string;
-    }) =>
-        fetchApi<any>("/tasks", { method: "POST", body: JSON.stringify(payload) }),
-    updateTask: async (taskId: string, payload: Partial<{
-        title: string;
-        description: string;
-        status: string;
-        priority: string;
-        assigned_to: string;
-        due_date: string;
         patient_id: string;
         visit_id: string;
-        activity_type_id: string;
-    }>) =>
-        fetchApi<any>(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
-    deleteTask: async (taskId: string) =>
-        fetchApi(`/tasks/${taskId}`, { method: "DELETE" }),
+        visit_activity_id?: string;
+        activity_type_id?: string;
+        title: string;
+        status?: string;
+        priority?: string;
+        assigned_to?: string; // change from string | null → string | undefined
+        due_date?: string;
+        source?: string;       // optional, hydration can include it
+        source_id?: string;
+    }) =>
+        fetchApi("/tasks", { method: "POST", body: JSON.stringify(payload) }),
+
+    updateTasksByVisit: async (
+        visitId: string,
+        payload: Partial<{ status: string; assigned_to?: string; due_date?: string }>
+    ) => fetchApi(`/visits/${visitId}/tasks`, { method: "PATCH", body: JSON.stringify(payload) }),
+
+    updateTask: async (taskId: string, payload: any) =>
+        fetchApi(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
-    // Team Members / Org Metrics
+    // Chat Threads & Messages
     // -----------------------
-    getTeamMemberCount: async () => {
-        const metrics = await fetchApi<{
-            total_members: number;
-            total_trials: number;
-            total_patients: number;
-            total_documents: number;
-            active_trials: number;
-        }>(`/organizations/me/metrics`);
-        return metrics.total_members;
-    },
-
-    // -----------------------
-    // Chat Messages
-    // -----------------------
-    getMessages: async (sessionId: string) =>
-        fetchApi<any[]>(`/messages?session_id=${sessionId}`),
-    createMessage: async (payload: { session_id: string; content: string }) =>
-        fetchApi(`/messages`, { method: "POST", body: JSON.stringify(payload) }),
-    updateMessage: async (messageId: string, content: string) =>
-        fetchApi(`/messages/${messageId}`, { method: "PUT", body: JSON.stringify({ content }) }),
-    deleteMessage: async (messageId: string) =>
-        fetchApi(`/messages/${messageId}`, { method: "DELETE" }),
-
-    // -----------------------
-    // Chat Threads
-    // -----------------------
-    getThreads: async (trialId?: string) => {
-        const params = trialId ? `?trial_id=${trialId}` : "";
-        return fetchApi<any[]>(`/chat-threads${params}`);
-    },
+    getThreads: async (trialId?: string) =>
+        fetchApi(`/chat-threads${trialId ? `?trial_id=${trialId}` : ""}`),
     createThread: async (payload: { title: string; trial_id?: string }) =>
         fetchApi(`/chat-threads`, { method: "POST", body: JSON.stringify(payload) }),
     updateThread: async (threadId: string, payload: { title?: string }) =>
@@ -157,13 +134,21 @@ export const apiClient = {
     markThreadRead: async (threadId: string) =>
         fetchApi(`/chat-threads/${threadId}/read`, { method: "POST" }),
 
+    getMessages: async (sessionId: string) => fetchApi(`/messages?session_id=${sessionId}`),
+    createMessage: async (payload: { session_id: string; content: string }) =>
+        fetchApi("/messages", { method: "POST", body: JSON.stringify(payload) }),
+    updateMessage: async (messageId: string, content: string) =>
+        fetchApi(`/messages/${messageId}`, { method: "PUT", body: JSON.stringify({ content }) }),
+    deleteMessage: async (messageId: string) =>
+        fetchApi(`/messages/${messageId}`, { method: "DELETE" }),
+
     // -----------------------
     // Trial Documents
     // -----------------------
     getTrialDocuments: async (trialId?: string) =>
-        fetchApi<any[]>(`/documents${trialId ? `?trial_id=${trialId}` : ""}`),
+        fetchApi(`/documents${trialId ? `?trial_id=${trialId}` : ""}`),
     getTrialDocumentById: async (documentId: string) =>
-        fetchApi<any>(`/documents/${documentId}`),
+        fetchApi(`/documents/${documentId}`),
     uploadTrialDocument: async (
         file: File,
         trialId: string,
@@ -177,14 +162,50 @@ export const apiClient = {
         formData.append("document_name", documentName);
         formData.append("document_type", documentType);
         formData.append("description", description);
-        return fetchApi<any>("/documents/upload", {
-            method: "POST",
-            body: formData,
-            headers: {},
-        });
+
+        return fetchApi(`/documents/upload`, { method: "POST", body: formData });
     },
     updateTrialDocument: async (documentId: string, payload: Record<string, any>) =>
-        fetchApi<any>(`/documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
     deleteTrialDocument: async (documentId: string) =>
         fetchApi(`/documents/${documentId}`, { method: "DELETE" }),
+
+
+    // -----------------------
+    // Activities / Activity Types
+    // -----------------------
+    getTrialActivity: async (trialId: string, activityId: string) =>
+        fetchApi(`/trials/${trialId}/activities/${activityId}`),
+
+    getActivityType: async (activityTypeId: string) =>
+        fetchApi(`/activity-types/${activityTypeId}`),
+
+
+    // -----------------------
+    // Visits & Visit Activities
+    // -----------------------
+
+    // Create a visit
+    createVisit: async (payload: {
+        patient_id: string;
+        trial_id?: string;
+        visit_template_name: string;
+        visit_name: string;
+        visit_order: number;
+        days_from_day_zero?: number;
+        is_day_zero?: boolean;
+        scheduled_date: string;
+        status?: string;
+    }): Promise<{ id: string }> =>
+        fetchApi(`/visits`, { method: "POST", body: JSON.stringify(payload) }),
+
+    // Create a visit activity
+    createVisitActivity: async (payload: {
+        visit_id: string;
+        activity_type_id: string;
+        activity_name: string;
+        activity_order: number;
+        status?: string;
+    }): Promise<{ id: string }> =>
+        fetchApi(`/visit-activities`, { method: "POST", body: JSON.stringify(payload) }),
 };
