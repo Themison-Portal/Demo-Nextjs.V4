@@ -3,6 +3,9 @@ import type {
     TrialTeamMember,
     VisitScheduleTemplate,
 } from "./../services/trials/types";
+import type { ActivityType, TrialActivityType } from "@/services/activities/types";
+import type { TrialDetails } from "@/services/trials/types";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
@@ -74,22 +77,23 @@ export const apiClient = {
     // Trials
     // -----------------------
     getTrials: async () => fetchApi(`/trials`),
-    getTrialById: async (trialId: string) => fetchApi(`/trials/${trialId}`),
+    getTrialById: (trialId: string): Promise<TrialDetails> =>
+        fetchApi<TrialDetails>(`/trials/${trialId}`),
 
 
     // -----------------------
     // Patients
     // -----------------------
-    getPatients: async () => fetchApi(`/patients`),
-    getPatientById: async (patientId: string) => fetchApi(`/patients/${patientId}`),
+    getPatients: async () => fetchApi(`/ patients`),
+    getPatientById: async (patientId: string) => fetchApi(`/ patients / ${patientId}`),
     createPatient: async (payload: any) => fetchApi("/patients", { method: "POST", body: JSON.stringify(payload) }),
     updatePatient: async (patientId: string, payload: any) =>
-        fetchApi(`/patients/${patientId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/ patients / ${patientId} `, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Visits
     // -----------------------
-    getPatientVisits: async (patientId: string) => fetchApi(`/patients/${patientId}/visits`),
+    getPatientVisits: async (patientId: string) => fetchApi(`/ patients / ${patientId}/visits`),
     updateVisit: async (visitId: string, payload: any) =>
         fetchApi(`/visits/${visitId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
@@ -174,11 +178,14 @@ export const apiClient = {
     // -----------------------
     // Activities / Activity Types
     // -----------------------
-    getTrialActivity: async (trialId: string, activityId: string) =>
+    getTrialActivity: async (
+        trialId: string,
+        activityId: string
+    ): Promise<TrialActivityType | null> =>
         fetchApi(`/trials/${trialId}/activities/${activityId}`),
 
-    getActivityType: async (activityTypeId: string) =>
-        fetchApi(`/activity-types/${activityTypeId}`),
+    getActivityType: async (activityId: string): Promise<ActivityType | null> =>
+        fetchApi(`/activity-types/${activityId}`),
 
 
     // -----------------------

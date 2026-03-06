@@ -1,4 +1,4 @@
-import type { VisitScheduleTemplate, VisitTemplate } from "./types";
+import type { VisitTemplate } from "./types";
 import type { HydrationResult, RecalculationResult } from "./types";
 import type {
     EnrollmentPreview,
@@ -6,6 +6,9 @@ import type {
     EnrollmentActivityPreview,
 } from "@/services/patients/types";
 import { apiClient } from "@/lib/apiClient"; // FastAPI client
+import type { TrialDetails } from "@/services/trials/types";
+import { VisitScheduleTemplate } from '@/services/trials/types';
+import type { VisitScheduleTemplateWithAssignees } from "@/services/trials/types";
 
 // ============================================================================
 // Helpers
@@ -14,10 +17,15 @@ import { apiClient } from "@/lib/apiClient"; // FastAPI client
 /**
  * Get user_id by trial role
  */
-async function getUserByTrialRole(trialId: string, role: string): Promise<string | null> {
+async function getUserByTrialRole(
+    trialId: string,
+    role: string
+): Promise<string | null> {
     const members = await apiClient.getTrialTeamMembers(trialId);
-    const member = members.find((m) => m.role === role);
-    return member?.user_id || null;
+
+    const member = members.find((m) => m.role_name === role);
+
+    return member?.member_id ?? null;
 }
 
 /**
@@ -34,12 +42,14 @@ async function resolveActivityName(trialId: string, activityId: string): Promise
 /**
  * Get trial template or throw
  */
-async function getTrialTemplate(trialId: string): Promise<VisitScheduleTemplate> {
-    const trial = await apiClient.getTrialById(trialId);
-    if (!trial?.visit_schedule_template) {
+async function getTrialTemplate(trialId: string): Promise<VisitScheduleTemplate[]> {
+    const trial = await apiClient.getTrialById(trialId) as TrialDetails;
+
+    if (!trial?.visit_schedules?.length) {
         throw new Error(`Trial ${trialId} has no visit schedule template`);
     }
-    return trial.visit_schedule_template;
+
+    return trial.visit_schedules;
 }
 
 /**
@@ -107,6 +117,8 @@ async function hydrateVisitFromTemplate(
         });
 
         activitiesCreated++;
+
+        const template = trial.visit_schedules as VisitScheduleTemplateWithAssignees;
 
         const assigneeUserId = await resolveAssignee(
             trialId,
@@ -221,7 +233,7 @@ export async function previewEnrollment(
     baselineDate: string
 ): Promise<EnrollmentPreview> {
     const template = await getTrialTemplate(trialId);
-    const remainingVisits = template.visits.filter((v) => v.order > 1).sort((a, b) => a.order - b.order);
+    const remainingVisits = template.visits.filter((v: any) => v.order > 1).sort((a: any, b: any) => a.order - b.order);
     const baselineDateObj = new Date(baselineDate);
 
     const visitsPreview: EnrollmentVisitPreview[] = [];
