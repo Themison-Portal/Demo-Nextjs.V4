@@ -3,6 +3,29 @@ import type {
     TrialTeamMember,
     VisitScheduleTemplate,
 } from "./../services/trials/types";
+import type {
+    ArchiveFolder,
+    SavedResponse,
+    CreateFolderInput,
+    CreateSavedResponseInput,
+} from "@/types/archive";
+
+import type { TeamMembersResponse } from "@/services/client/teamMembers";
+
+
+import type {
+    ChatSession,
+    ChatMessage,
+    ChatSessionWithMessages,
+    CreateChatSessionInput,
+    CreateChatMessageInput,
+    UpdateChatSessionInput,
+} from "@/types/chat";
+import type { PatientVisit } from "@/services/visits/types";
+import type { TaskWithContext, Task, TaskPayload } from "@/services/tasks/types";
+import type { AddTrialTeamMemberInput, TrialRole } from "./../services/trials/types";
+import type { TrialDocument } from "@/services/documents/types";
+
 import type { ActivityType, TrialActivityType } from "@/services/activities/types";
 import type { TrialDetails } from "@/services/trials/types";
 
@@ -42,10 +65,35 @@ export const apiClient = {
     // -----------------------
     // Organization
     // -----------------------
-    getOrganization: async () => fetchApi("/organizations/me"),
-    updateOrganization: async (payload: { name?: string; settings?: any }) =>
-        fetchApi("/organizations/me", { method: "PUT", body: JSON.stringify(payload) }),
-    getOrganizationMetrics: async () => fetchApi("/organizations/me/metrics"),
+    getOrganization: async (id?: string) => {
+        // If ID is provided, admin endpoint, else fallback to /me
+        return fetchApi(id ? `/organizations/${id}` : "/organizations/me");
+    },
+
+    updateOrganization: async (
+        payload: { name?: string; settings?: any },
+        id?: string
+    ) => {
+        return fetchApi(id ? `/organizations/${id}` : "/organizations/me", {
+            method: "PUT",
+            body: JSON.stringify(payload),
+        });
+    },
+
+    getOrganizationMetrics: async () => fetchApi("/organizations/me"),
+
+    // Invite member to organization (admin)
+    inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }) =>
+        fetchApi(`/organizations/members`, {
+            method: "POST",
+            body: JSON.stringify({ ...payload, org_id: orgId }),
+        }),
+
+    removeMember: async (memberId: string) =>
+        fetchApi(`/members/${memberId}`, { method: "DELETE" }),
+    getTeamMembers: async (): Promise<TeamMembersResponse> => {
+        return fetchApi("/members");
+    },
 
     // -----------------------
     // Invitations
@@ -63,7 +111,14 @@ export const apiClient = {
     // -----------------------
     // Members
     // -----------------------
-    getCurrentUser: async () => fetchApi("/me"),
+    // getCurrentUser: async () => fetchApi("/me"),
+    getCurrentUser: async (): Promise<{
+        member: { id: string; email: string; default_role: string; onboarding_completed: boolean };
+        profile?: { first_name?: string; last_name?: string };
+        organization?: { id?: string; name?: string };
+    }> => {
+        return fetchApi("/me");
+    },
     getMyTrialAssignments: async () => fetchApi("/me/trial-assignments"),
     getMembers: async () => fetchApi("/members"),
     getTrialTeamMembers: async (trialId: string) =>
@@ -84,16 +139,36 @@ export const apiClient = {
     // -----------------------
     // Patients
     // -----------------------
-    getPatients: async () => fetchApi(`/ patients`),
-    getPatientById: async (patientId: string) => fetchApi(`/ patients / ${patientId}`),
+    getPatients: async () => fetchApi(`/patients`),
+    getPatientById: async (patientId: string) => fetchApi(`/patients/${patientId}`),
     createPatient: async (payload: any) => fetchApi("/patients", { method: "POST", body: JSON.stringify(payload) }),
     updatePatient: async (patientId: string, payload: any) =>
-        fetchApi(`/ patients / ${patientId} `, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/patients/${patientId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    deletePatient: async (patientId: string): Promise<void> =>
+        fetchApi(`/patients/${patientId}`, {
+            method: "DELETE",
+        }),
+
 
     // -----------------------
     // Visits
     // -----------------------
-    getPatientVisits: async (patientId: string) => fetchApi(`/ patients / ${patientId}/visits`),
+    getPatientVisits: async (patientId: string) => fetchApi(`/ patients/${patientId}/visits`),
+    completeVisit: async (
+        orgId: string,
+        trialId: string,
+        patientId: string,
+        visitId: string
+    ): Promise<PatientVisit> => {
+        return fetchApi(
+            `/api/client/${orgId}/trials/${trialId}/patients/${patientId}/visits/${visitId}/complete`,
+            {
+                method: "POST",
+                credentials: "include",
+            }
+        );
+    },
+
     updateVisit: async (visitId: string, payload: any) =>
         fetchApi(`/visits/${visitId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
@@ -113,7 +188,7 @@ export const apiClient = {
         due_date?: string;
         source?: string;       // optional, hydration can include it
         source_id?: string;
-    }) =>
+    }): Promise<TaskPayload> =>
         fetchApi("/tasks", { method: "POST", body: JSON.stringify(payload) }),
 
     updateTasksByVisit: async (
@@ -125,7 +200,7 @@ export const apiClient = {
         fetchApi(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
-    // Chat Threads & Messages
+    // Chat Threads & Messages 
     // -----------------------
     getThreads: async (trialId?: string) =>
         fetchApi(`/chat-threads${trialId ? `?trial_id=${trialId}` : ""}`),
@@ -146,11 +221,72 @@ export const apiClient = {
     deleteMessage: async (messageId: string) =>
         fetchApi(`/messages/${messageId}`, { method: "DELETE" }),
 
+
+    // -----------------------
+    // Chat / Document AI 
+    // -----------------------
+
+    getChatSessions: async (trialId: string): Promise<ChatSession[]> =>
+        fetchApi(`/api/chat-sessions/?trial_id=${trialId}`),
+
+    getChatSession: async (sessionId: string): Promise<ChatSessionWithMessages> => {
+        const session = await fetchApi<ChatSession>(`/api/chat-sessions/${sessionId}`);
+
+        const messages = await fetchApi<ChatMessage[]>(
+            `/api/chat-messages/?session_id=${sessionId}`
+        );
+
+        return { ...session, messages };
+    },
+
+    createChatSession: async (
+        payload: CreateChatSessionInput
+    ): Promise<ChatSession> =>
+        fetchApi(`/api/chat-sessions/`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+
+    updateChatSession: async (
+        payload: UpdateChatSessionInput
+    ): Promise<ChatSession> =>
+        fetchApi(`/api/chat-sessions/${payload.id}`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
+        }),
+
+    deleteChatSession: async (sessionId: string): Promise<void> =>
+        fetchApi(`/api/chat-sessions/${sessionId}`, {
+            method: "DELETE",
+        }),
+
+    createChatMessage: async (
+        payload: CreateChatMessageInput
+    ): Promise<ChatMessage> =>
+        fetchApi(`/api/chat-messages/`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+
+    updateChatMessage: async (
+        messageId: string,
+        content: string
+    ): Promise<ChatMessage> =>
+        fetchApi(`/api/chat-messages/${messageId}`, {
+            method: "PUT",
+            body: JSON.stringify({ content }),
+        }),
+
+    deleteChatMessage: async (messageId: string): Promise<void> =>
+        fetchApi(`/api/chat-messages/${messageId}`, {
+            method: "DELETE",
+        }),
+
     // -----------------------
     // Trial Documents
     // -----------------------
-    getTrialDocuments: async (trialId?: string) =>
-        fetchApi(`/documents${trialId ? `?trial_id=${trialId}` : ""}`),
+    getTrialDocuments: async (trialId: string): Promise<TrialDocument[]> =>
+        fetchApi(`/documents?trial_id=${trialId}`),
     getTrialDocumentById: async (documentId: string) =>
         fetchApi(`/documents/${documentId}`),
     uploadTrialDocument: async (
@@ -215,4 +351,184 @@ export const apiClient = {
         status?: string;
     }): Promise<{ id: string }> =>
         fetchApi(`/visit-activities`, { method: "POST", body: JSON.stringify(payload) }),
+
+    // -----------------------
+    // Archive (Response Library)
+    // -----------------------
+    getArchiveFolders: async (orgId: string): Promise<ArchiveFolder[]> =>
+        fetchApi(`/archive/folders/?org_id=${orgId}`),
+
+    createArchiveFolder: async (payload: CreateFolderInput): Promise<ArchiveFolder> =>
+        fetchApi(`/archive/folders/`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+
+    deleteArchiveFolder: async (folderId: string): Promise<void> =>
+        fetchApi(`/archive/folders/${folderId}`, {
+            method: "DELETE",
+        }),
+
+    getSavedResponses: async (folderId: string): Promise<SavedResponse[]> =>
+        fetchApi(`/archive/responses/?folder_id=${folderId}`),
+
+    createSavedResponse: async (payload: CreateSavedResponseInput): Promise<SavedResponse> =>
+        fetchApi(`/archive/responses/`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+
+    updateSavedResponse: async (
+        responseId: string,
+        payload: Partial<SavedResponse>
+    ): Promise<SavedResponse> =>
+        fetchApi(`/archive/responses/${responseId}`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
+        }),
+
+    deleteSavedResponse: async (responseId: string): Promise<void> =>
+        fetchApi(`/archive/responses/${responseId}`, {
+            method: "DELETE",
+        }),
+
+    // -----------------------
+    // Visit Schedule Template
+    // -----------------------
+
+    getVisitTemplate: async (
+        trialId: string
+    ): Promise<VisitScheduleTemplate> =>
+        fetchApi(`/trials/${trialId}/template`),
+
+    updateVisitTemplate: async (
+        trialId: string,
+        template: VisitScheduleTemplate
+    ): Promise<VisitScheduleTemplate> =>
+        fetchApi(`/trials/${trialId}/template`, {
+            method: "PUT",
+            body: JSON.stringify(template),
+        }),
+
+
+    // -----------------------
+    // Trial Team Members
+    // -----------------------
+    getTrialTeam: async (orgId: string, trialId: string): Promise<TrialTeamMember[]> =>
+        apiClient.getTrialTeamMembers(trialId), // reuse existing endpoint
+
+    addTrialTeamMember: async (
+        trialId: string,
+        payload: AddTrialTeamMemberInput
+    ): Promise<TrialTeamMember> =>
+        fetchApi(`/trials/${trialId}/team-members`, { method: "POST", body: JSON.stringify(payload) }),
+
+    updateTrialTeamMember: async (
+        orgId: string,
+        trialId: string,
+        memberId: string,
+        role: TrialRole
+    ): Promise<TrialTeamMember> =>
+        fetchApi(`/trials/${trialId}/team-members/${memberId}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+
+    updateTrialTeamMemberSettings: async (
+        orgId: string,
+        trialId: string,
+        memberId: string,
+        settings: Record<string, any>
+    ): Promise<TrialTeamMember> =>
+        fetchApi(`/trials/${trialId}/team-members/${memberId}/settings`, { method: "PATCH", body: JSON.stringify(settings) }),
+
+    updateTrialTeamMemberStatus: async (
+        orgId: string,
+        trialId: string,
+        memberId: string,
+        status: "active" | "inactive"
+    ): Promise<TrialTeamMember> =>
+        fetchApi(`/trials/${trialId}/team-members/${memberId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+
+    removeTrialTeamMember: async (
+        orgId: string,
+        trialId: string,
+        memberId: string
+    ): Promise<void> =>
+        fetchApi(`/trials/${trialId}/team-members/${memberId}`, { method: "DELETE" }),
+
+    // -----------------------
+    // RAG PDF Upload / Processing
+    // -----------------------
+
+    /**
+     * Upload PDF for RAG processing
+     * Returns a job ID immediately
+     */
+    uploadPdfDocument: async (
+        documentUrl: string,
+        documentId: string,
+        chunkSize = 750
+    ): Promise<{ job_id: string; document_id: string; status: string; message: string }> =>
+        fetchApi(`/upload-pdf`, {
+            method: "POST",
+            body: JSON.stringify({ document_url: documentUrl, document_id: documentId, chunk_size: chunkSize }),
+        }),
+
+    /**
+     * Poll PDF ingestion status by job ID
+     */
+    getUploadStatus: async (
+        jobId: string
+    ): Promise<{
+        job_id: string;
+        document_id: string;
+        status: "queued" | "processing" | "completed" | "failed";
+        progress_percent: number;
+        current_stage?: string;
+        message?: string;
+        result?: any;
+        error?: string;
+    }> =>
+        fetchApi(`/status/${jobId}`),
+
+    // -----------------------
+    // Tasks
+    // -----------------------
+    getTasks: async (params?: {
+        trial_id?: string;
+        patient_id?: string;
+        assigned_to?: string;
+        status?: string;
+        priority?: string;
+        category?: string;
+    }): Promise<TaskWithContext[]> => {
+
+        const query = new URLSearchParams();
+
+        if (params?.trial_id) query.append("trial_id", params.trial_id);
+        if (params?.patient_id) query.append("patient_id", params.patient_id);
+        if (params?.assigned_to) query.append("assigned_to", params.assigned_to);
+        if (params?.status) query.append("status", params.status);
+        if (params?.priority) query.append("priority", params.priority);
+        if (params?.category) query.append("category", params.category);
+
+        const qs = query.toString();
+
+        return fetchApi(`/tasks${qs ? `?${qs}` : ""}`);
+    },
+
+    // createTask: async (payload: TaskCreate): Promise<Task> =>
+    //     fetchApi("/tasks", {
+    //         method: "POST",
+    //         body: JSON.stringify(payload),
+    //     }),
+
+    // updateTask: async (taskId: string, payload: TaskUpdate): Promise<Task> =>
+    //     fetchApi(`/tasks/${taskId}`, {
+    //         method: "PATCH",
+    //         body: JSON.stringify(payload),
+    //     }),
+
+    deleteTask: async (taskId: string): Promise<{ success: boolean }> =>
+        fetchApi(`/tasks/${taskId}`, {
+            method: "DELETE",
+        }),
 };

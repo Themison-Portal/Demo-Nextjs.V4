@@ -2,30 +2,29 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getTeamMembers } from '@/services/client/teamMembers';
+import { apiClient } from '@/lib/apiClient'; // import your apiClient
 
 const EMPTY_ARRAY: never[] = [];
 
 /**
  * Hook to fetch team members from all trials the user has access to
- * @param orgId - Organization ID
- * @param trialId - Optional filter by specific trial
+ * @param orgId - Organization ID (not needed if apiClient already uses auth context)
  */
-export function useTeamMembers(orgId: string, trialId?: string) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['client', 'team-members', orgId, trialId],
-    queryFn: () => getTeamMembers(orgId, trialId),
-    staleTime: 60000, // 1 minute - team members don't change often
-  });
+export function useTeamMembers() {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['teamMembers'],
+        queryFn: () => apiClient.getTeamMembers(),
+        staleTime: 60000, // 1 minute - team members don't change often
+    });
 
-  const teamMembers = useMemo(
-    () => data?.team_members ?? EMPTY_ARRAY,
-    [data?.team_members]
-  );
+    const teamMembers = useMemo(
+        () => data?.team_members ?? EMPTY_ARRAY,
+        [data?.team_members]
+    );
 
-  return {
-    teamMembers,
-    isLoading,
-    error,
-  };
+    return {
+        teamMembers,
+        isLoading,
+        error,
+    };
 }

@@ -1,193 +1,145 @@
-/**
- * Client - useTrialDocuments Hook
- * TanStack Query hook for trial documents with RAG processing polling
- */
-
-"use client";
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getTrialDocuments,
-  uploadDocument,
-  updateDocumentCategory,
-  getDocumentProcessingStatus,
-  updateDocumentStatus,
-} from "@/services/client/documents";
-import type { DocumentProcessingStatus } from "@/services/documents";
+import { apiClient } from "@/lib/apiClient";
+import type { TrialDocument } from "@/services/documents/types";
+import type { DocumentStatus, DocumentProcessingStatus } from "@/services/documents/types";
+
 
 const POLLING_INTERVAL = 5000;
 
-/**
- * Hook for fetching documents for a trial
- * Automatically polls RAG processing status for documents in "processing" state
- */
 export function useTrialDocuments(orgId: string, trialId: string) {
-  const queryClient = useQueryClient();
-  const queryKey = ["client", "trial-documents", trialId];
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelledRef = useRef(false);
+    const queryClient = useQueryClient();
+    const queryKey = ["client", "trial-documents", trialId];
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const cancelledRef = useRef(false);
 
-  // Reactive state for processing statuses (triggers re-renders)
-  const [processingStatuses, setProcessingStatuses] = useState<
-    Map<string, DocumentProcessingStatus>
-  >(new Map());
+    const [processingStatuses, setProcessingStatuses] = useState<
+        Map<string, DocumentProcessingStatus>
+    >(new Map());
 
-  // Callback to notify consumers about status changes
-  const statusChangeCallbackRef = useRef<
-    ((docId: string, status: DocumentProcessingStatus) => void) | null
-  >(null);
+    const statusChangeCallbackRef = useRef<
+        ((docId: string, status: DocumentProcessingStatus) => void) | null
+    >(null);
 
-  const onProcessingStatusChange = useCallback(
-    (callback: (docId: string, status: DocumentProcessingStatus) => void) => {
-      statusChangeCallbackRef.current = callback;
-    },
-    [],
-  );
+    const onProcessingStatusChange = useCallback(
+        (callback: (docId: string, status: DocumentProcessingStatus) => void) => {
+            statusChangeCallbackRef.current = callback;
+        },
+        []
+    );
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey,
-    queryFn: () => getTrialDocuments(orgId, trialId),
-    enabled: !!orgId && !!trialId,
-  });
+    // // Helper to normalize backend status to frontend type
+    // function normalizeStatus(status: string): TrialDocument["status"] {
+    //     switch (status) {
+    //         case "queued":
+    //             return "pending";
+    //         case "processing":
+    //         case "completed":
+    //         case "failed":
+    //             return status;
+    //         default:
+    //             return "pending"; // fallback for unknown statuses
+    //     }
+    // }
 
-  const documents = data?.documents || [];
 
-  // Poll processing status using recursive setTimeout (no concurrency)
-  useEffect(() => {
-    const processingDocs = documents.filter((d) => d.status === "processing");
+    // Explicitly type the query result as TrialDocument[]
+    const { data, isLoading, error, refetch } = useQuery<TrialDocument[]>({
+        queryKey,
+        queryFn: async (): Promise<TrialDocument[]> => {
+            const docs = await apiClient.getTrialDocuments(trialId);
 
-    if (processingDocs.length === 0) {
-      setProcessingStatuses((prev) => {
-        if (prev.size === 0) return prev;
-        return new Map();
-      });
-      return;
-    }
+            return (docs as any[]).map((doc) => ({
+                ...doc,
+                // normalize backend status to frontend DocumentStatus
+                status:
+                    doc.status === "queued"
+                        ? "pending"
+                        : doc.status === "completed"
+                            ? "ready"
+                            : doc.status === "failed"
+                                ? "error"
+                                : (doc.status as DocumentStatus), // "uploading" | "processing"
+            })) as TrialDocument[];
+        },
+        enabled: !!orgId && !!trialId,
+    });
 
-    cancelledRef.current = false;
+    const documents: TrialDocument[] = data || [];
 
-    const poll = async () => {
-      if (cancelledRef.current) return;
-
-      const results = await Promise.allSettled(
-        processingDocs.map((doc) => getDocumentProcessingStatus(doc.id)),
-      );
-
-      if (cancelledRef.current) return;
-
-      // Check each result for terminal status
-      let hasTerminal = false;
-
-      const statusMap = new Map<string, DocumentProcessingStatus>();
-      results.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          const docId = processingDocs[index].id;
-          statusMap.set(docId, result.value);
-          if (
-            result.value.status === "completed" ||
-            result.value.status === "failed"
-          ) {
-            hasTerminal = true;
-          }
+    // Poll processing statuses
+    useEffect(() => {
+        const processingDocs = documents.filter((d) => d.status === "processing");
+        if (!processingDocs.length) {
+            setProcessingStatuses(new Map());
+            return;
         }
-      });
 
-      // Update UI with latest statuses
-      setProcessingStatuses(statusMap);
+        cancelledRef.current = false;
 
-      if (hasTerminal) {
-        // Terminal detected — PATCH each terminal doc, then refetch
-        const patchPromises = Array.from(statusMap.entries())
-          .filter(
-            ([, s]) => s.status === "completed" || s.status === "failed",
-          )
-          .map(async ([docId, status]) => {
-            const dbStatus =
-              status.status === "completed" ? "ready" : "error";
-            try {
-              await updateDocumentStatus(
-                orgId,
-                trialId,
-                docId,
-                dbStatus,
-                status.error,
-              );
-            } catch (err) {
-              console.error("[Hook] Failed to update document status:", err);
+        const poll = async () => {
+            if (cancelledRef.current) return;
+
+            const results = await Promise.allSettled(
+                processingDocs.map((doc) => apiClient.getUploadStatus(doc.job_id))
+            );
+
+            if (cancelledRef.current) return;
+
+            const statusMap = new Map<string, DocumentProcessingStatus>();
+
+            results.forEach((result: PromiseSettledResult<any>, idx: number) => {
+                if (result.status === "fulfilled") {
+                    const value = result.value;
+                    const status: DocumentProcessingStatus = {
+                        document_id: processingDocs[idx].id,
+                        status:
+                            value.status === "queued"
+                                ? "pending"
+                                : (value.status as DocumentProcessingStatus["status"]),
+                        progress_percent: value.progress_percent ?? 0,
+                        current_stage: value.current_stage ?? "unknown",
+                        message: value.message ?? "",
+                        error: value.error ?? "",
+                    };
+                    statusMap.set(processingDocs[idx].id, status);
+                    statusChangeCallbackRef.current?.(processingDocs[idx].id, status);
+                }
+            });
+
+            setProcessingStatuses(statusMap);
+
+            // Re-run poll if any documents still processing
+            if ([...statusMap.values()].some((s) => s.status === "processing")) {
+                timeoutRef.current = setTimeout(poll, POLLING_INTERVAL);
+            } else {
+                queryClient.invalidateQueries({ queryKey });
             }
-            statusChangeCallbackRef.current?.(docId, status);
-          });
+        };
 
-        await Promise.all(patchPromises);
+        poll();
 
-        if (!cancelledRef.current) {
-          await queryClient.invalidateQueries({ queryKey });
-        }
-        // Don't schedule next poll — useEffect will re-run if needed
-        return;
-      }
+        return () => {
+            cancelledRef.current = true;
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, [documents.map((d) => d.id).join(",")]);
 
-      // Not terminal — schedule next poll
-      if (!cancelledRef.current) {
-        timeoutRef.current = setTimeout(poll, POLLING_INTERVAL);
-      }
+    // Upload document
+    const uploadMutation = useMutation({
+        mutationFn: ({ file, documentId }: { file: File; documentId: string }) =>
+            apiClient.uploadTrialDocument(file, trialId, documentId),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+    });
+
+    return {
+        documents,
+        isLoading,
+        error,
+        refetch,
+        processingStatuses,
+        onProcessingStatusChange,
+        uploadDocument: uploadMutation.mutateAsync,
+        isUploading: uploadMutation.isPending,
     };
-
-    // Start first poll
-    poll();
-
-    return () => {
-      cancelledRef.current = true;
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    documents
-      .filter((d) => d.status === "processing")
-      .map((d) => d.id)
-      .sort()
-      .join(","),
-  ]);
-
-  // Mutation: upload document
-  const uploadMutation = useMutation({
-    mutationFn: ({ file, category }: { file: File; category: string }) =>
-      uploadDocument(orgId, trialId, file, category),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
-
-  // Mutation: update document category
-  const updateCategoryMutation = useMutation({
-    mutationFn: ({
-      documentId,
-      category,
-    }: {
-      documentId: string;
-      category: string;
-    }) => updateDocumentCategory(orgId, trialId, documentId, category),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
-
-  return {
-    documents,
-    total: data?.total || 0,
-    isLoading,
-    error,
-    refetch,
-    uploadDocument: uploadMutation.mutateAsync,
-    isUploading: uploadMutation.isPending,
-    uploadError: uploadMutation.error,
-    updateCategory: updateCategoryMutation.mutateAsync,
-    isUpdatingCategory: updateCategoryMutation.isPending,
-    processingStatuses,
-    onProcessingStatusChange,
-  };
 }

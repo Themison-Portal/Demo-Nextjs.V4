@@ -1,122 +1,124 @@
-/**
- * Hook: useTrialTeam
- * Manages trial team members with TanStack Query
- */
+'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getTrialTeam,
-  addTrialTeamMember,
-  updateTrialTeamMember,
-  updateTrialTeamMemberSettings,
-  updateTrialTeamMemberStatus,
-  removeTrialTeamMember,
-} from '@/services/client/trials';
+import { apiClient } from '@/lib/apiClient';
 import { toast } from '@/lib/toast';
-import type { AddTrialTeamMemberInput, TrialRole } from '@/services/trials/types';
+import type {
+    AddTrialTeamMemberInput,
+    TrialTeamMember,
+    TrialRole,
+} from '@/services/trials/types';
 
 export function useTrialTeam(orgId: string, trialId: string) {
-  const queryClient = useQueryClient();
-  const queryKey = ['client', 'trial-team', orgId, trialId];
+    const queryClient = useQueryClient();
+    const queryKey = ['client', 'trial-team', orgId, trialId];
 
-  // Query: get team members
-  const { data, isLoading, error } = useQuery({
-    queryKey,
-    queryFn: () => getTrialTeam(orgId, trialId),
-    enabled: !!orgId && !!trialId,
-  });
+    // -----------------------
+    // Query: Get team members
+    // -----------------------
+    const { data, isLoading, error } = useQuery({
+        queryKey,
+        queryFn: () => apiClient.getTrialTeamMembers(trialId),
+        enabled: !!orgId && !!trialId,
+    });
 
-  // Mutation: add team member
-  const addMutation = useMutation({
-    mutationFn: (input: AddTrialTeamMemberInput) =>
-      addTrialTeamMember(orgId, trialId, input),
-    onSuccess: () => {
-      // Invalidate team query
-      queryClient.invalidateQueries({ queryKey });
-      // Invalidate trial details (PI might have changed)
-      queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
-      toast.success("Team member added", "The member has been added to the trial team");
-    },
-    onError: (error: any) => {
-      toast.error("Failed to add team member", error.message || "Please try again");
-    },
-  });
 
-  // Mutation: update role
-  const updateRoleMutation = useMutation({
-    mutationFn: ({ orgMemberId, role }: { orgMemberId: string; role: TrialRole }) =>
-      updateTrialTeamMember(orgId, trialId, orgMemberId, role),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-      // Invalidate trial details (PI might have changed)
-      queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
-    },
-  });
 
-  // Mutation: update settings
-  const updateSettingsMutation = useMutation({
-    mutationFn: ({
-      orgMemberId,
-      settings,
-    }: {
-      orgMemberId: string;
-      settings: { notes?: string; contact_info?: string; [key: string]: unknown };
-    }) => updateTrialTeamMemberSettings(orgId, trialId, orgMemberId, settings),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
+    // -----------------------
+    // Mutation: Add team member
+    // -----------------------
+    const addMutation = useMutation({
+        mutationFn: (input: AddTrialTeamMemberInput) =>
+            apiClient.addTrialTeamMember(orgId, trialId, input),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
+            toast.success('Team member added', 'The member has been added to the trial team');
+        },
+        onError: (err: any) => {
+            toast.error('Failed to add team member', err?.message || 'Please try again');
+        },
+    });
 
-  // Mutation: update status
-  const updateStatusMutation = useMutation({
-    mutationFn: ({
-      orgMemberId,
-      status,
-    }: {
-      orgMemberId: string;
-      status: 'active' | 'inactive';
-    }) => updateTrialTeamMemberStatus(orgId, trialId, orgMemberId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
+    // -----------------------
+    // Mutation: Update role
+    // -----------------------
+    const updateRoleMutation = useMutation({
+        mutationFn: ({ orgMemberId, role }: { orgMemberId: string; role: TrialRole }) =>
+            apiClient.updateTrialTeamMember(orgId, trialId, orgMemberId, role),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
+        },
+    });
 
-  // Mutation: remove member
-  const removeMutation = useMutation({
-    mutationFn: (orgMemberId: string) =>
-      removeTrialTeamMember(orgId, trialId, orgMemberId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-      // Invalidate trial details (PI might have been removed)
-      queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
-    },
-  });
+    // -----------------------
+    // Mutation: Update settings
+    // -----------------------
+    const updateSettingsMutation = useMutation({
+        mutationFn: ({
+            orgMemberId,
+            settings,
+        }: {
+            orgMemberId: string;
+            settings?: { notes?: string; contact_info?: string;[key: string]: unknown };
+        }) => apiClient.updateTrialTeamMemberSettings(orgId, trialId, orgMemberId, settings || {}),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey });
+        },
+    });
 
-  return {
-    // Data
-    teamMembers: data?.team_members || [],
-    isLoading,
-    error,
+    // -----------------------
+    // Mutation: Update status
+    // -----------------------
+    const updateStatusMutation = useMutation({
+        mutationFn: ({
+            orgMemberId,
+            status,
+        }: {
+            orgMemberId: string;
+            status: 'active' | 'inactive';
+        }) => apiClient.updateTrialTeamMemberStatus(orgId, trialId, orgMemberId, status),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+    });
 
-    // Mutations
-    addTeamMember: addMutation.mutateAsync,
-    isAdding: addMutation.isPending,
+    // -----------------------
+    // Mutation: Remove member
+    // -----------------------
+    const removeMutation = useMutation({
+        mutationFn: (orgMemberId: string) =>
+            apiClient.removeTrialTeamMember(orgId, trialId, orgMemberId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
+        },
+    });
 
-    updateRole: (orgMemberId: string, role: TrialRole) =>
-      updateRoleMutation.mutateAsync({ orgMemberId, role }),
-    isUpdatingRole: updateRoleMutation.isPending,
+    return {
+        // Data
+        teamMembers: data || [], //using data directly instead of mapping to ensure we have all fields, including settings
+        isLoading,
+        error,
 
-    updateSettings: (
-      orgMemberId: string,
-      settings: { notes?: string; contact_info?: string; [key: string]: unknown }
-    ) => updateSettingsMutation.mutateAsync({ orgMemberId, settings }),
-    isUpdatingSettings: updateSettingsMutation.isPending,
+        // Mutations
+        addTeamMember: addMutation.mutateAsync,
+        isAdding: addMutation.isPending,
 
-    updateStatus: (orgMemberId: string, status: 'active' | 'inactive') =>
-      updateStatusMutation.mutateAsync({ orgMemberId, status }),
-    isUpdatingStatus: updateStatusMutation.isPending,
+        updateRole: (orgMemberId: string, role: TrialRole) =>
+            updateRoleMutation.mutateAsync({ orgMemberId, role }),
+        isUpdatingRole: updateRoleMutation.isPending,
 
-    removeMember: removeMutation.mutateAsync,
-    isRemoving: removeMutation.isPending,
-  };
+        updateSettings: (
+            orgMemberId: string,
+            settings: Partial<TrialTeamMember['settings']>
+        ) => updateSettingsMutation.mutateAsync({ orgMemberId, settings }),
+        isUpdatingSettings: updateSettingsMutation.isPending,
+
+        updateStatus: (orgMemberId: string, status: 'active' | 'inactive') =>
+            updateStatusMutation.mutateAsync({ orgMemberId, status }),
+        isUpdatingStatus: updateStatusMutation.isPending,
+
+        removeMember: removeMutation.mutateAsync,
+        isRemoving: removeMutation.isPending,
+    };
 }

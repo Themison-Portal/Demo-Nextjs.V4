@@ -3,87 +3,127 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskSource = 'manual' | 'visit' | 'response';
 
 export interface Task {
-  id: string;
-  trial_id: string;
-  patient_id?: string | null;
-  visit_id?: string | null;
-  visit_activity_id?: string | null; // FK to visit_activities (1:1 for source='visit')
-  activity_type_id?: string | null;
-  category?: string | null;
-  title: string;
-  description?: string | null;
-  status: TaskStatus;
-  priority?: TaskPriority | null; // Optional like Trello
-  assigned_to?: string | null;
-  due_date?: string | null;
-  source?: TaskSource | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string | null;
+    id: string;
+    trial_id?: string;
+    patient_id?: string | null;
+    visit_id?: string | null;
+    visit_activity_id?: string | null; // FK to visit_activities (1:1 for source='visit')
+    activity_type_id?: string | null;
+    category?: string | null;
+    title: string;
+    description?: string | null;
+    status: TaskStatus;
+    priority?: TaskPriority | null; // Optional like Trello
+    assigned_to?: string | null;
+    due_date?: string | null;
+    source?: TaskSource | null;
+    created_at: string;
+
+    updated_at?: string;
+    deleted_at?: string | null;
 }
 
 export interface TaskWithContext extends Task {
-  patient?: {
-    patient_number: string;
-    initials?: string | null;
-  } | null;
-  visit?: {
-    visit_name: string;
-    scheduled_date?: string | null;
-  } | null;
-  activity_type?: {
-    id: string;
-    name: string;
-    category?: string | null;
-  } | null;
-  trial?: {
-    name: string;
-  };
-  assigned_user?: {
-    id: string;
-    email: string;
-    full_name?: string | null;
-  } | null;
+    patient?: {
+        patient_number: string;
+        initials?: string | null;
+    } | null;
+    visit?: {
+        visit_name: string;
+        scheduled_date?: string | null;
+    } | null;
+    activity_type?: {
+        id: string;
+        name: string;
+        category?: string | null;
+    } | null;
+    trial?: {
+        name: string;
+    };
+    assigned_user?: {
+        id: string;
+        email: string;
+        full_name?: string | null;
+    } | null;
 }
 
 export interface TasksResponse {
-  tasks: TaskWithContext[];
-  total: number;
+    tasks: TaskWithContext[];
+    total: number;
 }
 
 // Input types for mutations
 export interface CreateTaskInput {
-  trial_id: string;
-  patient_id?: string | null;
-  visit_id?: string | null;
-  activity_type_id?: string | null;
-  category?: string | null;
-  title: string;
-  description?: string | null;
-  status?: TaskStatus;
-  priority?: TaskPriority | null;
-  assigned_to?: string | null;
-  due_date?: string | null;
+    trial_id: string;
+    patient_id?: string | null;
+    visit_id?: string | null;
+    activity_type_id?: string | null;
+    category?: string | null;
+    title: string;
+    description?: string | null;
+    status?: TaskStatus;
+    priority?: TaskPriority | null;
+    assigned_to?: string | null;
+    due_date?: string | null;
 }
 
+export type TaskPayload = {
+    trial_id: string;
+    patient_id?: string; // optional now
+    visit_id: string;
+    visit_activity_id?: string;
+    activity_type_id?: string;
+    title: string;
+    status?: string;
+    priority?: string;
+    assigned_to?: string;
+    due_date?: string;
+    source?: string;
+    source_id?: string;
+};
+
 export interface UpdateTaskInput {
-  title?: string;
-  description?: string | null;
-  status?: TaskStatus;
-  priority?: TaskPriority | null;
-  assigned_to?: string | null;
-  due_date?: string | null;
-  patient_id?: string | null;
-  visit_id?: string | null;
-  activity_type_id?: string | null;
-  category?: string | null;
+    title?: string;
+    description?: string | null;
+    status?: TaskStatus;
+    priority?: TaskPriority | null;
+    assigned_to?: string | null;
+    due_date?: string | null;
+    patient_id?: string | null;
+    visit_id?: string | null;
+    activity_type_id?: string | null;
+    category?: string | null;
 }
 
 export interface TaskFilters {
-  trial_id?: string;
-  patient_id?: string;
-  assigned_to?: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  category?: string;
+    trial_id?: string;
+    patient_id?: string;
+    assigned_to?: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    category?: string;
+}
+
+export interface AssignedUser {
+    id: string;
+    full_name: string;
+}
+
+
+export interface TaskCreate {
+    trial_id?: string;
+    patient_id?: string;
+    assigned_to?: string;
+    status?: string;
+    priority?: string;
+    category?: string;
+    due_date?: string;
+}
+
+export interface TaskUpdate {
+    status?: string;
+    priority?: string;
+    category?: string;
+    assigned_to?: string;
+    due_date?: string;
 }

@@ -2,18 +2,15 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import {
-  getTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-} from "@/services/client/tasks";
+import { apiClient } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
+
 import type {
-  TaskFilters,
-  TaskWithContext,
-  CreateTaskInput,
-  UpdateTaskInput,
+    TaskFilters,
+    TaskWithContext,
+    CreateTaskInput,
+    UpdateTaskInput,
+    TaskPayload,
 } from "@/services/tasks/types";
 
 const EMPTY_TASKS: TaskWithContext[] = [];
@@ -21,111 +18,134 @@ const EMPTY_TASKS: TaskWithContext[] = [];
 /**
  * Flexible hook for tasks with CRUD operations
  * All filters are sent to the backend for server-side filtering
- * @param orgId - Organization ID
- * @param filters - Optional filters (trial_id, patient_id, assigned_to, status, priority, category)
  */
-export function useTasks(orgId: string, filters?: TaskFilters) {
-  const queryClient = useQueryClient();
+export function useTasks(filters?: TaskFilters) {
+    const queryClient = useQueryClient();
 
-  // Query for fetching tasks - all filters handled by backend
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["client", "tasks", orgId, filters],
-    queryFn: () => getTasks(orgId, filters),
-    refetchOnWindowFocus: true,
-    staleTime: 30000, // 30 seconds
-  });
+    // -----------------------
+    // Fetch tasks
+    // -----------------------
+    const { data, isLoading, error } = useQuery({
+        queryKey: ["tasks", filters],
+        queryFn: () => apiClient.getTasks(filters),
+        refetchOnWindowFocus: true,
+        staleTime: 30000,
+    });
 
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: (input: CreateTaskInput) => createTask(orgId, input),
-    onSuccess: (data) => {
-      // Invalidate all task queries for this org
-      queryClient.invalidateQueries({
-        queryKey: ["client", "tasks", orgId],
-      });
-      toast.success("Task created", data.title);
-    },
-    onError: (error: any) => {
-      toast.error("Failed to create task", error.message || "Please try again");
-    },
-  });
+    // -----------------------
+    // Create Task
+    // -----------------------
+    const createMutation = useMutation({
+        mutationFn: (input: TaskPayload) =>
+            apiClient.createTask({
+                ...input,
+                patient_id: input.patient_id ?? "", // convert undefined to empty string
+            }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            toast.success("Task created", data.title);
+        },
+        onError: (error: any) => {
+            toast.error("Failed to create task", error.message || "Please try again");
+        },
+    });
 
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: ({
-      taskId,
-      input,
-    }: {
-      taskId: string;
-      input: UpdateTaskInput;
-    }) => updateTask(orgId, taskId, input),
-    onSuccess: (data, variables) => {
-      // Invalidate task queries
-      queryClient.invalidateQueries({
-        queryKey: ["client", "tasks", orgId],
-      });
-      // Invalidate patient-visits queries (to refresh visit activities status)
-      queryClient.invalidateQueries({
-        queryKey: ["patient-visits"],
-      });
+    // -----------------------
+    // Update Task
+    // -----------------------
+    const updateMutation = useMutation({
+        mutationFn: ({
+            taskId,
+            input,
+        }: {
+            taskId: string;
+            input: UpdateTaskInput;
+        }) => apiClient.updateTask(taskId, input),
 
-      // Show success toast for status changes (especially completion)
-      if (variables.input.status === "completed") {
-        toast.success("Task completed", "Great work!");
-      } else if (variables.input.status) {
-        toast.success(
-          "Task updated",
-          `Status changed to ${variables.input.status.replace("_", " ")}`,
-        );
-      }
-    },
-    onError: (error: any) => {
-      toast.error("Failed to update task", error.message || "Please try again");
-    },
-  });
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
 
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: (taskId: string) => deleteTask(orgId, taskId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["client", "tasks", orgId],
-      });
-      toast.success("Task deleted", "The task has been removed");
-    },
-    onError: (error: any) => {
-      toast.error("Failed to delete task", error.message || "Please try again");
-    },
-  });
+            if (variables.input.status === "completed") {
+                toast.success("Task completed", "Great work!");
+            } else if (variables.input.status) {
+                toast.success(
+                    "Task updated",
+                    `Status changed to ${variables.input.status.replace("_", " ")}`
+                );
+            }
+        },
+        onError: (error: any) => {
+            toast.error("Failed to update task", error.message || "Please try again");
+        },
+    });
 
-  // Memoize mutation functions to prevent unnecessary re-renders
-  const createTaskFn = useCallback(
-    (input: CreateTaskInput) => createMutation.mutateAsync(input),
-    [createMutation.mutateAsync],
-  );
+    // -----------------------
+    // Delete Task
+    // -----------------------
+    const deleteMutation = useMutation({
+        mutationFn: (taskId: string) => apiClient.deleteTask(taskId),
 
-  const updateTaskFn = useCallback(
-    (taskId: string, input: UpdateTaskInput) =>
-      updateMutation.mutateAsync({ taskId, input }),
-    [updateMutation.mutateAsync],
-  );
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
 
-  const deleteTaskFn = useCallback(
-    (taskId: string) => deleteMutation.mutateAsync(taskId),
-    [deleteMutation.mutateAsync],
-  );
+            toast.success("Task deleted", "The task has been removed");
+        },
+        onError: (error: any) => {
+            toast.error("Failed to delete task", error.message || "Please try again");
+        },
+    });
 
-  return {
-    tasks: data?.tasks ?? EMPTY_TASKS,
-    allTasks: data?.tasks ?? EMPTY_TASKS,
-    total: data?.total || 0,
-    isLoading,
-    error,
-    createTask: createTaskFn,
-    updateTask: updateTaskFn,
-    deleteTask: deleteTaskFn,
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending,
-  };
+    // -----------------------
+    // Memoized mutation helpers
+    // -----------------------
+    const createTaskFn = useCallback(
+        (input: CreateTaskInput) => {
+            // Map null -> undefined for patient_id
+            const payload: TaskPayload = {
+                trial_id: input.trial_id,
+                patient_id: input.patient_id ?? undefined, // null → undefined
+                visit_id: input.visit_id ?? "",           // convert null/undefined to empty string
+                activity_type_id: input.activity_type_id ?? undefined,
+                //category: string,
+                title: input.title,
+                //description: input.description ?? undefined,
+                status: input.status,
+                priority: input.priority ?? undefined,
+                assigned_to: input.assigned_to ?? undefined,
+                due_date: input.due_date ?? undefined,
+            };
+
+            return createMutation.mutateAsync(payload);
+        },
+        [createMutation]
+    );
+
+    const updateTaskFn = useCallback(
+        (taskId: string, input: UpdateTaskInput) =>
+            updateMutation.mutateAsync({ taskId, input }),
+        [updateMutation]
+    );
+
+    const deleteTaskFn = useCallback(
+        (taskId: string) => deleteMutation.mutateAsync(taskId),
+        [deleteMutation]
+    );
+
+    return {
+        tasks: data ?? EMPTY_TASKS,
+        allTasks: data ?? EMPTY_TASKS,
+        total: data?.length || 0,
+
+        isLoading,
+        error,
+
+        createTask: createTaskFn,
+        updateTask: updateTaskFn,
+        deleteTask: deleteTaskFn,
+
+        isCreating: createMutation.isPending,
+        isUpdating: updateMutation.isPending,
+        isDeleting: deleteMutation.isPending,
+    };
 }

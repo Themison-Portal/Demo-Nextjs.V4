@@ -8,40 +8,41 @@
 // ============================================================================
 
 export type DocumentCategory =
-  | "protocol"
-  | "amendments"
-  | "regulatory"
-  | "consent"
-  | "ops"
-  | "safety"
-  | "admin"
-  | "other";
+    | "protocol"
+    | "amendments"
+    | "regulatory"
+    | "consent"
+    | "ops"
+    | "safety"
+    | "admin"
+    | "other";
 
 // ============================================================================
 // DOCUMENT STATUS
 // ============================================================================
 
-export type DocumentStatus = "uploading" | "processing" | "ready" | "error";
+export type DocumentStatus = "pending" | "uploading" | "processing" | "ready" | "error";
 
 // ============================================================================
 // TRIAL DOCUMENT
 // ============================================================================
 
 export interface TrialDocument {
-  id: string;
-  trial_id: string;
-  file_name: string;
-  file_size: number;
-  file_type: string;
-  storage_path: string;
-  storage_url: string;
-  status: DocumentStatus;
-  category?: DocumentCategory | null;
-  uploaded_by?: string | null;
-  processing_error?: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string | null;
+    id: string;
+    job_id: string;
+    trial_id: string;
+    file_name: string;
+    file_size: number;
+    file_type: string;
+    storage_path: string;
+    storage_url: string;
+    status: DocumentStatus;
+    category?: DocumentCategory | null;
+    uploaded_by?: string | null;
+    processing_error?: string | null;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string | null;
 }
 
 // ============================================================================
@@ -49,31 +50,31 @@ export interface TrialDocument {
 // ============================================================================
 
 export interface RAGIndexRequest {
-  doc_id: string;
-  url: string;
-  api_key: string;
+    doc_id: string;
+    url: string;
+    api_key: string;
 }
 
 export interface RAGIndexResponse {
-  status: "succeeded" | "failed";
-  doc_id: string;
-  error?: string;
+    status: "succeeded" | "failed";
+    doc_id: string;
+    error?: string;
 }
 
 export interface RAGQueryRequest {
-  doc_id: string;
-  query: string;
-  api_key: string;
+    doc_id: string;
+    query: string;
+    api_key: string;
 }
 
 export interface RAGQueryResponse {
-  doc_id: string;
-  query: string;
-  answer: string;
-  chunks?: Array<{
-    content: string;
-    score: number;
-  }>;
+    doc_id: string;
+    query: string;
+    answer: string;
+    chunks?: Array<{
+        content: string;
+        score: number;
+    }>;
 }
 
 // ============================================================================
@@ -81,15 +82,18 @@ export interface RAGQueryResponse {
 // ============================================================================
 
 export interface DocumentProcessingStatus {
-  document_id: string;
-  status: "pending" | "processing" | "completed" | "failed";
-  stage?: string;
-  progress?: number;
-  chunks_count?: number;
-  error?: string;
-  started_at?: string;
-  updated_at?: string;
-  completed_at?: string;
+    document_id: string;
+    status: "pending" | "processing" | "completed" | "failed" | "queued";
+    stage?: string;
+    progress?: number;
+    progress_percent: number;
+    current_stage?: string;
+    chunks_count?: number;
+    message?: string;
+    error?: string;
+    started_at?: string;
+    updated_at?: string;
+    completed_at?: string;
 }
 
 // ============================================================================
@@ -97,11 +101,11 @@ export interface DocumentProcessingStatus {
 // ============================================================================
 
 export interface UploadDocumentResponse {
-  document: TrialDocument;
-  message: string;
+    document: TrialDocument;
+    message: string;
 }
 
 export interface GetDocumentsResponse {
-  documents: TrialDocument[];
-  total: number;
+    documents: TrialDocument[];
+    total: number;
 }

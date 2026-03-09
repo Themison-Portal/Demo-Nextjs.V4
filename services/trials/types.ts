@@ -155,3 +155,27 @@ export interface AddTrialTeamMemberInput {
     org_member_id: string;
     trial_role: TrialRole;
 }
+
+// ============================================================================
+// TEAM MEMBER RESPONSE TYPES
+// ============================================================================
+
+export interface TeamMemberTrialInfo {
+    trial_id: string;
+    trial_name: string;
+    trial_role: string;
+}
+
+export interface TeamMember {
+    user_id: string;
+    email: string;
+    full_name?: string | null;
+    trial_role: string; // Primary role (from first trial)
+    trial_id: string; // Primary trial
+    trial_name: string;
+    trials: TeamMemberTrialInfo[]; // All trials this user is in
+}
+
+export interface TeamMembersResponse {
+    team_members: TeamMember[];
+}

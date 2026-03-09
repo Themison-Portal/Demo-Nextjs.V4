@@ -34,22 +34,7 @@ export const authService = {
      */
     async getCurrentUser(): Promise<User | null> {
         try {
-            const data = await apiClient<{
-                member: {
-                    id: string;
-                    email: string;
-                    default_role: string;
-                    onboarding_completed: boolean;
-                };
-                profile?: {
-                    first_name?: string;
-                    last_name?: string;
-                };
-                organization?: {
-                    id?: string;
-                    name?: string;
-                };
-            }>("/me");
+            const data = await apiClient.getCurrentUser();
 
             const role =
                 data.member.default_role === "staff" ||
