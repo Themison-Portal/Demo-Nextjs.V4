@@ -6,78 +6,112 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getOrganization,
-  inviteMember,
-  removeMember,
-  updateOrganization,
-} from '@/services/client/organizations';
-import type { AddMemberInput, UpdateOrganizationInput } from '@/services/organizations/types';
+import { apiClient } from '@/lib/apiClient';
+
+import type {
+    AddMemberInput,
+    UpdateOrganizationInput,
+} from '@/services/organizations/types';
 
 /**
- * Hook for organization data and member management in Client App
- * @param orgId - Organization ID
+ * Hook for organization data and member management
  */
 export function useOrganization(orgId: string) {
-  const queryClient = useQueryClient();
-  const queryKey = ['client', 'organization', orgId];
+    const queryClient = useQueryClient();
 
-  // Query: get organization with members
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey,
-    queryFn: () => getOrganization(orgId),
-    enabled: !!orgId,
-  });
+    const orgQueryKey = ['organization', orgId];
+    const membersQueryKey = ['organization-members', orgId];
 
-  // Mutation: invite member
-  const inviteMutation = useMutation({
-    mutationFn: (input: AddMemberInput) => inviteMember(orgId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
+    /**
+     * Query: organization details
+     */
+    const {
+        data: organization,
+        isLoading: isOrgLoading,
+        error: orgError,
+        refetch,
+    } = useQuery({
+        queryKey: orgQueryKey,
+        queryFn: () => apiClient.getOrganization(orgId),
+        enabled: !!orgId,
+    });
 
-  // Mutation: remove member
-  const removeMutation = useMutation({
-    mutationFn: (userId: string) => removeMember(orgId, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
+    /**
+     * Query: team members
+     */
+    const {
+        data: membersData,
+        isLoading: isMembersLoading,
+    } = useQuery({
+        queryKey: membersQueryKey,
+        queryFn: () => apiClient.getTeamMembers(),
+        enabled: !!orgId,
+    });
 
-  // Mutation: update organization
-  const updateMutation = useMutation({
-    mutationFn: (input: UpdateOrganizationInput) => updateOrganization(orgId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
+    /**
+     * Mutation: invite member
+     */
+    const inviteMutation = useMutation({
+        mutationFn: (input: AddMemberInput) =>
+            apiClient.inviteMemberorg(orgId, {
+                email: input.email,
+                org_role: input.org_role,
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: membersQueryKey });
+        },
+    });
 
-  return {
-    // Data
-    organization: data,
-    members: data?.members || [],
-    invitations: data?.invitations || [],
+    /**
+     * Mutation: remove member
+     */
+    const removeMutation = useMutation({
+        mutationFn: (memberId: string) => apiClient.removeMember(memberId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: membersQueryKey });
+        },
+    });
 
-    // Loading states
-    isLoading,
-    error,
+    /**
+     * Mutation: update organization
+     */
+    const updateMutation = useMutation({
+        mutationFn: (input: UpdateOrganizationInput) =>
+            apiClient.updateOrganization(
+                {
+                    name: input.name,
+                    settings: input.settings,
+                },
+                orgId
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: orgQueryKey });
+        },
+    });
 
-    // Actions
-    refetch,
-    inviteMember: inviteMutation.mutateAsync,
-    isInviting: inviteMutation.isPending,
-    inviteError: inviteMutation.error,
-    removeMember: removeMutation.mutateAsync,
-    isRemoving: removeMutation.isPending,
-    removeError: removeMutation.error,
-    updateOrganization: updateMutation.mutateAsync,
-    isUpdating: updateMutation.isPending,
-    updateError: updateMutation.error,
-  };
+    return {
+        // Data
+        organization,
+        members: membersData?.members ?? [],
+        invitations: membersData?.invitations ?? [],
+
+        // Loading
+        isLoading: isOrgLoading || isMembersLoading,
+        error: orgError,
+
+        // Actions
+        refetch,
+
+        inviteMember: inviteMutation.mutateAsync,
+        isInviting: inviteMutation.isPending,
+        inviteError: inviteMutation.error,
+
+        removeMember: removeMutation.mutateAsync,
+        isRemoving: removeMutation.isPending,
+        removeError: removeMutation.error,
+
+        updateOrganization: updateMutation.mutateAsync,
+        isUpdating: updateMutation.isPending,
+        updateError: updateMutation.error,
+    };
 }

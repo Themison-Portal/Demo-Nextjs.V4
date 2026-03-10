@@ -2,135 +2,109 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import {
-  getMessages,
-  getMessage,
-  createMessage,
-  markMessageAsRead,
-  validateTrialAccess,
-} from '@/services/client/messages'
-import type {
-  MessageFilters,
-  CreateMessageInput,
-} from '@/services/messages/types'
+import { apiClient } from '@/lib/apiClient'
+import type { CreateMessageInput } from '@/services/messages/types'
 
 /**
- * Hook for fetching messages with optional filters
- * @param orgId - Organization ID
- * @param filters - Optional filters (trial_id, unread_only, has_attachments)
+ * Hook for fetching messages for a chat session
  */
-export function useMessages(orgId: string, filters?: MessageFilters) {
-  const { data: messages = [], isLoading, error } = useQuery({
-    queryKey: ['client', 'messages', orgId, filters],
-    queryFn: () => getMessages(orgId, filters),
-    refetchOnWindowFocus: true,
-    staleTime: 10000, // 10 seconds - messages should be fresher than tasks
-  })
+export function useMessages(sessionId: string) {
+    const { data: messages = [], isLoading, error } = useQuery({
+        queryKey: ['messages', sessionId],
+        queryFn: () => apiClient.getMessages(sessionId),
+        enabled: !!sessionId,
+        refetchOnWindowFocus: true,
+        staleTime: 10000,
+    })
 
-  return {
-    messages,
-    isLoading,
-    error,
-  }
+    return {
+        messages,
+        isLoading,
+        error,
+    }
 }
 
 /**
- * Hook for fetching a single message with full details
- * @param orgId - Organization ID
- * @param messageId - Message ID
+ * Hook for creating a message
  */
-export function useMessage(orgId: string, messageId: string | null) {
-  const { data: message, isLoading, error } = useQuery({
-    queryKey: ['client', 'messages', orgId, messageId],
-    queryFn: () => getMessage(orgId, messageId!),
-    enabled: !!messageId,
-    refetchOnWindowFocus: true,
-    staleTime: 10000,
-  })
+export function useCreateMessage(sessionId: string) {
+    const queryClient = useQueryClient()
 
-  return {
-    message,
-    isLoading,
-    error,
-  }
+    const mutation = useMutation({
+        mutationFn: (content: string) =>
+            apiClient.createMessage({
+                session_id: sessionId,
+                content,
+            }),
+
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['messages', sessionId],
+            })
+        },
+    })
+
+    const create = useCallback(
+        (content: string) => mutation.mutateAsync(content),
+        [mutation]
+    )
+
+    return {
+        createMessage: create,
+        isCreating: mutation.isPending,
+        error: mutation.error,
+    }
 }
 
 /**
- * Hook for creating a new message
- * Automatically invalidates message queries on success
+ * Hook for updating a message
  */
-export function useCreateMessage(orgId: string) {
-  const queryClient = useQueryClient()
+export function useUpdateMessage(sessionId: string) {
+    const queryClient = useQueryClient()
 
-  const mutation = useMutation({
-    mutationFn: (input: CreateMessageInput) => createMessage(orgId, input),
-    onSuccess: () => {
-      // Invalidate all message queries for this org
-      queryClient.invalidateQueries({
-        queryKey: ['client', 'messages', orgId],
-      })
-    },
-  })
+    const mutation = useMutation({
+        mutationFn: ({
+            messageId,
+            content,
+        }: {
+            messageId: string
+            content: string
+        }) => apiClient.updateMessage(messageId, content),
 
-  const create = useCallback(
-    (input: CreateMessageInput) => mutation.mutateAsync(input),
-    [mutation]
-  )
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['messages', sessionId],
+            })
+        },
+    })
 
-  return {
-    createMessage: create,
-    isCreating: mutation.isPending,
-    error: mutation.error,
-  }
+    return {
+        updateMessage: mutation.mutateAsync,
+        isUpdating: mutation.isPending,
+        error: mutation.error,
+    }
 }
 
 /**
- * Hook for marking a message as read
- * Automatically invalidates message queries on success
+ * Hook for deleting a message
  */
-export function useMarkMessageAsRead(orgId: string) {
-  const queryClient = useQueryClient()
+export function useDeleteMessage(sessionId: string) {
+    const queryClient = useQueryClient()
 
-  const mutation = useMutation({
-    mutationFn: (messageId: string) => markMessageAsRead(orgId, messageId),
-    onSuccess: () => {
-      // Invalidate all message queries for this org
-      queryClient.invalidateQueries({
-        queryKey: ['client', 'messages', orgId],
-      })
-    },
-  })
+    const mutation = useMutation({
+        mutationFn: (messageId: string) =>
+            apiClient.deleteMessage(messageId),
 
-  const markAsRead = useCallback(
-    (messageId: string) => mutation.mutateAsync(messageId),
-    [mutation]
-  )
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['messages', sessionId],
+            })
+        },
+    })
 
-  return {
-    markAsRead,
-    isMarking: mutation.isPending,
-    error: mutation.error,
-  }
-}
-
-/**
- * Hook for validating if users have access to a trial
- * Used before sending messages to ensure recipients can access the trial
- */
-export function useValidateTrialAccess(orgId: string, trialId: string) {
-  const mutation = useMutation({
-    mutationFn: (userIds: string[]) =>
-      validateTrialAccess(orgId, trialId, userIds),
-  })
-
-  const validate = useCallback(
-    (userIds: string[]) => mutation.mutateAsync(userIds),
-    [mutation]
-  )
-
-  return {
-    validate,
-    isValidating: mutation.isPending,
-    error: mutation.error,
-  }
+    return {
+        deleteMessage: mutation.mutateAsync,
+        isDeleting: mutation.isPending,
+        error: mutation.error,
+    }
 }

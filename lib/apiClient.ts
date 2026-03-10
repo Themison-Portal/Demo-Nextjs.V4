@@ -2,6 +2,7 @@ import type {
     Trial,
     TrialTeamMember,
     VisitScheduleTemplate,
+
 } from "./../services/trials/types";
 import type {
     ArchiveFolder,
@@ -10,7 +11,7 @@ import type {
     CreateSavedResponseInput,
 } from "@/types/archive";
 
-import type { TeamMembersResponse } from "@/services/client/teamMembers";
+import type { TeamMembersResponse } from "@/types/members";
 
 
 import type {
