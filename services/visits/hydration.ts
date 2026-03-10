@@ -103,6 +103,9 @@ async function hydrateVisitFromTemplate(
     let activitiesCreated = 0;
     let tasksCreated = 0;
 
+    // Cast template to include assignees
+    const templateWithAssignees = template as VisitScheduleTemplateWithAssignees;
+
     for (let i = 0; i < (visit.activity_ids?.length ?? 0); i++) {
         const activityId = visit.activity_ids[i];
         const activityOrder = i + 1;
@@ -118,13 +121,11 @@ async function hydrateVisitFromTemplate(
 
         activitiesCreated++;
 
-        const template = trial.visit_schedules as VisitScheduleTemplateWithAssignees;
-
         const assigneeUserId = await resolveAssignee(
             trialId,
             activityId,
             visit.order,
-            template.assignees,
+            templateWithAssignees.assignees ?? {},
             overrides
         );
 
@@ -147,7 +148,6 @@ async function hydrateVisitFromTemplate(
 
     return { activitiesCreated, tasksCreated };
 }
-
 // ============================================================================
 // Public API
 // ============================================================================

@@ -27,7 +27,15 @@ import type { TaskWithContext, Task, TaskPayload } from "@/services/tasks/types"
 import type { AddTrialTeamMemberInput, TrialRole } from "./../services/trials/types";
 import type { TrialDocument } from "@/services/documents/types";
 
-import type { ActivityType, TrialActivityType } from "@/services/activities/types";
+import type {
+    ActivityType,
+    ActivityListResponse,
+    TrialActivityType,
+    TrialActivityListResponse,
+    CreateTrialActivityInput,
+    UpdateTrialActivityInput,
+    ActivityMetadata,
+} from "@/services/activities/types";
 import type { TrialDetails } from "@/services/trials/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -81,7 +89,7 @@ export const apiClient = {
         });
     },
 
-    getOrganizationMetrics: async () => fetchApi("/organizations/me"),
+    getOrganizationMetrics: async () => fetchApi("/organizations/me/metrics"),
 
     // Invite member to organization (admin)
     inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }) =>
@@ -95,6 +103,77 @@ export const apiClient = {
     getTeamMembers: async (): Promise<TeamMembersResponse> => {
         return fetchApi("/members");
     },
+
+    // -----------------------
+    // Console / Admin org APIs
+    // -----------------------
+
+    /**
+     * List all organizations (console)
+     */
+    getOrganizations: async () => {
+        return fetchApi("/organizations");
+    },
+
+    /**
+     * Create organization
+     */
+    createOrganization: async (payload: {
+        name: string;
+        settings?: any;
+    }) => {
+        return fetchApi("/organizations", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+    },
+
+    /**
+     * Update organization (console PATCH)
+     */
+    patchOrganization: async (
+        orgId: string,
+        payload: { name?: string; settings?: any }
+    ) => {
+        return fetchApi(`/organizations/${orgId}`, {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+        });
+    },
+
+    /**
+     * Invite member (uses invitation system)
+     */
+    inviteMemberorg: async (
+        payload: { email: string; org_role: string }
+    ) =>
+        fetchApi("/invitations/batch", {
+            method: "POST",
+            body: JSON.stringify({
+                invitations: [
+                    {
+                        email: payload.email,
+                        initial_role: payload.org_role,
+                    },
+                ],
+            }),
+        }),
+
+    /**
+     * Remove member from organization
+     */
+    removeMember: async (orgId: string, memberId: string) =>
+        fetchApi(`/organizations/${orgId}/members/${memberId}`, {
+            method: "DELETE",
+        }),
+
+    /**
+     * Get team members
+     */
+    getTeamMembers: async (): Promise<TeamMembersResponse> => {
+        return fetchApi("/members");
+    },
+
 
     // -----------------------
     // Invitations
@@ -318,11 +397,49 @@ export const apiClient = {
     getTrialActivity: async (
         trialId: string,
         activityId: string
-    ): Promise<TrialActivityType | null> =>
-        fetchApi(`/trials/${trialId}/activities/${activityId}`),
+    ): Promise<TrialActivityType | null> => {
+        return fetchApi(`/api/trials/${trialId}/activities/${activityId}`);
+    },
 
-    getActivityType: async (activityId: string): Promise<ActivityType | null> =>
-        fetchApi(`/activity-types/${activityId}`),
+    getActivityType: async (activityId: string): Promise<ActivityType | null> => {
+        return fetchApi(`/api/activity-types/${activityId}`);
+    },
+
+    getTrialActivityTypes: async (
+        trialId: string
+    ): Promise<TrialActivityListResponse> => {
+        return fetchApi(`/api/trials/${trialId}/activities`);
+    },
+
+    createTrialActivity: async (
+        trialId: string,
+        data: CreateTrialActivityInput
+    ): Promise<TrialActivityType> => {
+        return fetchApi(`/api/trials/${trialId}/activities`, {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    updateTrialActivity: async (
+        trialId: string,
+        activityId: string,
+        data: UpdateTrialActivityInput
+    ): Promise<TrialActivityType> => {
+        return fetchApi(`/api/trials/${trialId}/activities/${activityId}`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+    },
+
+    deleteTrialActivity: async (
+        trialId: string,
+        activityId: string
+    ): Promise<void> => {
+        return fetchApi(`/api/trials/${trialId}/activities/${activityId}`, {
+            method: "DELETE",
+        });
+    },
 
 
     // -----------------------
@@ -532,4 +649,20 @@ export const apiClient = {
         fetchApi(`/tasks/${taskId}`, {
             method: "DELETE",
         }),
+
+    ragQuery: async (payload: {
+        query: string;
+        document_id: string;
+        document_name: string;
+    }) => {
+        const res = await fetch("/api/rag/query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error("RAG query failed");
+
+        return res.json();
+    };
 };

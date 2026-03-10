@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getTrialActivities } from '@/services/client/activities';
-import type { ActivityCategory } from '@/services/activities/types';
+import { apiClient } from '@/lib/apiClient';
+import type { ActivityCategory, TrialActivityType } from '@/services/activities/types';
 
 /**
  * Hook to fetch trial-specific activity types
@@ -14,15 +14,17 @@ export function useActivityTypes(trialId: string, category?: ActivityCategory) {
     const { data, isLoading, error } = useQuery({
         queryKey,
         queryFn: async () => {
-            const activities = await getTrialActivities(trialId);
+            if (!trialId) return { activities: [], total: 0 };
 
-            if (!activities) return { activities: [], total: 0 };
+            // Call the correct apiClient endpoint
+            const response = await apiClient.getTrialActivityTypes(trialId);
+            // response is { activities: TrialActivityType[]; total: number }
 
-            const filtered = category
-                ? activities.filter((a) => a.category === category)
-                : activities;
+            const filteredActivities: TrialActivityType[] = category
+                ? response.activities.filter((a) => a.category === category)
+                : response.activities;
 
-            return { activities: filtered, total: filtered.length };
+            return { activities: filteredActivities, total: filteredActivities.length };
         },
         enabled: !!trialId,
         staleTime: 1000 * 60 * 10, // 10 minutes

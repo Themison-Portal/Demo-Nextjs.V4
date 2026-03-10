@@ -31,7 +31,8 @@ export async function getActivityTypes(
 export async function getTrialActivities(
     trialId: string
 ): Promise<TrialActivityListResponse> {
-    return apiClient.getTrialActivity(trialId);
+    const activities = await apiClient.getTrialActivityTypes(trialId);
+    return activities;
 }
 
 /**
@@ -40,7 +41,17 @@ export async function getTrialActivities(
 export async function getActivityMetadata(
     trialId: string
 ): Promise<{ activities: ActivityMetadata[]; total: number }> {
-    return apiClient.getTrialActivityMetadata(trialId); // use apiClient endpoint for metadata
+    const trialActivities = await apiClient.getTrialActivityTypes(trialId); // trial-specific
+    const activities: ActivityMetadata[] = trialActivities.activities.map(a => ({
+        activity_id: a.activity_id,
+        name: a.name,
+        category: a.category,
+        description: a.description,
+        source: 'trial',
+        is_custom: a.is_custom,
+    }));
+
+    return { activities, total: activities.length };
 }
 
 /**
