@@ -24,4 +24,4 @@ export { withTrialMember } from "./withTrialMember";
 export { responses } from "./types";
 export type { AuthHandler, RouteContext } from "./types";
 export type { OrgMemberUser, OrgMemberHandler } from "./withOrgMember";
-export type { TrialMemberUser, TrialMemberHandler } from "./withTrialMember";
+// export type { TrialMemberUser, TrialMemberHandler } from "./withTrialMember";

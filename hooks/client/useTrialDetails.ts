@@ -10,7 +10,7 @@ import { formatDateForApi } from '@/lib/date';
  * Hook for fetching a single trial with full details
  * @param trialId - Trial ID
  */
-export function useTrialDetails(trialId: string) {
+export function useTrialDetails(trialId: string, orgId: string) {
     const queryClient = useQueryClient();
     const queryKey = ['client', 'trial', trialId];
 
@@ -37,7 +37,7 @@ export function useTrialDetails(trialId: string) {
     // Mutation: add team member
     const addTeamMemberMutation = useMutation({
         mutationFn: (input: AddTrialTeamMemberInput) =>
-            apiClient.addTrialTeamMember(trialId, input),
+            apiClient.addTrialTeamMember(orgId, trialId, input), // <- orgId added
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey });
         },

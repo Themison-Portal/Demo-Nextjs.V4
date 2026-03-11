@@ -7,7 +7,7 @@ import type {
 } from "@/services/patients/types";
 import { apiClient } from "@/lib/apiClient"; // FastAPI client
 import type { TrialDetails } from "@/services/trials/types";
-import { VisitScheduleTemplate } from '@/services/trials/types';
+import { VisitScheduleTemplate, VisitScheduleTemplateExtended } from '@/services/trials/types';
 import type { VisitScheduleTemplateWithAssignees } from "@/services/trials/types";
 
 // ============================================================================
@@ -42,14 +42,24 @@ async function resolveActivityName(trialId: string, activityId: string): Promise
 /**
  * Get trial template or throw
  */
-async function getTrialTemplate(trialId: string): Promise<VisitScheduleTemplate[]> {
+async function getTrialTemplate(trialId: string): Promise<VisitTemplate[]> {
     const trial = await apiClient.getTrialById(trialId) as TrialDetails;
 
     if (!trial?.visit_schedules?.length) {
         throw new Error(`Trial ${trialId} has no visit schedule template`);
     }
 
-    return trial.visit_schedules;
+    // Map VisitScheduleTemplate -> VisitTemplate
+    return (trial.visit_schedules as VisitScheduleTemplateExtended[]).map((v): VisitTemplate => ({
+        name: v.name,
+        order: v.order,
+        is_day_zero: v.is_day_zero,
+        days_from_day_zero: v.days_from_day_zero,
+        window_before_days: v.window_before_days ?? 0,
+        window_after_days: v.window_after_days ?? 0,
+        activity_ids: v.activity_ids ?? [],
+        description: v.description ?? undefined,
+    }));
 }
 
 /**
@@ -86,9 +96,9 @@ async function hydrateVisitFromTemplate(
     patientId: string,
     visit: VisitTemplate,
     scheduledDate: string,
-    template: VisitScheduleTemplate,
     overrides?: Record<string, string | null>
 ): Promise<{ activitiesCreated: number; tasksCreated: number }> {
+    // Create the visit record
     const visitRecord = await apiClient.createVisit({
         patient_id: patientId,
         visit_template_name: visit.name,
@@ -103,12 +113,19 @@ async function hydrateVisitFromTemplate(
     let activitiesCreated = 0;
     let tasksCreated = 0;
 
-    // Cast template to include assignees
-    const templateWithAssignees = template as VisitScheduleTemplateWithAssignees;
+    // Build assignees map from visit.assignees
+    const assigneesMap: Record<string, string> = {};
+    (visit.assignees ?? []).forEach(a => {
+        if (a.role && a.user_id) {
+            assigneesMap[a.role] = a.user_id;
+        }
+    });
 
+    // Loop through activities
     for (let i = 0; i < (visit.activity_ids?.length ?? 0); i++) {
         const activityId = visit.activity_ids[i];
         const activityOrder = i + 1;
+
         const activityName = await resolveActivityName(trialId, activityId);
 
         const activityRecord = await apiClient.createVisitActivity({
@@ -121,14 +138,16 @@ async function hydrateVisitFromTemplate(
 
         activitiesCreated++;
 
+        // Resolve assignee
         const assigneeUserId = await resolveAssignee(
             trialId,
             activityId,
             visit.order,
-            templateWithAssignees.assignees ?? {},
+            assigneesMap,
             overrides
         );
 
+        // Create task for this activity
         await apiClient.createTask({
             trial_id: trialId,
             patient_id: patientId,
@@ -159,10 +178,11 @@ export async function hydrateScreeningVisit(
 ): Promise<HydrationResult & { baseline_deadline_date: string }> {
     const template = await getTrialTemplate(trialId);
 
-    const screeningVisit = template.visits.find((v) => v.order === 1 && !v.is_day_zero);
+    // Instead of template.visits, just use template directly
+    const screeningVisit = template.find((v) => v.order === 1 && !v.is_day_zero);
     if (!screeningVisit) throw new Error("Template must have a screening visit (order=1)");
 
-    const dayZeroVisit = template.visits.find((v) => v.is_day_zero);
+    const dayZeroVisit = template.find((v) => v.is_day_zero);
     if (!dayZeroVisit) throw new Error("Template must have a day_zero visit");
 
     const windowDays = Math.abs(dayZeroVisit.days_from_day_zero - screeningVisit.days_from_day_zero);
@@ -178,7 +198,6 @@ export async function hydrateScreeningVisit(
         patientId,
         screeningVisit,
         screeningDate,
-        template
     );
 
     return {
@@ -197,8 +216,13 @@ export async function hydrateRemainingVisits(
     baselineDate: string,
     assigneeOverrides?: Record<string, string | null>
 ): Promise<HydrationResult> {
-    const template = await getTrialTemplate(trialId);
-    const remainingVisits = template.visits.filter((v) => v.order > 1).sort((a, b) => a.order - b.order);
+    const template = await getTrialTemplate(trialId); // VisitTemplate[]
+
+    // Use the array directly, no .visits
+    const remainingVisits = template
+        .filter((v: VisitTemplate) => v.order > 1)
+        .sort((a: VisitTemplate, b: VisitTemplate) => a.order - b.order);
+
     const baselineDateObj = new Date(baselineDate);
 
     let visitsCreated = 0;
@@ -215,8 +239,7 @@ export async function hydrateRemainingVisits(
             patientId,
             visit,
             scheduledDate,
-            template,
-            assigneeOverrides
+            assigneeOverrides // optional
         );
 
         visitsCreated++;
@@ -224,7 +247,13 @@ export async function hydrateRemainingVisits(
         tasksCreated += result.tasksCreated;
     }
 
-    return { visits_created: visitsCreated, activities_created: activitiesCreated, tasks_created: tasksCreated, patient_id: patientId, trial_id: trialId };
+    return {
+        visits_created: visitsCreated,
+        activities_created: activitiesCreated,
+        tasks_created: tasksCreated,
+        patient_id: patientId,
+        trial_id: trialId
+    };
 }
 
 export async function previewEnrollment(
@@ -232,12 +261,32 @@ export async function previewEnrollment(
     trialId: string,
     baselineDate: string
 ): Promise<EnrollmentPreview> {
-    const template = await getTrialTemplate(trialId);
-    const remainingVisits = template.visits.filter((v: any) => v.order > 1).sort((a: any, b: any) => a.order - b.order);
+    const template = await getTrialTemplate(trialId); // VisitTemplate[]
+
+    const remainingVisits = template
+        .filter((v: VisitTemplate) => v.order > 1)
+        .sort((a, b) => a.order - b.order);
+
     const baselineDateObj = new Date(baselineDate);
 
     const visitsPreview: EnrollmentVisitPreview[] = [];
     let totalActivities = 0;
+
+    // Convert members array to map for quick lookup
+    const members = await apiClient.getTrialTeamMembers(trialId);
+
+    // Map role_name → member info
+    const membersMap: Record<string, { member_id: string; full_name?: string; email?: string }> = {};
+
+    members.forEach((m) => {
+        if (m.role_name) {
+            membersMap[m.role_name] = {
+                member_id: m.member_id,
+                full_name: m.user?.full_name,
+                email: m.user?.email,
+            };
+        }
+    });
 
     for (const visit of remainingVisits) {
         const scheduledDateObj = new Date(baselineDateObj);
@@ -248,30 +297,52 @@ export async function previewEnrollment(
 
         for (const activityId of visit.activity_ids ?? []) {
             const activityName = await resolveActivityName(trialId, activityId);
-            const role = template.assignees[activityId] ?? null;
+
+            // Lookup role from visit.assignees
+            const role = visit.assignees?.find(a => a.role === activityId)?.role ?? null;
 
             let assigneeUserId: string | null = null;
             let assigneeUser: { id: string; name: string; email: string } | null = null;
 
             if (role) {
-                const members = await apiClient.getTrialTeamMembers(trialId);
-                const member = members.find((m) => m.role === role);
+                const member = membersMap[role];
                 if (member) {
-                    assigneeUserId = member.user_id;
-                    assigneeUser = { id: member.user_id, name: member.full_name, email: member.email };
+                    assigneeUserId = member.member_id;
+                    assigneeUser = {
+                        id: member.member_id,
+                        name: member.full_name ?? "", // fallback
+                        email: member.email ?? "",     // fallback
+                    };
                 }
             }
 
-            activitiesPreview.push({ activity_id: activityId, activity_name: activityName, assigned_to_role: role, assigned_to_user_id: assigneeUserId, assigned_to_user: assigneeUser });
+            activitiesPreview.push({
+                activity_id: activityId,
+                activity_name: activityName,
+                assigned_to_role: role,
+                assigned_to_user_id: assigneeUserId,
+                assigned_to_user: assigneeUser
+            });
             totalActivities++;
         }
 
-        visitsPreview.push({ name: visit.name, order: visit.order, scheduled_date: scheduledDate, days_from_day_zero: visit.days_from_day_zero, is_day_zero: visit.is_day_zero ?? false, activities: activitiesPreview });
+        visitsPreview.push({
+            name: visit.name,
+            order: visit.order,
+            scheduled_date: scheduledDate,
+            days_from_day_zero: visit.days_from_day_zero,
+            is_day_zero: visit.is_day_zero ?? false,
+            activities: activitiesPreview
+        });
     }
 
-    return { visits: visitsPreview, total_visits: visitsPreview.length, total_activities: totalActivities, baseline_date: baselineDate };
+    return {
+        visits: visitsPreview,
+        total_visits: visitsPreview.length,
+        total_activities: totalActivities,
+        baseline_date: baselineDate
+    };
 }
-
 export async function recalculateVisitSchedule(
     patientId: string,
     newVisitStartDate: string
@@ -290,7 +361,7 @@ export async function recalculateVisitSchedule(
         await apiClient.updateVisit(visit.id, { scheduled_date: scheduledDateStr });
         visitsUpdated++;
 
-        const tasksCount = await apiClient.updateTasksByVisit(patientId, visit.id, { due_date: scheduledDateStr });
+        const tasksCount = await apiClient.updateTasksByVisit(visit.id, { due_date: scheduledDateStr });
         tasksUpdated += tasksCount;
     }
 

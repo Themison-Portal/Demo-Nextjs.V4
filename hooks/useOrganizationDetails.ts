@@ -1,36 +1,79 @@
-import { apiClient } from "@/lib/apiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
 
-interface UpdateOrgPayload {
-    name?: string;
-    settings?: any;
-}
+import type {
+    OrganizationDetails,
+    OrganizationMember,
+    Invitation,
+    UpdateOrganizationInput,
+    AddMemberInput,
+} from "@/services/organizations/types";
 
-export function useOrganizationDetails(orgId?: string) {
+export function useOrganizationDetails(orgId: string) {
     const queryClient = useQueryClient();
 
-    // ✅ Wrap apiClient call to match queryFn signature
-    const { data, isLoading, error, refetch } = useQuery({
+    // Fetch organization
+    const orgQuery = useQuery({
         queryKey: ["organization", orgId],
-        queryFn: () => apiClient.getOrganization(orgId), // pass id here
-        staleTime: 1000 * 60 * 2,
-        enabled: !!orgId, // only fetch if orgId exists
+        queryFn: () => apiClient.getOrganization(orgId),
+        enabled: Boolean(orgId),
     });
 
-    // ✅ Wrap mutationFn to pass orgId
+    // Update organization
     const updateMutation = useMutation({
-        mutationFn: (payload: UpdateOrgPayload) => apiClient.updateOrganization(payload, orgId),
+        mutationFn: (payload: UpdateOrganizationInput) =>
+            apiClient.updateOrganization(payload, orgId),
+
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["organization", orgId] });
+            queryClient.invalidateQueries({
+                queryKey: ["organization", orgId],
+            });
         },
     });
 
+    // Invite member
+    const inviteMutation = useMutation({
+        mutationFn: (payload: AddMemberInput) =>
+            apiClient.inviteMemberorg(orgId, payload),
+
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["organization", orgId],
+            });
+        },
+    });
+
+    // Remove member
+    const removeMutation = useMutation({
+        mutationFn: (userId: string) =>
+            apiClient.removeMember(userId),
+
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["organization", orgId],
+            });
+        },
+    });
+
+    const organization = orgQuery.data as OrganizationDetails | undefined;
+
     return {
-        organization: data || null,
-        isLoading,
-        error: error as Error | null,
-        refetch,
+        organization: organization ?? null,
+
+        members: organization?.members ?? [],
+        invitations: organization?.invitations ?? [],
+
+        isLoading: orgQuery.isLoading,
+        error: orgQuery.error ?? null,
+        refetch: orgQuery.refetch,
+
         updateOrganization: updateMutation.mutateAsync,
         isUpdating: updateMutation.isPending,
+
+        inviteMember: inviteMutation.mutateAsync,
+        isInviting: inviteMutation.isPending,
+
+        removeMember: removeMutation.mutateAsync,
+        isRemoving: removeMutation.isPending,
     };
 }

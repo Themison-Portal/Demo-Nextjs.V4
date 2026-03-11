@@ -110,6 +110,19 @@ export interface VisitScheduleTemplate {
     updated_at: string;
     deleted_at?: string | null;
 }
+
+export interface VisitScheduleTemplateExtended extends VisitScheduleTemplate {
+    name: string;
+    order: number;
+    is_day_zero: boolean;
+    days_from_day_zero: number;
+    window_before_days: number;
+    window_after_days: number;
+    activity_ids: string[];
+    description?: string;
+}
+
+
 export interface VisitScheduleTemplateWithAssignees extends VisitScheduleTemplate {
     assignees?: { role: string; user_id: string }[];
 }
@@ -125,6 +138,13 @@ export interface TrialDetails extends Trial {
     active_patient_count: number;
     task_count: number;
     pending_task_count: number;
+}
+
+export interface TrialWithAssignmentsCreate {
+    name: string;
+    start_date?: string;
+    members: { member_id: string; role_id: string }[];
+    pending_members: { invitation_id: string; role_id: string }[];
 }
 
 // ============================================================================

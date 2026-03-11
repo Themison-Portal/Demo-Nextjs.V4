@@ -64,13 +64,13 @@ export function useCreateChatMessage() {
 
         onSuccess: (data) => {
             queryClient.invalidateQueries({
-                queryKey: ["chat-session", data.session_id],
+                queryKey: ["chat-session", data.chat_session_id],
             });
 
             queryClient.invalidateQueries({
                 queryKey: ["chat-sessions"],
             });
-        },
+        }
     });
 }
 

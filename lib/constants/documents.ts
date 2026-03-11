@@ -4,8 +4,8 @@
  */
 
 import type {
-  DocumentCategory,
-  DocumentStatus,
+    DocumentCategory,
+    DocumentStatus,
 } from "@/services/documents/types";
 
 // ============================================================================
@@ -13,39 +13,39 @@ import type {
 // ============================================================================
 
 export const DOCUMENT_CATEGORY = {
-  PROTOCOL: "protocol",
-  AMENDMENTS: "amendments",
-  REGULATORY: "regulatory",
-  CONSENT: "consent",
-  OPS: "ops",
-  SAFETY: "safety",
-  ADMIN: "admin",
-  OTHER: "other",
+    PROTOCOL: "protocol",
+    AMENDMENTS: "amendments",
+    REGULATORY: "regulatory",
+    CONSENT: "consent",
+    OPS: "ops",
+    SAFETY: "safety",
+    ADMIN: "admin",
+    OTHER: "other",
 } as const;
 
 export const DOCUMENT_CATEGORY_OPTIONS: {
-  value: DocumentCategory;
-  label: string;
+    value: DocumentCategory;
+    label: string;
 }[] = [
-  { value: "protocol", label: "Protocols" },
-  { value: "amendments", label: "Amendments" },
-  { value: "regulatory", label: "Regulatory & Legal" },
-  { value: "consent", label: "Patient Consent (ICF)" },
-  { value: "ops", label: "Operations & Lab" },
-  { value: "safety", label: "Safety & SAEs" },
-  { value: "admin", label: "Administrative" },
-  { value: "other", label: "Other" },
-];
+        { value: "protocol", label: "Protocols" },
+        { value: "amendments", label: "Amendments" },
+        { value: "regulatory", label: "Regulatory & Legal" },
+        { value: "consent", label: "Patient Consent (ICF)" },
+        { value: "ops", label: "Operations & Lab" },
+        { value: "safety", label: "Safety & SAEs" },
+        { value: "admin", label: "Administrative" },
+        { value: "other", label: "Other" },
+    ];
 
 export const DOCUMENT_CATEGORY_STYLES: Record<DocumentCategory, string> = {
-  protocol: "bg-blue-100 text-blue-700",
-  amendments: "bg-indigo-100 text-indigo-700",
-  regulatory: "bg-purple-100 text-purple-700",
-  consent: "bg-green-100 text-green-700",
-  ops: "bg-yellow-100 text-yellow-700",
-  safety: "bg-red-100 text-red-700",
-  admin: "bg-orange-100 text-orange-700",
-  other: "bg-gray-100 text-gray-600",
+    protocol: "bg-blue-100 text-blue-700",
+    amendments: "bg-indigo-100 text-indigo-700",
+    regulatory: "bg-purple-100 text-purple-700",
+    consent: "bg-green-100 text-green-700",
+    ops: "bg-yellow-100 text-yellow-700",
+    safety: "bg-red-100 text-red-700",
+    admin: "bg-orange-100 text-orange-700",
+    other: "bg-gray-100 text-gray-600",
 };
 
 // ============================================================================
@@ -53,22 +53,24 @@ export const DOCUMENT_CATEGORY_STYLES: Record<DocumentCategory, string> = {
 // ============================================================================
 
 export const DOCUMENT_STATUS = {
-  UPLOADING: "uploading",
-  PROCESSING: "processing",
-  READY: "ready",
-  ERROR: "error",
+    UPLOADING: "uploading",
+    PROCESSING: "processing",
+    READY: "ready",
+    ERROR: "error",
 } as const;
 
 export const DOCUMENT_STATUS_STYLES: Record<DocumentStatus, string> = {
-  uploading: "bg-gray-100 text-gray-700",
-  processing: "bg-amber-50 text-amber-700",
-  ready: "bg-green-100 text-green-700",
-  error: "bg-red-100 text-red-700",
+    uploading: "bg-gray-100 text-gray-700",
+    processing: "bg-amber-50 text-amber-700",
+    ready: "bg-green-100 text-green-700",
+    error: "bg-red-100 text-red-700",
+    pending: "bg-gray-50 text-gray-500",
 };
 
 export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
-  uploading: "Uploading...",
-  processing: "Analyzing with AI...",
-  ready: "Ready",
-  error: "Error",
+    uploading: "Uploading...",
+    processing: "Analyzing with AI...",
+    ready: "Ready",
+    error: "Error",
+    pending: "Pending...",
 };

@@ -17,7 +17,10 @@ export interface VisitTemplate {
     window_after_days: number; // Visit window tolerance (days after)
     activity_ids: string[]; // ['blood_draw', 'ecg', etc.]
     description?: string;
+    assignees?: { role: string; user_id: string }[];
 }
+
+
 
 // ============================================================================
 // Database Record Types

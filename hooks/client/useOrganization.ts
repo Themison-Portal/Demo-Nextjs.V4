@@ -1,69 +1,74 @@
-/**
- * Client - useOrganization Hook
- * TanStack Query hook for organization data in Client App
- */
-
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
-
 import type {
     AddMemberInput,
     UpdateOrganizationInput,
 } from '@/services/organizations/types';
 
-/**
- * Hook for organization data and member management
- */
-export function useOrganization(orgId: string) {
+export function useOrganization(orgId?: string) {
     const queryClient = useQueryClient();
 
     const orgQueryKey = ['organization', orgId];
-    const membersQueryKey = ['organization-members', orgId];
+    const membersQueryKey = ['members'];
+    const invitationsQueryKey = ['invitations'];
 
     /**
-     * Query: organization details
+     * Organization Query
      */
     const {
         data: organization,
         isLoading: isOrgLoading,
         error: orgError,
-        refetch,
+        refetch: refetchOrganization,
     } = useQuery({
         queryKey: orgQueryKey,
         queryFn: () => apiClient.getOrganization(orgId),
-        enabled: !!orgId,
     });
 
     /**
-     * Query: team members
+     * Members Query
+     * BE: GET /members
      */
     const {
         data: membersData,
         isLoading: isMembersLoading,
+        refetch: refetchMembers,
     } = useQuery({
         queryKey: membersQueryKey,
-        queryFn: () => apiClient.getTeamMembers(),
-        enabled: !!orgId,
+        queryFn: () => apiClient.getMembers(),
     });
 
     /**
-     * Mutation: invite member
+     * Invitations Query
+     * BE: GET /invitations
+     */
+    const {
+        data: invitationsData,
+        isLoading: isInvitationsLoading,
+        refetch: refetchInvitations,
+    } = useQuery({
+        queryKey: invitationsQueryKey,
+        queryFn: () => apiClient.getInvitations(),
+    });
+
+    /**
+     * Invite Member Mutation
      */
     const inviteMutation = useMutation({
         mutationFn: (input: AddMemberInput) =>
-            apiClient.inviteMemberorg(orgId, {
+            apiClient.inviteMemberorg(orgId!, {
                 email: input.email,
                 org_role: input.org_role,
             }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: membersQueryKey });
+            queryClient.invalidateQueries({ queryKey: invitationsQueryKey });
         },
     });
 
     /**
-     * Mutation: remove member
+     * Remove Member Mutation
      */
     const removeMutation = useMutation({
         mutationFn: (memberId: string) => apiClient.removeMember(memberId),
@@ -73,7 +78,7 @@ export function useOrganization(orgId: string) {
     });
 
     /**
-     * Mutation: update organization
+     * Update Organization Mutation
      */
     const updateMutation = useMutation({
         mutationFn: (input: UpdateOrganizationInput) =>
@@ -92,16 +97,21 @@ export function useOrganization(orgId: string) {
     return {
         // Data
         organization,
-        members: membersData?.members ?? [],
-        invitations: membersData?.invitations ?? [],
+        members: membersData ?? [],
+        invitations: invitationsData ?? [],
 
         // Loading
-        isLoading: isOrgLoading || isMembersLoading,
+        isLoading: isOrgLoading || isMembersLoading || isInvitationsLoading,
         error: orgError,
 
-        // Actions
-        refetch,
+        // Refetch
+        refetch: () => {
+            refetchOrganization();
+            refetchMembers();
+            refetchInvitations();
+        },
 
+        // Actions
         inviteMember: inviteMutation.mutateAsync,
         isInviting: inviteMutation.isPending,
         inviteError: inviteMutation.error,

@@ -3,8 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import { toast } from '@/lib/toast';
-import type { CreateTrialInput } from '@/services/trials/types';
-import type { TrialDetails } from '@/services/trials/types';
+import type { TrialWithAssignmentsCreate } from '@/services/trials/types';
 
 /**
  * Hook for fetching trials list for an organization
@@ -28,13 +27,14 @@ export function useTrials(orgId: string) {
 
     // Mutation: create trial
     const createMutation = useMutation({
-        mutationFn: (input: CreateTrialInput) => apiClient.createTrial(orgId, input),
-        onSuccess: (newTrial: TrialDetails) => {
+        mutationFn: (input: TrialWithAssignmentsCreate) =>
+            apiClient.createTrialWithAssignments(orgId, input),
+        onSuccess: (newTrial) => {
             queryClient.invalidateQueries({ queryKey });
             toast.success("Trial created", `${newTrial.name} has been created successfully`);
         },
-        onError: (error: any) => {
-            toast.error("Failed to create trial", error.message || "Please try again");
+        onError: (err: any) => {
+            toast.error("Failed to create trial", err?.message || "Please try again");
         },
     });
 
