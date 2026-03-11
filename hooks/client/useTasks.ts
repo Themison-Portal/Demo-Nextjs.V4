@@ -29,6 +29,7 @@ export function useTasks(filters?: TaskFilters) {
         queryKey: ["tasks", filters],
         queryFn: () => apiClient.getTasks(filters),
         refetchOnWindowFocus: true,
+        enabled: !!filters?.trial_id,
         staleTime: 30000,
     });
 

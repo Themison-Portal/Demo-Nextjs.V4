@@ -1,98 +1,116 @@
-'use client';
+'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/apiClient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '@/lib/apiClient'
 import type {
     AddMemberInput,
     UpdateOrganizationInput,
-} from '@/services/organizations/types';
+} from '@/services/organizations/types'
+import type { OrganizationUser } from '@/components/app/organization/OrganizationMembers'
 
-export function useOrganization(orgId?: string) {
-    const queryClient = useQueryClient();
+interface Invitation {
+    email: string
+    org_role: string
+    expires_at: string
+}
 
-    const orgQueryKey = ['organization', orgId];
-    const membersQueryKey = ['members'];
-    const invitationsQueryKey = ['invitations'];
+interface UseOrganizationReturn {
+    organization: any // type properly if you have Organization type
+    members: OrganizationUser[]
+    invitations: Invitation[]
+    isLoading: boolean
+    error: Error | null
+    refetch: () => void
 
-    /**
-     * Organization Query
-     */
+    inviteMember: (invite: AddMemberInput) => Promise<void>
+    isInviting: boolean
+    inviteError: Error | null
+
+    removeMember: (memberId: string) => Promise<void>
+    isRemoving: boolean
+    removeError: Error | null
+
+    updateOrganization: (input: UpdateOrganizationInput) => Promise<void>
+    isUpdating: boolean
+    updateError: Error | null
+}
+
+export function useOrganization(orgId?: string): UseOrganizationReturn {
+    const queryClient = useQueryClient()
+
+    const orgQueryKey = ['organization', orgId]
+    const membersQueryKey = ['organization', orgId, 'members']
+    const invitationsQueryKey = ['organization', orgId, 'invitations']
+
+    // -------------------------------
+    // Organization Query
+    // -------------------------------
     const {
         data: organization,
         isLoading: isOrgLoading,
         error: orgError,
         refetch: refetchOrganization,
-    } = useQuery({
+    } = useQuery<any>({
         queryKey: orgQueryKey,
-        queryFn: () => apiClient.getOrganization(orgId),
-    });
+        queryFn: () => apiClient.getOrganization(orgId!),
+        enabled: !!orgId,
+    })
 
-    /**
-     * Members Query
-     * BE: GET /members
-     */
+    // -------------------------------
+    // Members Query
+    // -------------------------------
     const {
         data: membersData,
         isLoading: isMembersLoading,
         refetch: refetchMembers,
-    } = useQuery({
+    } = useQuery<OrganizationUser[]>({
         queryKey: membersQueryKey,
-        queryFn: () => apiClient.getMembers(),
-    });
+        queryFn: () => apiClient.getMembers() as Promise<OrganizationUser[]>, // <-- call without args if BE auto filters by org
+        enabled: !!orgId,
+    })
 
-    /**
-     * Invitations Query
-     * BE: GET /invitations
-     */
+    // -------------------------------
+    // Invitations Query
+    // -------------------------------
     const {
         data: invitationsData,
         isLoading: isInvitationsLoading,
         refetch: refetchInvitations,
-    } = useQuery({
+    } = useQuery<Invitation[]>({
         queryKey: invitationsQueryKey,
-        queryFn: () => apiClient.getInvitations(),
-    });
+        queryFn: () => apiClient.getInvitations() as Promise<Invitation[]>,
+        enabled: !!orgId,
+    })
 
-    /**
-     * Invite Member Mutation
-     */
-    const inviteMutation = useMutation({
-        mutationFn: (input: AddMemberInput) =>
-            apiClient.inviteMemberorg(orgId!, {
-                email: input.email,
-                org_role: input.org_role,
-            }),
+    // -------------------------------
+    // Invite Member Mutation
+    // -------------------------------
+    const inviteMutation = useMutation<void, Error, AddMemberInput>({
+        mutationFn: (input) => apiClient.inviteMemberorg(orgId!, input),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: invitationsQueryKey });
+            queryClient.invalidateQueries({ queryKey: invitationsQueryKey })
         },
-    });
+    })
 
-    /**
-     * Remove Member Mutation
-     */
-    const removeMutation = useMutation({
-        mutationFn: (memberId: string) => apiClient.removeMember(memberId),
+    // -------------------------------
+    // Remove Member Mutation
+    // -------------------------------
+    const removeMutation = useMutation<void, Error, string>({
+        mutationFn: (memberId) => apiClient.removeMember(memberId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: membersQueryKey });
+            queryClient.invalidateQueries({ queryKey: membersQueryKey })
         },
-    });
+    })
 
-    /**
-     * Update Organization Mutation
-     */
-    const updateMutation = useMutation({
-        mutationFn: (input: UpdateOrganizationInput) =>
-            apiClient.updateOrganization(
-                {
-                    name: input.name,
-                    settings: input.settings,
-                },
-                orgId
-            ),
+    // -------------------------------
+    // Update Organization Mutation
+    // -------------------------------
+    const updateMutation = useMutation<void, Error, UpdateOrganizationInput>({
+        mutationFn: (input) => apiClient.updateOrganization(input, orgId!),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: orgQueryKey });
+            queryClient.invalidateQueries({ queryKey: orgQueryKey })
         },
-    });
+    })
 
     return {
         // Data
@@ -100,28 +118,28 @@ export function useOrganization(orgId?: string) {
         members: membersData ?? [],
         invitations: invitationsData ?? [],
 
-        // Loading
+        // Loading & Error
         isLoading: isOrgLoading || isMembersLoading || isInvitationsLoading,
-        error: orgError,
+        error: orgError ?? null,
 
         // Refetch
         refetch: () => {
-            refetchOrganization();
-            refetchMembers();
-            refetchInvitations();
+            refetchOrganization()
+            refetchMembers()
+            refetchInvitations()
         },
 
         // Actions
         inviteMember: inviteMutation.mutateAsync,
         isInviting: inviteMutation.isPending,
-        inviteError: inviteMutation.error,
+        inviteError: inviteMutation.error ?? null,
 
         removeMember: removeMutation.mutateAsync,
         isRemoving: removeMutation.isPending,
-        removeError: removeMutation.error,
+        removeError: removeMutation.error ?? null,
 
         updateOrganization: updateMutation.mutateAsync,
         isUpdating: updateMutation.isPending,
-        updateError: updateMutation.error,
-    };
+        updateError: updateMutation.error ?? null,
+    }
 }

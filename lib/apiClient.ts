@@ -88,7 +88,7 @@ export const apiClient = {
     updateOrganization: async (
         payload: { name?: string; settings?: any },
         id?: string
-    ) => {
+    ): Promise<void> => {
         return fetchApi(id ? `/organizations/${id}` : "/organizations/me", {
             method: "PUT",
             body: JSON.stringify(payload),
@@ -98,13 +98,13 @@ export const apiClient = {
     getOrganizationMetrics: async () => fetchApi("/organizations/me/metrics"),
 
     // Invite member to organization (admin)
-    inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }) =>
+    inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }): Promise<void> =>
         fetchApi(`/organizations/members`, {
             method: "POST",
             body: JSON.stringify({ ...payload, org_id: orgId }),
         }),
 
-    removeMember: async (memberId: string) =>
+    removeMember: async (memberId: string): Promise<void> =>
         fetchApi(`/members/${memberId}`, { method: "DELETE" }),
     getTeamMembers: async (): Promise<TeamMembersResponse> => {
         return fetchApi("/members");
