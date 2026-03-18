@@ -1,38 +1,56 @@
-/**
- * App Layout - Organization App
- * Protected layout for clinic users
- *
- * Validates organization access using requireOrgAccess guard
- * - Staff users: requires support_enabled = true
- * - Clinic users: requires active membership
- *
- * Note: Fetches are automatically cached by Next.js Request Memoization
- * Pages can safely re-fetch org data without additional DB queries
- */
+// app/[orgId]/layout.tsx
+"use client";
 
-import { requireOrgAccess } from "@/lib/auth/guards";
-import { getUser } from "@/lib/auth/getUser";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { AppMain } from "@/components/app/shared/AppMain";
 
+/**
+ * App Layout - Organization App
+ * Client-side protected layout for clinic users
+ *
+ * Uses useAuth() hook to fetch current user and validate organization access
+ * Redirects unauthorized users to /unauthorized
+ */
+
 interface AppLayoutProps {
-  children: React.ReactNode;
-  params: Promise<{ orgId: string }>;
+    children: React.ReactNode;
+    params: { orgId: string };
 }
 
-export default async function AppLayout({ children, params }: AppLayoutProps) {
-  const { orgId } = await params;
+export default function AppLayout({ children, params }: AppLayoutProps) {
+    const { orgId } = params;
+    const router = useRouter();
+    const { user, isLoading } = useAuth();
 
-  // Validate organization access (auto-redirects if invalid)
-  // Fetch is cached - pages can re-fetch without performance penalty
-  await requireOrgAccess(orgId);
+    useEffect(() => {
+        if (!isLoading) {
+            // Not authenticated → redirect to signin
+            if (!user) {
+                router.push("/signin");
+                return;
+            }
 
-  // Get user info for sidebar
-  const user = await getUser();
-  const firstName = user?.firstName || user?.email?.split("@")[0] || "User";
+            // Check organization access
+            if (user.organizationId !== orgId) {
+                router.push("/unauthorized");
+                return;
+            }
+        }
+    }, [user, isLoading, orgId, router]);
 
-  return (
-    <AppMain orgId={orgId} userEmail={user?.email} userFirstName={firstName}>
-      {children}
-    </AppMain>
-  );
+    if (isLoading) return <div>Loading...</div>;
+
+    const firstName = user?.firstName || user?.email?.split("@")[0] || "User";
+
+    return (
+        <AppMain
+            orgId={orgId}
+            userEmail={user?.email}
+            userFirstName={firstName}
+        >
+            {children}
+        </AppMain>
+    );
 }

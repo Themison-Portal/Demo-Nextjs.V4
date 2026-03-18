@@ -12,20 +12,20 @@
 // ============================================================================
 
 export const CONSOLE_ROUTES = {
-  /** Console home/dashboard */
-  HOME: "/console",
+    /** Console home/dashboard */
+    HOME: "/console",
 
-  /** Staff sign in */
-  SIGNIN: "/console/signin",
+    /** Staff sign in */
+    SIGNIN: "/console/signin",
 
-  /** Staff sign up */
-  SIGNUP: "/console/signup",
+    /** Staff sign up */
+    SIGNUP: "/console/signup",
 
-  /** Organizations list */
-  ORGANIZATIONS: "/console/organizations",
+    /** Organizations list */
+    ORGANIZATIONS: "/console/organizations",
 
-  /** Organization detail page */
-  ORGANIZATION: (id: string) => `/console/organizations/${id}`,
+    /** Organization detail page */
+    ORGANIZATION: (id: string) => `/console/organizations/${id}`,
 } as const;
 
 // ============================================================================
@@ -33,73 +33,73 @@ export const CONSOLE_ROUTES = {
 // ============================================================================
 
 export const APP_ROUTES = {
-  /** Client dashboard */
-  DASHBOARD: (orgId: string) => `/${orgId}/dashboard`,
+    /** Client dashboard */
+    DASHBOARD: (orgId: string) => `/${orgId}/dashboard`,
 
-  /** Client trials */
-  TRIALS: (orgId: string) => `/${orgId}/trials`,
+    /** Client trials */
+    TRIALS: (orgId: string) => `/${orgId}/trials`,
 
-  /** Trial detail page (redirects to overview) */
-  TRIAL: (orgId: string, trialId: string) => `/${orgId}/trials/${trialId}`,
+    /** Trial detail page (redirects to overview) */
+    TRIAL: (orgId: string, trialId: string) => `/${orgId}/trials/${trialId}`,
 
-  /** Trial tab (overview, documentation, team, patients) */
-  TRIAL_TAB: (orgId: string, trialId: string, tab: string) =>
-    `/${orgId}/trials/${trialId}/${tab}`,
+    /** Trial tab (overview, documentation, team, patients) */
+    TRIAL_TAB: (orgId: string, trialId: string, tab: string) =>
+        `/${orgId}/trials/${trialId}/${tab}`,
 
-  /** Trial patients list */
-  PATIENTS: (orgId: string, trialId: string) => `/${orgId}/trials/${trialId}/patients`,
+    /** Trial patients list */
+    PATIENTS: (orgId: string, trialId: string) => `/${orgId}/trials/${trialId}/patients`,
 
-  /** Trial patient detail */
-  PATIENT: (orgId: string, trialId: string, patientId: string) =>
-    `/${orgId}/trials/${trialId}/patients/${patientId}`,
+    /** Trial patient detail */
+    PATIENT: (orgId: string, trialId: string, patientId: string) =>
+        `/${orgId}/trials/${trialId}/patients/${patientId}`,
 
-  /** Patient tab (overview, visits, documents) */
-  PATIENT_TAB: (orgId: string, trialId: string, patientId: string, tab: string) =>
-    `/${orgId}/trials/${trialId}/patients/${patientId}/${tab}`,
+    /** Patient tab (overview, visits, documents) */
+    PATIENT_TAB: (orgId: string, trialId: string, patientId: string, tab: string) =>
+        `/${orgId}/trials/${trialId}/patients/${patientId}/${tab}`,
 
-  /** Task management */
-  TASKS: (orgId: string) => `/${orgId}/tasks`,
+    /** Task management */
+    TASKS: (orgId: string) => `/${orgId}/tasks`,
 
-  /** Communication Hub */
-  MESSAGES: (orgId: string) => `/${orgId}/messages`,
+    /** Communication Hub */
+    MESSAGES: (orgId: string) => `/${orgId}/messages`,
 
-  /** Organization management */
-  ORGANIZATION: (orgId: string) => `/${orgId}/organization`,
+    /** Organization management */
+    ORGANIZATION: (orgId: string) => `/${orgId}/organization`,
 
-  /** Organization tab (overview, members, settings) */
-  ORGANIZATION_TAB: (orgId: string, tab: string) =>
-    `/${orgId}/organization/${tab}`,
+    /** Organization tab (overview, members, settings) */
+    ORGANIZATION_TAB: (orgId: string, tab: string) =>
+        `/${orgId}/organization/${tab}`,
 
-  /** Client settings */
-  SETTINGS: (orgId: string) => `/${orgId}/settings`,
+    /** Client settings */
+    SETTINGS: (orgId: string) => `/${orgId}/settings`,
 
-  /** Document AI - Generic entry point */
-  DOCUMENT_AI: (orgId: string) => `/${orgId}/ai`,
+    /** Document AI - Generic entry point */
+    DOCUMENT_AI: (orgId: string) => `/${orgId}/ai`,
 
-  /** Document AI Chat - With trial, document, and optional chat ID */
-  DOCUMENT_AI_CHAT: (
-    orgId: string,
-    trialId: string,
-    documentId: string,
-    chatId?: string,
-  ) =>
-    chatId
-      ? `/${orgId}/ai?trialId=${trialId}&documentId=${documentId}&chatId=${chatId}`
-      : `/${orgId}/ai?trialId=${trialId}&documentId=${documentId}`,
+    /** Document AI Chat - With trial, document, and optional chat ID */
+    DOCUMENT_AI_CHAT: (
+        orgId: string,
+        trialId: string,
+        documentId: string,
+        chatId?: string,
+    ) =>
+        chatId
+            ? `/${orgId}/ai?trialId=${trialId}&documentId=${documentId}&chatId=${chatId}`
+            : `/${orgId}/ai?trialId=${trialId}&documentId=${documentId}`,
 
-  /** Document AI Archive - Generic entry point */
-  DOCUMENT_AI_ARCHIVE: (orgId: string) => `/${orgId}/ai/archive`,
+    /** Document AI Archive - Generic entry point */
+    DOCUMENT_AI_ARCHIVE: (orgId: string) => `/${orgId}/ai/archive`,
 
-  /** Document AI Archive - With trial, document, and optional chat ID */
-  DOCUMENT_AI_ARCHIVE_CHAT: (
-    orgId: string,
-    trialId: string,
-    documentId: string,
-    chatId?: string,
-  ) =>
-    chatId
-      ? `/${orgId}/ai/archive?trialId=${trialId}&documentId=${documentId}&chatId=${chatId}`
-      : `/${orgId}/ai/archive?trialId=${trialId}&documentId=${documentId}`,
+    /** Document AI Archive - With trial, document, and optional chat ID */
+    DOCUMENT_AI_ARCHIVE_CHAT: (
+        orgId: string,
+        trialId: string,
+        documentId: string,
+        chatId?: string,
+    ) =>
+        chatId
+            ? `/${orgId}/ai/archive?trialId=${trialId}&documentId=${documentId}&chatId=${chatId}`
+            : `/${orgId}/ai/archive?trialId=${trialId}&documentId=${documentId}`,
 } as const;
 
 // ============================================================================
@@ -107,21 +107,24 @@ export const APP_ROUTES = {
 // ============================================================================
 
 export const PUBLIC_ROUTES = {
-  /** Landing page */
-  HOME: "/",
+    /** Landing page */
+    HOME: "/",
 
-  /** Client signin */
-  SIGNIN: "/signin",
+    /** Client signin */
+    SIGNIN: "/signin",
 
-  /** Client signup (with invitation token) */
-  SIGNUP: "/signup",
+    /** Client signup (with invitation token) */
+    SIGNUP: "/signup",
 
-  /** Error page */
-  ERROR: "/error",
+    /** Auth callback (ADD THIS) */
+    CALLBACK: "/auth/callback",
 
-  /** Error page with message */
-  ERROR_WITH_MESSAGE: (message: string) =>
-    `/error?message=${encodeURIComponent(message)}`,
+    /** Error page */
+    ERROR: "/error",
+
+    /** Error page with message */
+    ERROR_WITH_MESSAGE: (message: string) =>
+        `/error?message=${encodeURIComponent(message)}`,
 } as const;
 
 // ============================================================================
@@ -129,8 +132,8 @@ export const PUBLIC_ROUTES = {
 // ============================================================================
 
 export const AUTH_ROUTES = {
-  /** OAuth/PKCE callback */
-  CALLBACK: "/auth/callback",
+    /** OAuth/PKCE callback */
+    CALLBACK: "/auth/callback",
 } as const;
 
 // ============================================================================
@@ -138,11 +141,11 @@ export const AUTH_ROUTES = {
 // ============================================================================
 
 export const EXTERNAL_ROUTES = {
-  /** Themison marketing website */
-  WEBSITE: "https://www.themison.com/",
+    /** Themison marketing website */
+    WEBSITE: "https://www.themison.com/",
 
-  /** Contact page */
-  CONTACT: "https://www.themison.com/contact",
+    /** Contact page */
+    CONTACT: "https://www.themison.com/contact",
 } as const;
 
 // ============================================================================
@@ -167,11 +170,11 @@ export const EXTERNAL_ROUTES = {
  * ```
  */
 export const ROUTES = {
-  CONSOLE: CONSOLE_ROUTES,
-  APP: APP_ROUTES,
-  PUBLIC: PUBLIC_ROUTES,
-  AUTH: AUTH_ROUTES,
-  EXTERNAL: EXTERNAL_ROUTES,
+    CONSOLE: CONSOLE_ROUTES,
+    APP: APP_ROUTES,
+    PUBLIC: PUBLIC_ROUTES,
+    AUTH: AUTH_ROUTES,
+    EXTERNAL: EXTERNAL_ROUTES,
 } as const;
 
 // ============================================================================

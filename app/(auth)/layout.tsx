@@ -1,35 +1,33 @@
-/**
- * Auth Layout
- * Public layout for client authentication (signin/signup)
- * Redirects authenticated users to their appropriate dashboard
- */
+"use client";
 
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/getUser";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/lib/routes";
 
-export default async function AuthLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    const user = await getUser();
+/**
+ * Client-side Auth Layout
+ * Redirects authenticated users to dashboard/console
+ */
+export default function SigninLayout({ children }: { children: React.ReactNode }) {
+    const { user, isLoading } = useAuth();
+    const router = useRouter();
 
-    // Not authenticated → allow access to signin/signup
-    if (!user) {
-        return <>{children}</>;
-    }
+    useEffect(() => {
+        if (!isLoading && user) {
+            // Staff → console
+            if (user.isStaff) {
+                router.push(ROUTES.CONSOLE.HOME);
+            }
+            // Client → dashboard
+            else if (user.organizationId) {
+                router.push(ROUTES.APP.DASHBOARD(user.organizationId));
+            }
+        }
+    }, [user, isLoading, router]);
 
-    // Staff user → redirect to console
-    if (user.isStaff) {
-        redirect(ROUTES.CONSOLE.HOME);
-    }
+    if (isLoading) return <div>Loading...</div>;
 
-    // Client user → redirect to their organization dashboard
-    if (user.organizationId) {
-        redirect(ROUTES.APP.DASHBOARD(user.organizationId));
-    }
-
-    // Fallback: user has no organization
-    redirect(ROUTES.PUBLIC.ERROR_WITH_MESSAGE("No organization found"));
+    // Not authenticated → show children (signin page)
+    return <>{children}</>;
 }

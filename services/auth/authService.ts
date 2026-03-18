@@ -12,6 +12,7 @@ export const authService = {
         await auth0.loginWithRedirect({
             authorizationParams: {
                 prompt: "login",
+                redirect_uri: window.location.origin + "/auth/callback",
             },
         });
     },

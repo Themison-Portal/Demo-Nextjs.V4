@@ -1,44 +1,39 @@
-/**
- * useAuth Hook
- * General authentication hook that provides current user state
- * Uses TanStack Query for caching and automatic refetching
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService, User } from '@/services/auth';
 
 const AUTH_QUERY_KEY = ['auth', 'user'];
 
 export function useAuth() {
-  const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
 
-  // Query current user
-  const {
-    data: user,
-    isLoading,
-    error,
-  } = useQuery<User | null>({
-    queryKey: AUTH_QUERY_KEY,
-    queryFn: () => authService.getCurrentUser(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: false,
-  });
+    // Only run query if token exists
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
-  // Signout mutation
-  const signoutMutation = useMutation({
-    mutationFn: () => authService.signout(),
-    onSuccess: () => {
-      // Clear user from cache
-      queryClient.setQueryData(AUTH_QUERY_KEY, null);
-    },
-  });
+    const {
+        data: user,
+        isLoading,
+        error,
+    } = useQuery<User | null>({
+        queryKey: AUTH_QUERY_KEY,
+        queryFn: () => authService.getCurrentUser(),
+        enabled: !!token, // ✅ Only fetch if token exists
+        staleTime: 1000 * 60 * 5,
+        retry: false,
+    });
 
-  return {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    error,
-    signout: signoutMutation.mutateAsync,
-    isSigningOut: signoutMutation.isPending,
-  };
+    const signoutMutation = useMutation({
+        mutationFn: () => authService.signout(),
+        onSuccess: () => {
+            queryClient.setQueryData(AUTH_QUERY_KEY, null);
+        },
+    });
+
+    return {
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        error,
+        signout: signoutMutation.mutateAsync,
+        isSigningOut: signoutMutation.isPending,
+    };
 }

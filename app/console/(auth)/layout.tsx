@@ -1,18 +1,29 @@
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth/getUser";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/lib/routes";
 
-export default async function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const user = await getUser();
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
+    const { user, isLoading } = useAuth();
 
-  // Ya autenticado como staff → redirigir a console
-  if (user?.isStaff) {
-    redirect(ROUTES.CONSOLE.HOME);
-  }
+    useEffect(() => {
+        if (!isLoading && user) {
+            // Staff user → console
+            if (user.isStaff) {
+                router.push(ROUTES.CONSOLE.HOME);
+            }
+            // Client user → dashboard
+            else if (user.organizationId) {
+                router.push(ROUTES.APP.DASHBOARD(user.organizationId));
+            }
+        }
+    }, [user, isLoading, router]);
 
-  return <>{children}</>;
+    if (isLoading) return <div>Loading...</div>;
+
+    // Not authenticated → allow signin/signup
+    return <>{children}</>;
 }

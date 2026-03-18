@@ -41,37 +41,31 @@ import type {
 } from "@/services/activities/types";
 import type { TrialDetails } from "@/services/trials/types";
 import { Organization } from "@/services/organizations/types";
+// import { getAuth0Client } from "@/lib/auth0";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const isFormData = options.body instanceof FormData;
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
+        credentials: "include", // include cookies for session management if needed
         headers: {
-            ...(isFormData ? {} : { "Content-Type": "application/json" }),
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers || {}),
         },
     });
 
     if (!response.ok) {
-        let errorMessage = `API error: ${response.status}`;
-        try {
-            const errorJson = await response.json();
-            errorMessage = errorJson?.detail || errorJson?.error || errorMessage;
-        } catch {
-            const text = await response.text();
-            if (text) errorMessage = text;
-        }
-        throw new Error(errorMessage);
+        const errorText = await response.text();
+        throw new Error(errorText || `API error: ${response.status}`);
     }
 
-    if (response.status === 204) return {} as T;
-
-    return response.json();
+    return response.status === 204 ? ({} as T) : response.json();
 }
 
 export const apiClient = {
@@ -203,7 +197,7 @@ export const apiClient = {
         profile?: { first_name?: string; last_name?: string };
         organization?: { id?: string; name?: string };
     }> => {
-        return fetchApi("/me");
+        return fetchApi("/auth/me");
     },
     getMyTrialAssignments: async () => fetchApi("/me/trial-assignments"),
     getMembers: async () => fetchApi("/members"),
