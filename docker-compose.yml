@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: themison-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env  # <-- swap this to .env.local, .env.docker, or .env.cloud as needed
+    depends_on:
+      backend:
+        condition: service_healthy  # optional if backend is in same compose
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  app-network:
+    driver: bridge
