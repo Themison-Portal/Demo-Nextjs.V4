@@ -20,7 +20,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 router.push(ROUTES.APP.DASHBOARD(user.organizationId));
             }
         }
-    }, [user, isLoading, router]);
+    }, [user, isLoading]);
 
     if (isLoading) return <div>Loading...</div>;
 

@@ -49,17 +49,19 @@ if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    const isFormData = options.body instanceof FormData; // ✅ detect FormData
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
-        credentials: "include", // include cookies for session management if needed
+        credentials: "include",
         headers: {
-            "Content-Type": "application/json",
+            ...(!isFormData ? { "Content-Type": "application/json" } : {}),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers || {}),
         },
     });
 
+    if (response.status === 401) return null as T;
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || `API error: ${response.status}`);
@@ -196,7 +198,9 @@ export const apiClient = {
         member: { id: string; email: string; default_role: string; onboarding_completed: boolean };
         profile?: { first_name?: string; last_name?: string };
         organization?: { id?: string; name?: string };
-    }> => {
+    } | null> => {
+        const token = localStorage.getItem("access_token");
+        if (!token) return null;
         return fetchApi("/auth/me");
     },
     getMyTrialAssignments: async () => fetchApi("/me/trial-assignments"),
@@ -249,7 +253,7 @@ export const apiClient = {
     // -----------------------
     // Visits
     // -----------------------
-    getPatientVisits: async (patientId: string) => fetchApi(`/ patients/${patientId}/visits`),
+    getPatientVisits: async (patientId: string) => fetchApi(`/patients/${patientId}/visits`),
     completeVisit: async (
         orgId: string,
         trialId: string,

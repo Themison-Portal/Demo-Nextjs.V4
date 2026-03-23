@@ -14,20 +14,20 @@ export default function SigninLayout({ children }: { children: React.ReactNode }
     const router = useRouter();
 
     useEffect(() => {
-        if (!isLoading && user) {
-            // Staff → console
-            if (user.isStaff) {
-                router.push(ROUTES.CONSOLE.HOME);
-            }
-            // Client → dashboard
-            else if (user.organizationId) {
-                router.push(ROUTES.APP.DASHBOARD(user.organizationId));
-            }
+        if (isLoading) return; // wait until auth resolves
+
+        // Only redirect if user exists
+        if (!user) return;
+
+        if (user.isStaff) {
+            router.replace(ROUTES.CONSOLE.HOME);
+        } else if (user.organizationId) {
+            router.replace(ROUTES.APP.DASHBOARD(user.organizationId));
         }
     }, [user, isLoading, router]);
 
     if (isLoading) return <div>Loading...</div>;
 
-    // Not authenticated → show children (signin page)
+    // Not authenticated → render signin page
     return <>{children}</>;
 }

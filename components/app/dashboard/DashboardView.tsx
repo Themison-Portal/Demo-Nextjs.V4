@@ -6,7 +6,7 @@
 "use client";
 
 import Link from "next/link";
-import { StatsGrid } from "./StatsGrid";
+// import { StatsGrid } from "./StatsGrid";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Plus, UserPlus } from "lucide-react";
 import { MyWorkload } from "@/components/app/tasks/MyWorkload";

@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "./getUser";
 import { ROUTES } from "@/lib/routes";
 import type { AuthUser } from "./getUser";
+import { cookies } from "next/dist/server/request/cookies";
 
 // ============================================================================
 // Staff Guard
@@ -69,10 +70,16 @@ export async function requireOrgAccess(
         redirect(ROUTES.PUBLIC.HOME);
     }
 
+    const cookieStore = await cookies(); // add this import at top
+    const token = cookieStore.get("access_token")?.value;
+
     const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/organizations/${orgId}`,
         {
             credentials: "include",
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             cache: "no-store",
         }
     );

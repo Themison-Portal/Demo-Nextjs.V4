@@ -3,9 +3,11 @@
  * Server-side helper to retrieve the authenticated user.
  *
  * This does NOT validate JWT locally.
- * It delegates authentication to the FastAPI backend (/me endpoint),
+ * It delegates authentication to the FastAPI backend (/auth/me endpoint),
  * which verifies the Auth0 JWT and resolves membership.
  */
+
+import { cookies } from "next/headers";
 
 export interface AuthUser {
     id: string;
@@ -27,22 +29,41 @@ export interface AuthUser {
  *   - null if not authenticated or token is invalid
  *
  * Security Model:
- *   - JWT is stored in an httpOnly cookie
- *   - This function sends cookies automatically (credentials: "include")
+ *   - JWT is read from the access_token cookie (set by AuthCallbackPage)
+ *   - Token is forwarded to FastAPI as Authorization: Bearer header
  *   - FastAPI validates the JWT via Auth0
  *   - Frontend never verifies or decodes tokens directly
  */
 export async function getUser(): Promise<AuthUser | null> {
     try {
+        // ✅ Read token from cookie — server components cannot access localStorage
+        const cookieStore = await cookies();
+        const token = cookieStore.get("access_token")?.value;
+
+        if (!token) {
+            console.warn("User not authenticated");
+            return null;
+        }
+
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/me`,
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
             {
-                credentials: "include", // sends httpOnly cookie
-                cache: "no-store",      // prevent caching authenticated responses
+                headers: {
+                    Authorization: `Bearer ${token}`, // ✅ forward token to FastAPI
+                },
+                cache: "no-store", // prevent caching authenticated responses
             }
         );
 
-        if (!response.ok) return null;
+        if (response.status === 401) {
+            console.warn("User not authenticated");
+            return null;
+        }
+
+        if (!response.ok) {
+            console.error("Failed to fetch user", response.status);
+            return null;
+        }
 
         const data = await response.json();
 
