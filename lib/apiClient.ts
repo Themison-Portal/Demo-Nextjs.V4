@@ -76,7 +76,7 @@ export const apiClient = {
     // -----------------------
     getOrganization: async (id?: string): Promise<Organization> => {
         // If ID is provided, admin endpoint, else fallback to /me
-        return fetchApi(id ? `/organizations/${id}` : "/organizations/me");
+        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/");
     },
 
 
@@ -85,25 +85,25 @@ export const apiClient = {
         payload: { name?: string; settings?: any },
         id?: string
     ): Promise<void> => {
-        return fetchApi(id ? `/organizations/${id}` : "/organizations/me", {
+        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/", {
             method: "PUT",
             body: JSON.stringify(payload),
         });
     },
 
-    getOrganizationMetrics: async () => fetchApi("/organizations/me/metrics"),
+    getOrganizationMetrics: async () => fetchApi("/api/organizations/me/metrics/"),
 
     // Invite member to organization (admin)
     inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }): Promise<void> =>
-        fetchApi(`/organizations/members`, {
+        fetchApi(`/api/organizations/members`, {
             method: "POST",
             body: JSON.stringify({ ...payload, org_id: orgId }),
         }),
 
     removeMember: async (memberId: string): Promise<void> =>
-        fetchApi(`/members/${memberId}`, { method: "DELETE" }),
+        fetchApi(`/api/members/${memberId}`, { method: "DELETE" }),
     getTeamMembers: async (): Promise<TeamMembersResponse> => {
-        return fetchApi("/members");
+        return fetchApi("/api/members");
     },
 
     // -----------------------
@@ -114,7 +114,7 @@ export const apiClient = {
      * List all organizations (console)
      */
     getOrganizations: async () => {
-        return fetchApi("/organizations");
+        return fetchApi("/api/organizations/");
     },
 
     /**
@@ -124,7 +124,8 @@ export const apiClient = {
         name: string;
         settings?: any;
     }) => {
-        return fetchApi("/organizations", {
+        console.log("POST to:", `${API_BASE_URL}/api/organizations/`);
+        return fetchApi("/api/organizations/", {
             method: "POST",
             body: JSON.stringify(payload),
         });
@@ -137,7 +138,7 @@ export const apiClient = {
         orgId: string,
         payload: { name?: string; settings?: any }
     ) => {
-        return fetchApi(`/organizations/${orgId}`, {
+        return fetchApi(`/api/organizations/${orgId}/`, {
             method: "PATCH",
             body: JSON.stringify(payload),
         });
@@ -149,7 +150,7 @@ export const apiClient = {
     inviteMemberToOrganization: async (
         payload: { email: string; org_role: string }
     ) =>
-        fetchApi("/invitations/batch", {
+        fetchApi("/api/invitations/batch", {
             method: "POST",
             body: JSON.stringify({
                 invitations: [
@@ -165,7 +166,7 @@ export const apiClient = {
      * Remove member from organization
      */
     removeMemberFromOrganization: async (orgId: string, memberId: string) =>
-        fetchApi(`/organizations/${orgId}/members/${memberId}`, {
+        fetchApi(`/api/organizations/${orgId}/members/${memberId}`, {
             method: "DELETE",
         }),
 
@@ -181,11 +182,11 @@ export const apiClient = {
     // Invitations
     // -----------------------
     getInvitations: async (status?: string) =>
-        fetchApi(`/invitations${status ? `?status=${status}` : ""}`),
+        fetchApi(`/api/invitations${status ? `?status=${status}` : ""}`),
     createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; initial_role: string }[] }) =>
         fetchApi("/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
     validateInvitationToken: async (token: string) =>
-        fetchApi(`/invitations/validate/${token}`),
+        fetchApi(`/api/invitations/validate/${token}`),
     getInvitationCounts: async () => fetchApi("/invitations/count"),
     inviteMember: async (orgId: string, payload: { email: string; org_role: string }) =>
         fetchApi(`/organizations/members`, { method: "POST", body: JSON.stringify({ ...payload, org_id: orgId }) }),
@@ -203,10 +204,11 @@ export const apiClient = {
         if (!token) return null;
         return fetchApi("/auth/me");
     },
-    getMyTrialAssignments: async () => fetchApi("/me/trial-assignments"),
-    getMembers: async () => fetchApi("/members"),
+    getMemberMe: async () => fetchApi("/api/members/me"),
+    getMyTrialAssignments: async () => fetchApi("/api/members/me/trial-assignments"),
+    getMembers: async () => fetchApi("/api/members/"),
     getTrialTeamMembers: async (trialId: string) =>
-        fetchApi<TrialTeamMember[]>(`/trials/${trialId}/team-members`),
+        fetchApi<TrialTeamMember[]>(`/api/trial-members/team/${trialId}`),
     updateMember: async (memberId: string, payload: any) =>
         fetchApi(`/members/${memberId}`, { method: "PUT", body: JSON.stringify(payload) }),
     deleteMember: async (memberId: string) =>
@@ -215,21 +217,21 @@ export const apiClient = {
     // -----------------------
     // Trials
     // -----------------------
-    getTrials: async (): Promise<TrialDetails[]> => fetchApi(`/trials`),
+    getTrials: async (): Promise<TrialDetails[]> => fetchApi(`/api/trials/`),
     getTrialById: (trialId: string): Promise<TrialDetails> =>
-        fetchApi<TrialDetails>(`/trials/${trialId}`),
+        fetchApi<TrialDetails>(`/api/trials/${trialId}`),
     createTrialWithAssignments: async (
         orgId: string,  // optional if BE derives org from current member
         payload: TrialWithAssignmentsCreate
     ): Promise<TrialDetails> => {
-        return fetchApi(`/trials/with-assignments`, {
+        return fetchApi(`/api/trials/with-assignments`, {
             method: "POST",
             body: JSON.stringify(payload),
         });
     },
 
     updateTrial: async (trialId: string, payload: UpdateTrialInput) => {
-        return fetchApi(`/trials/${trialId}`, {
+        return fetchApi(`/api/trials/${trialId}`, {
             method: "PUT",
             body: JSON.stringify(payload),
         });
@@ -239,13 +241,15 @@ export const apiClient = {
     // -----------------------
     // Patients
     // -----------------------
-    getPatients: async () => fetchApi(`/patients`),
-    getPatientById: async (patientId: string) => fetchApi(`/patients/${patientId}`),
-    createPatient: async (payload: any) => fetchApi("/patients", { method: "POST", body: JSON.stringify(payload) }),
+    getPatients: async (trialId?: string) => fetchApi(`/api/patients/${trialId ? `?trial_id=${trialId}` : ""}`),
+    getPatientById: async (patientId: string) => fetchApi(`/api/patients/${patientId}`),
+    createPatient: async (payload: any) => fetchApi("/api/patients", { method: "POST", body: JSON.stringify(payload) }),
     updatePatient: async (patientId: string, payload: any) =>
-        fetchApi(`/patients/${patientId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/api/patients/${patientId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    enrollInTrial: async (trialId: string, patientId: string) =>
+        fetchApi(`/api/trial-patients/`, { method: "POST", body: JSON.stringify({ trial_id: trialId, patient_id: patientId }) }),
     deletePatient: async (patientId: string): Promise<void> =>
-        fetchApi(`/patients/${patientId}`, {
+        fetchApi(`/api/patients/${patientId}`, {
             method: "DELETE",
         }),
 
@@ -270,34 +274,37 @@ export const apiClient = {
     },
 
     updateVisit: async (visitId: string, payload: any) =>
-        fetchApi(`/visits/${visitId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/api/patient-visits/${visitId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Tasks
     // -----------------------
     createTask: async (payload: {
         trial_id: string;
-        patient_id: string;
-        visit_id: string;
+        patient_id?: string;
+        visit_id?: string;
         visit_activity_id?: string;
         activity_type_id?: string;
         title: string;
         status?: string;
         priority?: string;
-        assigned_to?: string; // change from string | null → string | undefined
+        assigned_to?: string;
         due_date?: string;
-        source?: string;       // optional, hydration can include it
+        source?: string;
         source_id?: string;
-    }): Promise<TaskPayload> =>
-        fetchApi("/tasks", { method: "POST", body: JSON.stringify(payload) }),
-
-    updateTasksByVisit: async (
-        visitId: string,
-        payload: Partial<{ status: string; assigned_to?: string; due_date?: string }>
-    ): Promise<number> => fetchApi(`/visits/${visitId}/tasks`, { method: "PATCH", body: JSON.stringify(payload) }),
+    }): Promise<TaskPayload> => {
+        // Strip empty strings and frontend-only fields
+        const clean: Record<string, any> = {};
+        for (const [k, v] of Object.entries(payload)) {
+            if (v !== "" && v !== undefined && !["visit_activity_id", "source", "source_id"].includes(k)) {
+                clean[k] = v;
+            }
+        }
+        return fetchApi("/api/tasks/tasks/", { method: "POST", body: JSON.stringify(clean) });
+    },
 
     updateTask: async (taskId: string, payload: any) =>
-        fetchApi(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/api/tasks/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Chat Threads & Messages 
@@ -386,9 +393,9 @@ export const apiClient = {
     // Trial Documents
     // -----------------------
     getTrialDocuments: async (trialId: string): Promise<TrialDocument[]> =>
-        fetchApi(`/documents?trial_id=${trialId}`),
+        fetchApi(`/api/trial-documents/?trial_id=${trialId}`),
     getTrialDocumentById: async (documentId: string) =>
-        fetchApi(`/documents/${documentId}`),
+        fetchApi(`/api/trial-documents/${documentId}`),
     uploadTrialDocument: async (
         file: File,
         trialId: string,
@@ -403,12 +410,12 @@ export const apiClient = {
         formData.append("document_type", documentType);
         formData.append("description", description);
 
-        return fetchApi(`/documents/upload`, { method: "POST", body: formData });
+        return fetchApi(`/upload/upload-pdf`, { method: "POST", body: formData });
     },
     updateTrialDocument: async (documentId: string, payload: Record<string, any>) =>
         fetchApi(`/documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
     deleteTrialDocument: async (documentId: string) =>
-        fetchApi(`/documents/${documentId}`, { method: "DELETE" }),
+        fetchApi(`/api/trial-documents/${documentId}`, { method: "DELETE" }),
 
 
     // -----------------------
@@ -478,7 +485,7 @@ export const apiClient = {
         scheduled_date: string;
         status?: string;
     }): Promise<{ id: string }> =>
-        fetchApi(`/visits`, { method: "POST", body: JSON.stringify(payload) }),
+        fetchApi(`/api/patient-visits/`, { method: "POST", body: JSON.stringify(payload) }),
 
     // Create a visit activity
     createVisitActivity: async (payload: {
@@ -488,7 +495,7 @@ export const apiClient = {
         activity_order: number;
         status?: string;
     }): Promise<{ id: string }> =>
-        fetchApi(`/visit-activities`, { method: "POST", body: JSON.stringify(payload) }),
+        fetchApi(`/api/patient-visits/activities`, { method: "POST", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Archive (Response Library)
@@ -556,22 +563,25 @@ export const apiClient = {
         apiClient.getTrialTeamMembers(trialId), // reuse existing endpoint
 
     addTrialTeamMember: async (
-        orgId: string,           // new argument
-        trialId: string,
-        payload: AddTrialTeamMemberInput
-    ): Promise<TrialTeamMember> =>
-        fetchApi(`/orgs/${orgId}/trials/${trialId}/team-members`, {
-            method: "POST",
-            body: JSON.stringify(payload),
-        }),
-
-    updateTrialTeamMember: async (
         orgId: string,
         trialId: string,
-        memberId: string,
-        role: TrialRole
-    ): Promise<TrialTeamMember> =>
-        fetchApi(`/trials/${trialId}/team-members/${memberId}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+        payload: AddTrialTeamMemberInput
+    ): Promise<TrialTeamMember> => {
+        const roles = await fetchApi<{ id: string; name: string }[]>("/api/roles/");
+        const role = roles.find(r => r.name === payload.trial_role);
+        if (!role) throw new Error(`Role not found: ${payload.trial_role}`);
+
+        return fetchApi(`/api/trial-members/?trial_id=${trialId}`, {
+            method: "POST",
+            body: JSON.stringify({
+                trial_id: trialId,
+                member_id: payload.org_member_id,
+                role_id: role.id,
+            }),
+        });
+    },
+
+
 
     updateTrialTeamMemberSettings: async (
         orgId: string,
@@ -579,7 +589,15 @@ export const apiClient = {
         memberId: string,
         settings: Record<string, any>
     ): Promise<TrialTeamMember> =>
-        fetchApi(`/trials/${trialId}/team-members/${memberId}/settings`, { method: "PATCH", body: JSON.stringify(settings) }),
+        fetchApi(`/api/trial-members/${memberId}`, { method: "PATCH", body: JSON.stringify(settings) }),
+
+    updateTrialTeamMember: async (
+        orgId: string,
+        trialId: string,
+        memberId: string,
+        role: TrialRole
+    ): Promise<TrialTeamMember> =>
+        fetchApi(`/api/trial-members/${memberId}`, { method: "PATCH", body: JSON.stringify({ role_name: role }) }),
 
     updateTrialTeamMemberStatus: async (
         orgId: string,
@@ -587,14 +605,14 @@ export const apiClient = {
         memberId: string,
         status: "active" | "inactive"
     ): Promise<TrialTeamMember> =>
-        fetchApi(`/trials/${trialId}/team-members/${memberId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+        fetchApi(`/api/trial-members/${memberId}`, { method: "PATCH", body: JSON.stringify({ is_active: status === "active" }) }),
 
     removeTrialTeamMember: async (
         orgId: string,
         trialId: string,
         memberId: string
     ): Promise<void> =>
-        fetchApi(`/trials/${trialId}/team-members/${memberId}`, { method: "DELETE" }),
+        fetchApi(`/api/trial-members/${memberId}`, { method: "DELETE" }),
 
     // -----------------------
     // RAG PDF Upload / Processing
@@ -609,7 +627,7 @@ export const apiClient = {
         documentId: string,
         chunkSize = 750
     ): Promise<{ job_id: string; document_id: string; status: string; message: string }> =>
-        fetchApi(`/upload-pdf`, {
+        fetchApi(`/upload/upload-pdf`, {
             method: "POST",
             body: JSON.stringify({ document_url: documentUrl, document_id: documentId, chunk_size: chunkSize }),
         }),
@@ -629,7 +647,7 @@ export const apiClient = {
         result?: any;
         error?: string;
     }> =>
-        fetchApi(`/status/${jobId}`),
+        fetchApi(`/upload/status/${jobId}`),
 
     // -----------------------
     // Tasks
@@ -654,7 +672,7 @@ export const apiClient = {
 
         const qs = query.toString();
 
-        return fetchApi(`/tasks${qs ? `?${qs}` : ""}`);
+        return fetchApi(`/api/tasks/tasks${qs ? `?${qs}` : ""}`);
     },
 
     // createTask: async (payload: TaskCreate): Promise<Task> =>
@@ -664,13 +682,13 @@ export const apiClient = {
     //     }),
 
     // updateTask: async (taskId: string, payload: TaskUpdate): Promise<Task> =>
-    //     fetchApi(`/tasks/${taskId}`, {
+    //     fetchApi(`/api/tasks/tasks/${taskId}`, {
     //         method: "PATCH",
     //         body: JSON.stringify(payload),
     //     }),
 
     deleteTask: async (taskId: string): Promise<{ success: boolean }> =>
-        fetchApi(`/tasks/${taskId}`, {
+        fetchApi(`/api/tasks/tasks/${taskId}`, {
             method: "DELETE",
         }),
 

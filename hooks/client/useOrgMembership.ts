@@ -1,38 +1,23 @@
-'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import type { OrgMembership } from '@/services/organizations/types';
 import { OrgRole } from '@/lib/permissions/constants';
 
-
-interface ApiOrgMembershipResponse {
-    user_id: string;
-    email: string;
-    member_id: string;
-    org_role: string;
-    is_staff?: boolean;
-}
-
-/**
- * Hook to get current user's org membership
- */
 export function useOrgMembership(orgId: string) {
     const { data: membership, isLoading, error } = useQuery<OrgMembership, Error>({
         queryKey: ['org-membership', orgId],
         queryFn: async (): Promise<OrgMembership> => {
-            const data = (await apiClient.getOrganization(orgId)) as ApiOrgMembershipResponse;
-
+            const data = await apiClient.getMemberMe(); // hits /api/members/me
             return {
-                userId: data.user_id,
+                userId: data.profile_id ?? data.id,
                 email: data.email,
-                orgMemberId: data.member_id,
-                orgRole: data.org_role as OrgRole,
-                isStaff: data.is_staff ?? false,
+                orgMemberId: data.id,
+                orgRole: data.default_role as OrgRole,
+                isStaff: data.default_role === 'staff',
             };
         },
         enabled: !!orgId,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 1000 * 60 * 5,
     });
 
     return {

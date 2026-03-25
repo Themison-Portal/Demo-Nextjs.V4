@@ -12,8 +12,8 @@ export function useOrganizations() {
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ORGANIZATIONS_QUERY_KEY,
         queryFn: async (): Promise<Organization[]> => {
-            const response = await apiClient.getOrganizations() as { organizations: Organization[] };
-            return response.organizations;
+            const response = await apiClient.getOrganizations() as Organization[];
+            return response ?? [];
         },
         staleTime: 1000 * 60 * 2,
     });

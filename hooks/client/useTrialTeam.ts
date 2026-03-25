@@ -32,6 +32,7 @@ export function useTrialTeam(orgId: string, trialId: string) {
             apiClient.addTrialTeamMember(orgId, trialId, input),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey });
+            queryClient.refetchQueries({ queryKey });
             queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
             toast.success('Team member added', 'The member has been added to the trial team');
         },
@@ -93,10 +94,23 @@ export function useTrialTeam(orgId: string, trialId: string) {
             queryClient.invalidateQueries({ queryKey: ['client', 'trial', orgId, trialId] });
         },
     });
+    const teamMembers = (data || []).map((m: any) => ({
+        ...m,
+        trial_role: m.role_name,
+        assigned_at: m.created_at,
+        org_member_id: m.member_id,
+        status: m.is_active ? 'active' : 'inactive',
+        user: {
+            full_name: m.member_name,
+            email: m.member_email,
+            first_name: m.first_name,
+            last_name: m.last_name,
+        }
+    }));
 
     return {
         // Data
-        teamMembers: data || [], //using data directly instead of mapping to ensure we have all fields, including settings
+        teamMembers,
         isLoading,
         error,
 

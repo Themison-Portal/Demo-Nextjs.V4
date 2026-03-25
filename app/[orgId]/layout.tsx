@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { AppMain } from "@/components/app/shared/AppMain";
 
 interface AppLayoutProps {
     children: React.ReactNode;
-    params: { orgId: string };
+    params: Promise<{ orgId: string }>
 }
 
 export default function AppLayout({ children, params }: AppLayoutProps) {
-    const { orgId } = params;
+    const { orgId } = use(params);
     const router = useRouter();
     const { user, isLoading } = useAuth();
 

@@ -86,12 +86,9 @@ export function TrialTeam({ orgId, trialId }: TrialTeamProps) {
   };
 
   // When a member is removed, clear selection if it was the selected member
-  const handleRemoveMember = async (orgMemberId: string) => {
-    await removeMember(orgMemberId);
-    const removedMember = teamMembers.find(
-      (m) => m.org_member_id === orgMemberId,
-    );
-    if (removedMember && selectedMemberId === removedMember.id) {
+  const handleRemoveMember = async (trialMemberId: string) => {
+    await removeMember(trialMemberId);
+    if (selectedMemberId === trialMemberId) {
       setSelectedMemberId(null);
     }
   };

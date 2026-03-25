@@ -115,7 +115,16 @@ export function useOrganization(orgId?: string): UseOrganizationReturn {
     return {
         // Data
         organization,
-        members: membersData ?? [],
+        members: (membersData ?? []).map((m: any) => ({
+            ...m,
+            user_id: m.id,
+            user: {
+                full_name: m.name,
+                email: m.email,
+                first_name: m.first_name,
+                last_name: m.last_name,
+            }
+        })),
         invitations: invitationsData ?? [],
 
         // Loading & Error

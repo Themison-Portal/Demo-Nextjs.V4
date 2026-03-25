@@ -17,9 +17,13 @@ interface OrganizationMembersProps {
 
 export interface OrganizationUser {
     user_id: string;
-    org_role: "superadmin" | "admin" | "editor" | "reader";
+    id?: string;
+    name?: string;
+    org_role: "admin" | "staff";
+    default_role?: "admin" | "staff";
     status: "active" | "inactive";
-    user: {
+    user?: {
+        full_name?: string;
         first_name?: string;
         last_name?: string;
         email: string;
@@ -29,7 +33,7 @@ export interface OrganizationUser {
 interface UseOrganizationReturn {
     members: OrganizationUser[];
     isLoading: boolean;
-    inviteMember: (invite: { email: string; org_role: "superadmin" | "admin" | "editor" | "reader" }) => Promise<void>;
+    inviteMember: (invite: { email: string; org_role: "admin" | "staff" }) => Promise<void>;
     isInviting: boolean;
 }
 

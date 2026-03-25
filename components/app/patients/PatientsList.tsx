@@ -103,10 +103,10 @@ export function PatientsList({ orgId, trialId }: PatientsListProps) {
               <div className="col-span-2">
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                    PATIENT_STATUS_STYLES[patient.status]
+                    PATIENT_STATUS_STYLES[patient.status || "enrolled"]
                   }`}
                 >
-                  {patient.status.replace("_", " ")}
+                  {(patient.status || "enrolled").replace("_", " ")}
                 </span>
               </div>
               <div className="col-span-2">

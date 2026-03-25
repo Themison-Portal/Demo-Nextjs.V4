@@ -158,6 +158,8 @@ export interface CreateTrialInput {
     start_date?: string;
     end_date?: string;
     description?: string;
+    location?: string;
+    sponsor?: string;
 }
 
 export interface UpdateTrialInput {

@@ -10,7 +10,7 @@ import { formatDateForApi } from '@/lib/date';
  * Hook for fetching a single trial with full details
  * @param trialId - Trial ID
  */
-export function useTrialDetails(trialId: string, orgId: string) {
+export function useTrialDetails(orgId: string, trialId: string) {
     const queryClient = useQueryClient();
     const queryKey = ['client', 'trial', trialId];
 
