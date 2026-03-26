@@ -42,7 +42,7 @@ export function OrganizationMembers({ orgId }: OrganizationMembersProps) {
     const { canInviteMembers } = usePermissions(orgId);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-    const handleInvite = async (invites: { email: string; org_role: "superadmin" | "admin" | "editor" | "reader" }[]) => {
+    const handleInvite = async (invites: { email: string; org_role: "admin" | "staff" }[]) => {
         // Send invitations sequentially
         for (const invite of invites) {
             await inviteMember(invite);
@@ -119,17 +119,17 @@ export function OrganizationMembers({ orgId }: OrganizationMembersProps) {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-900">
-                                        {member.user.first_name || member.user.email.split("@")[0]}
+                                        {member.user?.first_name || member.user?.email.split("@")[0]}
                                     </p>
-                                    {member.user.last_name && (
-                                        <p className="text-xs text-gray-500">{member.user.last_name}</p>
+                                    {member.user?.last_name && (
+                                        <p className="text-xs text-gray-500">{member.user?.last_name}</p>
                                     )}
                                 </div>
                             </div>
 
                             {/* Email */}
                             <div className="col-span-4">
-                                <p className="text-sm text-gray-600">{member.user.email}</p>
+                                <p className="text-sm text-gray-600">{member.user?.email}</p>
                             </div>
 
                             {/* Role */}

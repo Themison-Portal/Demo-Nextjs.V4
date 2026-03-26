@@ -29,6 +29,7 @@ import type { PatientVisit } from "@/services/visits/types";
 import type { TaskWithContext, Task, TaskPayload } from "@/services/tasks/types";
 import type { AddTrialTeamMemberInput, TrialRole } from "./../services/trials/types";
 import type { TrialDocument } from "@/services/documents/types";
+import type { Patient } from "@/services/patients/types";
 
 import type {
     ActivityType,
@@ -242,7 +243,7 @@ export const apiClient = {
     // Patients
     // -----------------------
     getPatients: async (trialId?: string) => fetchApi(`/api/patients/${trialId ? `?trial_id=${trialId}` : ""}`),
-    getPatientById: async (patientId: string) => fetchApi(`/api/patients/${patientId}`),
+    getPatientById: async (patientId: string): Promise<Patient> => fetchApi(`/api/patients/${patientId}`),
     createPatient: async (payload: any) => fetchApi("/api/patients", { method: "POST", body: JSON.stringify(payload) }),
     updatePatient: async (patientId: string, payload: any) =>
         fetchApi(`/api/patients/${patientId}`, { method: "PATCH", body: JSON.stringify(payload) }),

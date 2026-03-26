@@ -8,7 +8,7 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
-import type { UpdatePatientInput } from '@/services/patients/types';
+import type { Patient, UpdatePatientInput } from '@/services/patients/types';
 import { formatDateForApi } from '@/lib/date';
 
 /**
@@ -27,7 +27,7 @@ export function usePatientDetails(orgId: string, trialId: string, patientId: str
         isLoading,
         error,
         refetch,
-    } = useQuery({
+    } = useQuery<Patient>({
         queryKey,
         queryFn: async () =>
             await apiClient.getPatientById(patientId), // ✅ uses apiClient
