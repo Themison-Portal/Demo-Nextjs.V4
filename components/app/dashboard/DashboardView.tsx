@@ -6,7 +6,6 @@
 "use client";
 
 import Link from "next/link";
-// import { StatsGrid } from "./StatsGrid";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Plus, UserPlus } from "lucide-react";
 import { MyWorkload } from "@/components/app/tasks/MyWorkload";
@@ -14,7 +13,6 @@ import { TimelineWorkloadChart } from "./charts/TimelineWorkloadChart";
 import { TaskStatusChart } from "./charts/TaskStatusChart";
 import { PatientStatusChart } from "./charts/PatientStatusChart";
 import { WorkloadChart } from "./charts/WorkloadChart";
-// import { useDashboardStats } from "@/hooks/client/useDashboardStats";
 import { ROUTES } from "@/lib/routes";
 
 interface DashboardViewProps {
@@ -28,14 +26,12 @@ export function DashboardView({
     userName,
     orgName,
 }: DashboardViewProps) {
-    const { data: stats, isLoading } = useDashboardStats(orgId);
+    const stats = null;
+    const isLoading = false;
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between gap-4 w-full">
-                {/* Stats Cards */}
-                <StatsGrid orgId={orgId} />
-
                 {/* Quick Actions */}
                 <div className="flex flex-col gap-2 w-auto">
                     <Link href={ROUTES.APP.DOCUMENT_AI(orgId)}>
@@ -71,13 +67,13 @@ export function DashboardView({
                 </div>
             </div>
 
-            {/* Analytics Charts Grid */}
+            {/* Analytics Charts — hidden until useDashboardStats endpoint is ready */}
             {!isLoading && stats && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <TimelineWorkloadChart timeline={stats.timeline} />
-                    <TaskStatusChart stats={stats.tasks} />
-                    <PatientStatusChart stats={stats.patients} />
-                    <WorkloadChart stats={stats.tasks.byAssignee} />
+                    <TimelineWorkloadChart timeline={(stats as any).timeline} />
+                    <TaskStatusChart stats={(stats as any).tasks} />
+                    <PatientStatusChart stats={(stats as any).patients} />
+                    <WorkloadChart stats={(stats as any).tasks.byAssignee} />
                 </div>
             )}
 

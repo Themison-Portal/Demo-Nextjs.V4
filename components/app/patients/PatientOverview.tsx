@@ -154,10 +154,10 @@ export function PatientOverview({
                   </h1>
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
-                      PATIENT_STATUS_STYLES[patient.status]
+                      PATIENT_STATUS_STYLES[patient.status || "enrolled"]
                     }`}
                   >
-                    {patient.status.replace("_", " ")}
+                    {(patient.status || "enrolled").replace("_", " ")}
                   </span>
                 </div>
 
@@ -441,10 +441,10 @@ export function PatientOverview({
                     ) : (
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          PATIENT_STATUS_STYLES[patient.status]
+                          PATIENT_STATUS_STYLES[patient.status || "enrolled"]
                         }`}
                       >
-                        {patient.status.replace("_", " ")}
+                        {(patient.status || "enrolled").replace("_", " ")}
                       </span>
                     )}
                   </div>

@@ -1,20 +1,10 @@
-"use client";
-import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
-import { DashboardView } from "@/components/app/dashboard/DashboardView";
+import { DashboardClient } from "@/components/app/dashboard/DashboardClient";
 
-export default function DashboardPage({ orgId }: { orgId: string }) {
-    const { user, isLoading } = useAuth();
-    const router = useRouter();
+interface DashboardPageProps {
+  params: Promise<{ orgId: string }>;
+}
 
-    if (isLoading) return <div>Loading...</div>;
-
-    if (!user || user.organizationId !== orgId) {
-        router.push("/unauthorized");
-        return null;
-    }
-
-    const firstName = user.firstName || user.email.split("@")[0] || "User";
-
-    return <DashboardView orgId={orgId} userName={firstName} orgName={user.organizationName} />;
+export default async function DashboardPage({ params }: DashboardPageProps) {
+  const { orgId } = await params;
+  return <DashboardClient orgId={orgId} />;
 }

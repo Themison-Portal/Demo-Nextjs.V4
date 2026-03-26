@@ -8,14 +8,13 @@ export function useAuth() {
     const queryClient = useQueryClient();
 
     // Use state so the component re-renders when token appears
-    const [token, setToken] = useState<string | null>(
-        typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-    );
-
+    const [token, setToken] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem('access_token');
-        if (stored !== token) setToken(stored);
+        setToken(stored);
+        setMounted(true);
 
         const handleStorage = () => {
             const updated = localStorage.getItem('access_token');
@@ -51,7 +50,7 @@ export function useAuth() {
 
     return {
         user,
-        isLoading: isLoading && !!token,
+        isLoading: !mounted || (isLoading && !!token),
         isAuthenticated: !!user,
         error,
         signout: signoutMutation.mutateAsync,

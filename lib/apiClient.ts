@@ -257,7 +257,7 @@ export const apiClient = {
     // -----------------------
     // Visits
     // -----------------------
-    getPatientVisits: async (patientId: string) => fetchApi(`/patients/${patientId}/visits`),
+    getPatientVisits: async (patientId: string) => fetchApi(`/api/patient-visits/?patient_id=${patientId}`),
     completeVisit: async (
         orgId: string,
         trialId: string,

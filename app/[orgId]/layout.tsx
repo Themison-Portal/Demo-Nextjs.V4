@@ -15,6 +15,8 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     const router = useRouter();
     const { user, isLoading } = useAuth();
 
+    console.log("USER:", user?.organizationId, "ORG:", orgId, "isStaff:", user?.isStaff)
+
     // Redirect only after auth check
     useEffect(() => {
         if (isLoading) return; // wait for auth
@@ -26,7 +28,15 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
         }
 
         // User cannot access this org → unauthorized
-        if (user.organizationId !== orgId) {
+        // if (user.organizationId !== orgId && !user.isStaff) {
+        //     router.replace("/unauthorized");
+        //     return;
+        // }
+        // if (user.organizationId !== orgId && !user.isStaff) {
+        //     router.replace("/unauthorized");
+        //     return;
+        // }
+        if (!isLoading && (!user || (user.organizationId !== orgId && !user.isStaff))) {
             router.replace("/unauthorized");
             return;
         }
@@ -35,8 +45,10 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     // Show loader while waiting for auth
     if (isLoading) return <div>Loading...</div>;
 
-    // Prevent flash content if unauthorized
-    if (!user || user.organizationId !== orgId) return null;
+    // // Prevent flash content if unauthorized
+    // if (!user || (user.organizationId !== orgId && !user.isStaff)) return null;
+    // if (!user || (user.organizationId !== orgId && !user.isStaff)) return null;
+    if (isLoading || !user || (user.organizationId !== orgId && !user.isStaff)) return null;
 
     const firstName = user.firstName || user.email?.split("@")[0] || "User";
 
