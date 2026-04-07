@@ -73,13 +73,13 @@ export function HeroSection() {
                                     </h3>
                                 </div>
                                 <p className="text-sm text-gray-600">
-                                    Contact us to request access to the private beta
+                                    Contact us to request access to the private beta.
                                 </p>
                                 <Link
                                     href="https://www.themison.com/contact"
                                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-blue-600 rounded-md hover:bg-blue-800 hover:text-white transition-colors font-bold border-2 border-blue-600 hover:border-blue-800"
                                 >
-                                    Request a Demo.
+                                    Request a Demo
                                     <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </div>
