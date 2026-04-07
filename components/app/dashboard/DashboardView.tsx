@@ -41,7 +41,7 @@ export function DashboardView({
                             className="w-full flex items-center gap-2 justify-start border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
                         >
                             <Sparkles className="h-4 w-4" />
-                            <span className="flex-1">Ask AI Assistant</span>
+                            <span className="flex-1">Ask Themison AI Assistant</span>
                         </Button>
                     </Link>
                     <Link href={ROUTES.APP.TRIALS(orgId)}>
