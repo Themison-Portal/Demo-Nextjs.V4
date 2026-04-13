@@ -4,18 +4,19 @@
  */
 
 export interface InvitationValidationResult {
-   type ValidationResult =
-    | {
-        valid: true;
-        invitation: {
-            email: string;
-            organization_id: string;
-            organization_name: string;  // ⭐ Add this
-            initial_role: string;
-            name?: string;
-        }
-    }
-    | { valid: false; error: string; details?: string };
+    valid: true;
+    invitation: {
+        id: string;
+        email: string;
+        org_id: string;
+        org_role: string;
+        organization: {
+            id: string;
+            name: string;
+        };
+        name?: string;
+        expires_at?: string;
+    };
 }
 
 export interface InvitationValidationError {
