@@ -658,7 +658,6 @@ export const apiClient = {
  * Trigger PDF ingestion for RAG processing (Step 2)
  * Uses uploaded document_url + document_id
  *
- * ⚠️ This does NOT upload files.
  * It only starts AI processing pipeline.
  */
     triggerPdfProcessing: async (
