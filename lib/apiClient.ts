@@ -630,20 +630,59 @@ export const apiClient = {
     // -----------------------
 
     /**
-     * Upload PDF for RAG processing
-     * Returns a job ID immediately
-     */
-    uploadPdfDocument: async (
+  * Upload trial document (Step 1)
+  * Sends actual file to backend → stored in GCS + DB
+  */
+    uploadTrialDocument: async (
+        file: File,
+        trialId: string,
+        documentName: string,
+        documentType = "other",
+        description = ""
+    ): Promise<any> => {
+        const formData = new FormData();
+
+        formData.append("file", file);
+        formData.append("trial_id", trialId);
+        formData.append("document_name", documentName);
+        formData.append("document_type", documentType);
+        formData.append("description", description);
+
+        return fetchApi(`/api/trial-documents/upload`, {
+            method: "POST",
+            body: formData,
+        });
+    },
+
+    /**
+ * Trigger PDF ingestion for RAG processing (Step 2)
+ * Uses uploaded document_url + document_id
+ *
+ * ⚠️ This does NOT upload files.
+ * It only starts AI processing pipeline.
+ */
+    triggerPdfProcessing: async (
         documentUrl: string,
         documentId: string,
         chunkSize = 750
-    ): Promise<{ job_id: string; document_id: string; status: string; message: string }> =>
+    ): Promise<{
+        job_id: string;
+        document_id: string;
+        status: string;
+        message: string;
+    }> =>
         fetchApi(`/upload/upload-pdf`, {
             method: "POST",
             headers: {
-                "x-api-key": process.env.NEXT_PUBLIC_UPLOAD_API_KEY!,
+                ...(process.env.NEXT_PUBLIC_UPLOAD_API_KEY
+                    ? { "x-api-key": process.env.NEXT_PUBLIC_UPLOAD_API_KEY }
+                    : {}),
             },
-            body: JSON.stringify({ document_url: documentUrl, document_id: documentId, chunk_size: chunkSize }),
+            body: JSON.stringify({
+                document_url: documentUrl,
+                document_id: documentId,
+                chunk_size: chunkSize,
+            }),
         }),
 
     /**
@@ -711,14 +750,9 @@ export const apiClient = {
         document_id: string;
         document_name: string;
     }) => {
-        const res = await fetch("/api/rag/query", {
+        return fetchApi(`/api/rag/query`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-
-        if (!res.ok) throw new Error("RAG query failed");
-
-        return res.json();
     },
 };
