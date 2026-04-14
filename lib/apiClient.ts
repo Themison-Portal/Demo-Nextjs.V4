@@ -51,7 +51,7 @@ type MemberMeResponse = {
     default_role: string;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 
 if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
 
@@ -85,22 +85,20 @@ export const apiClient = {
     // -----------------------
     getOrganization: async (id?: string): Promise<Organization> => {
         // If ID is provided, admin endpoint, else fallback to /me
-        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/");
+        return fetchApi(id ? `/api/organizations/${id}` : "/api/organizations/me");
     },
-
-
 
     updateOrganization: async (
         payload: { name?: string; settings?: any },
         id?: string
     ): Promise<void> => {
-        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/", {
+        return fetchApi(id ? `/api/organizations/${id}` : "/api/organizations/me", {
             method: "PUT",
             body: JSON.stringify(payload),
         });
     },
 
-    getOrganizationMetrics: async () => fetchApi("/api/organizations/me/metrics/"),
+    getOrganizationMetrics: async () => fetchApi("/api/organizations/me/metrics"),
 
     // Invite member to organization (admin)
     inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }): Promise<void> =>
@@ -123,7 +121,7 @@ export const apiClient = {
      * List all organizations (console)
      */
     getOrganizations: async () => {
-        return fetchApi("/api/organizations/");
+        return fetchApi("/api/organizations");
     },
 
     /**
@@ -133,8 +131,8 @@ export const apiClient = {
         name: string;
         settings?: any;
     }) => {
-        console.log("POST to:", `${API_BASE_URL}/api/organizations/`);
-        return fetchApi("/api/organizations/", {
+        console.log("POST to:", `${API_BASE_URL}/api/organizations`);
+        return fetchApi("/api/organizations", {
             method: "POST",
             body: JSON.stringify(payload),
         });
@@ -147,7 +145,7 @@ export const apiClient = {
         orgId: string,
         payload: { name?: string; settings?: any }
     ) => {
-        return fetchApi(`/api/organizations/${orgId}/`, {
+        return fetchApi(`/api/organizations/${orgId}`, {
             method: "PATCH",
             body: JSON.stringify(payload),
         });
@@ -198,7 +196,7 @@ export const apiClient = {
         fetchApi(`/api/invitations/validate/${token}`),
     getInvitationCounts: async () => fetchApi("/api/invitations/count"),
     inviteMember: async (orgId: string, payload: { email: string; org_role: string }) =>
-        fetchApi(`/organizations/members`, { method: "POST", body: JSON.stringify({ ...payload, org_id: orgId }) }),
+        fetchApi(`/api/organizations/members`, { method: "POST", body: JSON.stringify({ ...payload, org_id: orgId }) }),
 
     // -----------------------
     // Members
