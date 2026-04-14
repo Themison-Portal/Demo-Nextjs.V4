@@ -36,7 +36,7 @@ export async function validateInvitationToken(
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/invitations/validate/${token}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/invitations/validate/${token}`,
             {
                 credentials: "include", // send cookies if needed
                 cache: "no-store",

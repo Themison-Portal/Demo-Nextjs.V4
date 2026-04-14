@@ -191,12 +191,12 @@ export const apiClient = {
     // Invitations
     // -----------------------
     getInvitations: async (status?: string) =>
-        fetchApi(`/api/invitations${status ? `?status=${status}` : ""}`),
+        fetchApi(`/api/invitations/${status ? `?status=${status}` : ""}`),
     createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; initial_role: string }[] }) =>
-        fetchApi("/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
+        fetchApi("/api/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
     validateInvitationToken: async (token: string) =>
         fetchApi(`/api/invitations/validate/${token}`),
-    getInvitationCounts: async () => fetchApi("/invitations/count"),
+    getInvitationCounts: async () => fetchApi("/api/invitations/count"),
     inviteMember: async (orgId: string, payload: { email: string; org_role: string }) =>
         fetchApi(`/organizations/members`, { method: "POST", body: JSON.stringify({ ...payload, org_id: orgId }) }),
 
