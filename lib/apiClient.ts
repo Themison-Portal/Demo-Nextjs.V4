@@ -66,6 +66,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
             ...(!isFormData ? { "Content-Type": "application/json" } : {}),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers || {}),
+
         },
     });
 
@@ -639,6 +640,9 @@ export const apiClient = {
     ): Promise<{ job_id: string; document_id: string; status: string; message: string }> =>
         fetchApi(`/upload/upload-pdf`, {
             method: "POST",
+            headers: {
+                "x-api-key": process.env.NEXT_PUBLIC_UPLOAD_API_KEY!,
+            },
             body: JSON.stringify({ document_url: documentUrl, document_id: documentId, chunk_size: chunkSize }),
         }),
 
