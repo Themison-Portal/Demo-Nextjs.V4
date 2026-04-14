@@ -8,12 +8,13 @@ export function useOrgMembership(orgId: string) {
         queryKey: ['org-membership', orgId],
         queryFn: async (): Promise<OrgMembership> => {
             const data = await apiClient.getMemberMe(); // hits /api/members/me
+            const role = data.default_role;
             return {
                 userId: data.profile_id ?? data.id,
                 email: data.email,
                 orgMemberId: data.id,
                 orgRole: data.default_role as OrgRole,
-                isStaff: data.default_role === 'staff',
+                isStaff: ['staff', 'admin', 'owner'].includes(role),
             };
         },
         enabled: !!orgId,

@@ -44,6 +44,13 @@ import type { TrialDetails } from "@/services/trials/types";
 import { Organization } from "@/services/organizations/types";
 // import { getAuth0Client } from "@/lib/auth0";
 
+type MemberMeResponse = {
+    id: string;
+    email: string;
+    profile_id?: string;
+    default_role: string;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
@@ -205,7 +212,9 @@ export const apiClient = {
         if (!token) return null;
         return fetchApi("/auth/me");
     },
-    getMemberMe: async () => fetchApi("/api/members/me"),
+    getMemberMe: async (): Promise<MemberMeResponse> => {
+        return fetchApi<MemberMeResponse>("/api/members/me");
+    },
     getMyTrialAssignments: async () => fetchApi("/api/members/me/trial-assignments"),
     getMembers: async () => fetchApi("/api/members/"),
     getTrialTeamMembers: async (trialId: string) =>
