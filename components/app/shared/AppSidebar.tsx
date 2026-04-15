@@ -173,6 +173,7 @@ export function AppSidebar({
                     <button
                         onClick={async () => {
                             localStorage.removeItem('access_token');
+                            document.cookie = 'access_token=; path=/; max-age=0';
                             const auth0 = getAuth0Client();
                             await auth0.logout({
                                 logoutParams: { returnTo: window.location.origin }
@@ -182,6 +183,7 @@ export function AppSidebar({
                         title="Sign out"
                     >
                         <LogOut className="h-4 w-4" />
+                        <span>Sign out</span>
                     </button>
                 </div>
             </div>
