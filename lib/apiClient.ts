@@ -191,14 +191,14 @@ export const apiClient = {
     // Invitations
     // -----------------------
     getInvitations: async (status?: string) =>
-        fetchApi(`/api/invitations${status ? `?status=${status}` : ""}`),
+        fetchApi(`/api/invitations/${status ? `?status=${status}` : ""}`),
     createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; initial_role: string }[] }) =>
-        fetchApi("/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
+        fetchApi("/api/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
     validateInvitationToken: async (token: string) =>
         fetchApi(`/api/invitations/validate/${token}`),
-    getInvitationCounts: async () => fetchApi("/invitations/count"),
+    getInvitationCounts: async () => fetchApi("/api/invitations/count"),
     inviteMember: async (orgId: string, payload: { email: string; org_role: string }) =>
-        fetchApi(`/organizations/members`, { method: "POST", body: JSON.stringify({ ...payload, org_id: orgId }) }),
+        fetchApi(`/api/organizations/members`, { method: "POST", body: JSON.stringify({ ...payload, org_id: orgId }) }),
 
     // -----------------------
     // Members
@@ -221,9 +221,9 @@ export const apiClient = {
     getTrialTeamMembers: async (trialId: string) =>
         fetchApi<TrialTeamMember[]>(`/api/trial-members/team/${trialId}`),
     updateMember: async (memberId: string, payload: any) =>
-        fetchApi(`/members/${memberId}`, { method: "PUT", body: JSON.stringify(payload) }),
+        fetchApi(`/api/members/${memberId}`, { method: "PUT", body: JSON.stringify(payload) }),
     deleteMember: async (memberId: string) =>
-        fetchApi(`/members/${memberId}`, { method: "DELETE" }),
+        fetchApi(`/api/members/${memberId}`, { method: "DELETE" }),
 
     // -----------------------
     // Trials
@@ -311,11 +311,11 @@ export const apiClient = {
                 clean[k] = v;
             }
         }
-        return fetchApi("/api/tasks/tasks/", { method: "POST", body: JSON.stringify(clean) });
+        return fetchApi("/api/tasks/", { method: "POST", body: JSON.stringify(clean) });
     },
 
     updateTask: async (taskId: string, payload: any) =>
-        fetchApi(`/api/tasks/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/api/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Chat Threads & Messages 
@@ -424,7 +424,7 @@ export const apiClient = {
         return fetchApi(`/upload/upload-pdf`, { method: "POST", body: formData });
     },
     updateTrialDocument: async (documentId: string, payload: Record<string, any>) =>
-        fetchApi(`/documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/api/trial-documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
     deleteTrialDocument: async (documentId: string) =>
         fetchApi(`/api/trial-documents/${documentId}`, { method: "DELETE" }),
 
@@ -555,13 +555,13 @@ export const apiClient = {
     getVisitTemplate: async (
         trialId: string
     ): Promise<VisitScheduleTemplate> =>
-        fetchApi(`/trials/${trialId}/template`),
+        fetchApi(`/api/trials/${trialId}/template`),
 
     updateVisitTemplate: async (
         trialId: string,
         template: VisitScheduleTemplate
     ): Promise<VisitScheduleTemplate> =>
-        fetchApi(`/trials/${trialId}/template`, {
+        fetchApi(`/api/trials/${trialId}/template`, {
             method: "PUT",
             body: JSON.stringify(template),
         }),
@@ -725,7 +725,7 @@ export const apiClient = {
 
         const qs = query.toString();
 
-        return fetchApi(`/api/tasks/tasks${qs ? `?${qs}` : ""}`);
+        return fetchApi(`/api/tasks/${qs ? `?${qs}` : ""}`);
     },
 
     // createTask: async (payload: TaskCreate): Promise<Task> =>
@@ -741,7 +741,7 @@ export const apiClient = {
     //     }),
 
     deleteTask: async (taskId: string): Promise<{ success: boolean }> =>
-        fetchApi(`/api/tasks/tasks/${taskId}`, {
+        fetchApi(`/api/tasks/${taskId}`, {
             method: "DELETE",
         }),
 
