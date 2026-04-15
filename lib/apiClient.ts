@@ -190,7 +190,7 @@ export const apiClient = {
     // -----------------------
     getInvitations: async (status?: string) =>
         fetchApi(`/api/invitations/${status ? `?status=${status}` : ""}`),
-    createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; initial_role: string }[] }) =>
+    createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; org_role: string }[] }) =>
         fetchApi("/api/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
     validateInvitationToken: async (token: string) =>
         fetchApi(`/api/invitations/validate/${token}`),
