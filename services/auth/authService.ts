@@ -21,6 +21,7 @@ export const authService = {
      * Logout from Auth0
      */
     async signout(): Promise<void> {
+        localStorage.removeItem('access_token');
         const auth0 = await getAuth0Client();
 
         await auth0.logout({
