@@ -51,7 +51,7 @@ type MemberMeResponse = {
     default_role: string;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 
 if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
 
@@ -85,22 +85,20 @@ export const apiClient = {
     // -----------------------
     getOrganization: async (id?: string): Promise<Organization> => {
         // If ID is provided, admin endpoint, else fallback to /me
-        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/");
+        return fetchApi(id ? `/api/organizations/${id}` : "/api/organizations/me");
     },
-
-
 
     updateOrganization: async (
         payload: { name?: string; settings?: any },
         id?: string
     ): Promise<void> => {
-        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/", {
+        return fetchApi(id ? `/api/organizations/${id}` : "/api/organizations/me", {
             method: "PUT",
             body: JSON.stringify(payload),
         });
     },
 
-    getOrganizationMetrics: async () => fetchApi("/api/organizations/me/metrics/"),
+    getOrganizationMetrics: async () => fetchApi("/api/organizations/me/metrics"),
 
     // Invite member to organization (admin)
     inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }): Promise<void> =>
@@ -123,7 +121,7 @@ export const apiClient = {
      * List all organizations (console)
      */
     getOrganizations: async () => {
-        return fetchApi("/api/organizations/");
+        return fetchApi("/api/organizations");
     },
 
     /**
@@ -133,8 +131,8 @@ export const apiClient = {
         name: string;
         settings?: any;
     }) => {
-        console.log("POST to:", `${API_BASE_URL}/api/organizations/`);
-        return fetchApi("/api/organizations/", {
+        console.log("POST to:", `${API_BASE_URL}/api/organizations`);
+        return fetchApi("/api/organizations", {
             method: "POST",
             body: JSON.stringify(payload),
         });
@@ -147,7 +145,7 @@ export const apiClient = {
         orgId: string,
         payload: { name?: string; settings?: any }
     ) => {
-        return fetchApi(`/api/organizations/${orgId}/`, {
+        return fetchApi(`/api/organizations/${orgId}`, {
             method: "PATCH",
             body: JSON.stringify(payload),
         });
@@ -192,7 +190,7 @@ export const apiClient = {
     // -----------------------
     getInvitations: async (status?: string) =>
         fetchApi(`/api/invitations/${status ? `?status=${status}` : ""}`),
-    createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; initial_role: string }[] }) =>
+    createInvitationsBatch: async (payload: { invitations: { email: string; name?: string; org_role: string }[] }) =>
         fetchApi("/api/invitations/batch", { method: "POST", body: JSON.stringify(payload) }),
     validateInvitationToken: async (token: string) =>
         fetchApi(`/api/invitations/validate/${token}`),
@@ -221,9 +219,9 @@ export const apiClient = {
     getTrialTeamMembers: async (trialId: string) =>
         fetchApi<TrialTeamMember[]>(`/api/trial-members/team/${trialId}`),
     updateMember: async (memberId: string, payload: any) =>
-        fetchApi(`/api/members/${memberId}`, { method: "PUT", body: JSON.stringify(payload) }),
+        fetchApi(`/members/${memberId}`, { method: "PUT", body: JSON.stringify(payload) }),
     deleteMember: async (memberId: string) =>
-        fetchApi(`/api/members/${memberId}`, { method: "DELETE" }),
+        fetchApi(`/members/${memberId}`, { method: "DELETE" }),
 
     // -----------------------
     // Trials
@@ -311,11 +309,11 @@ export const apiClient = {
                 clean[k] = v;
             }
         }
-        return fetchApi("/api/tasks/", { method: "POST", body: JSON.stringify(clean) });
+        return fetchApi("/api/tasks/tasks/", { method: "POST", body: JSON.stringify(clean) });
     },
 
     updateTask: async (taskId: string, payload: any) =>
-        fetchApi(`/api/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/api/tasks/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
     // -----------------------
     // Chat Threads & Messages 
@@ -424,7 +422,7 @@ export const apiClient = {
         return fetchApi(`/upload/upload-pdf`, { method: "POST", body: formData });
     },
     updateTrialDocument: async (documentId: string, payload: Record<string, any>) =>
-        fetchApi(`/api/trial-documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+        fetchApi(`/documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
     deleteTrialDocument: async (documentId: string) =>
         fetchApi(`/api/trial-documents/${documentId}`, { method: "DELETE" }),
 
@@ -555,13 +553,13 @@ export const apiClient = {
     getVisitTemplate: async (
         trialId: string
     ): Promise<VisitScheduleTemplate> =>
-        fetchApi(`/api/trials/${trialId}/template`),
+        fetchApi(`/trials/${trialId}/template`),
 
     updateVisitTemplate: async (
         trialId: string,
         template: VisitScheduleTemplate
     ): Promise<VisitScheduleTemplate> =>
-        fetchApi(`/api/trials/${trialId}/template`, {
+        fetchApi(`/trials/${trialId}/template`, {
             method: "PUT",
             body: JSON.stringify(template),
         }),
@@ -658,7 +656,6 @@ export const apiClient = {
  * Trigger PDF ingestion for RAG processing (Step 2)
  * Uses uploaded document_url + document_id
  *
- * ⚠️ This does NOT upload files.
  * It only starts AI processing pipeline.
  */
     triggerPdfProcessing: async (
@@ -725,7 +722,7 @@ export const apiClient = {
 
         const qs = query.toString();
 
-        return fetchApi(`/api/tasks/${qs ? `?${qs}` : ""}`);
+        return fetchApi(`/api/tasks/tasks${qs ? `?${qs}` : ""}`);
     },
 
     // createTask: async (payload: TaskCreate): Promise<Task> =>
@@ -741,7 +738,7 @@ export const apiClient = {
     //     }),
 
     deleteTask: async (taskId: string): Promise<{ success: boolean }> =>
-        fetchApi(`/api/tasks/${taskId}`, {
+        fetchApi(`/api/tasks/tasks/${taskId}`, {
             method: "DELETE",
         }),
 

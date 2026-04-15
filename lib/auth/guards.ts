@@ -74,7 +74,7 @@ export async function requireOrgAccess(
     const token = cookieStore.get("access_token")?.value;
 
     const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/organizations/${orgId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/organizations/${orgId}`,
         {
             credentials: "include",
             headers: {
