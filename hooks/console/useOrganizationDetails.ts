@@ -45,7 +45,7 @@ export function useOrganizationDetails(id: string) {
     // Invite member mutation
     const inviteMutation = useMutation({
         mutationFn: (input: AddMemberInput) =>
-            apiClient.inviteMemberorg({ email: input.email, org_role: input.org_role }),
+            apiClient.inviteMemberToOrganization({ email: input.email, org_role: input.org_role }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: organizationDetailsKey(id) });
         },

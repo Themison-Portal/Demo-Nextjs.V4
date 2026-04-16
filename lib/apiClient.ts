@@ -57,7 +57,7 @@ if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    const isFormData = options.body instanceof FormData; // ✅ detect FormData
+    const isFormData = options.body instanceof FormData;
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
@@ -85,27 +85,27 @@ export const apiClient = {
     // -----------------------
     getOrganization: async (id?: string): Promise<Organization> => {
         // If ID is provided, admin endpoint, else fallback to /me
-        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/");
+        return fetchApi(id ? `/api/organizations/${id}` : "/api/organizations/me");
     },
 
     updateOrganization: async (
         payload: { name?: string; settings?: any },
         id?: string
     ): Promise<void> => {
-        return fetchApi(id ? `/api/organizations/${id}/` : "/api/organizations/me/", {
+        return fetchApi(id ? `/api/organizations/${id}` : "/api/organizations/me", {
             method: "PUT",
             body: JSON.stringify(payload),
         });
     },
 
-    getOrganizationMetrics: async () => fetchApi("/api/organizations/me/metrics/"),
+    getOrganizationMetrics: async () => fetchApi("/api/organizations/me/metrics"),
 
     // Invite member to organization (admin)
-    inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }): Promise<void> =>
-        fetchApi(`/api/organizations/members`, {
-            method: "POST",
-            body: JSON.stringify({ ...payload, org_id: orgId }),
-        }),
+    // inviteMemberorg: async (orgId: string, payload: { email: string; org_role: string }): Promise<void> =>
+    //     fetchApi(`/api/organizations/members`, {
+    //         method: "POST",
+    //         body: JSON.stringify({ ...payload, org_id: orgId }),
+    //     }),
 
     removeMember: async (memberId: string): Promise<void> =>
         fetchApi(`/api/members/${memberId}`, { method: "DELETE" }),
@@ -145,7 +145,7 @@ export const apiClient = {
         orgId: string,
         payload: { name?: string; settings?: any }
     ) => {
-        return fetchApi(`/api/organizations/${orgId}/`, {
+        return fetchApi(`/api/organizations/${orgId}`, {
             method: "PATCH",
             body: JSON.stringify(payload),
         });
@@ -156,14 +156,14 @@ export const apiClient = {
      */
     inviteMemberToOrganization: async (
         payload: { email: string; org_role: string }
-    ) =>
-        fetchApi("/api/invitations/batch", {
+    ): Promise<void> =>
+        fetchApi<void>("/api/invitations/batch", {
             method: "POST",
             body: JSON.stringify({
                 invitations: [
                     {
                         email: payload.email,
-                        initial_role: payload.org_role,
+                        org_role: payload.org_role,
                     },
                 ],
             }),
@@ -319,7 +319,7 @@ export const apiClient = {
     // Chat Threads & Messages — aliased to /api/chat-sessions + /api/chat-messages
     // -----------------------
     getThreads: async (trialId?: string) =>
-        fetchApi(`/api/chat-sessions/${trialId ? `?trial_id=${trialId}` : ""}`),
+        fetchApi(`/api/chat-sessions${trialId ? `?trial_id=${trialId}` : "/"}`),
     createThread: async (payload: { title: string; trial_id?: string }) =>
         fetchApi(`/api/chat-sessions/`, { method: "POST", body: JSON.stringify(payload) }),
     updateThread: async (threadId: string, payload: { title?: string }) =>
@@ -506,31 +506,44 @@ export const apiClient = {
     },
 
     // -----------------------
-    // Archive (Response Library) — NOT IMPLEMENTED ON BACKEND
-    // These stubs throw so callers fail loudly instead of hitting non-existent URLs.
+    // Archive (Response Library)
     // -----------------------
-    getArchiveFolders: async (_orgId: string): Promise<ArchiveFolder[]> => {
-        throw new Error("Archive endpoints are not implemented on the backend yet");
-    },
-    createArchiveFolder: async (_payload: CreateFolderInput): Promise<ArchiveFolder> => {
-        throw new Error("Archive endpoints are not implemented on the backend yet");
-    },
-    deleteArchiveFolder: async (_folderId: string): Promise<void> => {
-        throw new Error("Archive endpoints are not implemented on the backend yet");
-    },
-    getSavedResponses: async (_folderId: string): Promise<SavedResponse[]> => {
-        throw new Error("Archive endpoints are not implemented on the backend yet");
-    },
-    createSavedResponse: async (_payload: CreateSavedResponseInput): Promise<SavedResponse> => {
-        throw new Error("Archive endpoints are not implemented on the backend yet");
-    },
-    updateSavedResponse: async (_responseId: string, _payload: Partial<SavedResponse>): Promise<SavedResponse> => {
-        throw new Error("Archive endpoints are not implemented on the backend yet");
-    },
-    deleteSavedResponse: async (_responseId: string): Promise<void> => {
-        throw new Error("Archive endpoints are not implemented on the backend yet");
-    },
+    getArchiveFolders: async (orgId: string): Promise<ArchiveFolder[]> =>
+        fetchApi(`/api/archive/folders/?org_id=${orgId}`),
 
+    createArchiveFolder: async (payload: CreateFolderInput): Promise<ArchiveFolder> =>
+        fetchApi(`/api/archive/folders/`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+
+    deleteArchiveFolder: async (folderId: string): Promise<void> =>
+        fetchApi(`/api/archive/folders/${folderId}`, {
+            method: "DELETE",
+        }),
+
+    getSavedResponses: async (folderId: string): Promise<SavedResponse[]> =>
+        fetchApi(`/api/archive/responses/?folder_id=${folderId}`),
+
+    createSavedResponse: async (payload: CreateSavedResponseInput): Promise<SavedResponse> =>
+        fetchApi(`/api/archive/responses/`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+
+    updateSavedResponse: async (
+        responseId: string,
+        payload: Partial<SavedResponse>
+    ): Promise<SavedResponse> =>
+        fetchApi(`/api/archive/responses/${responseId}`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
+        }),
+
+    deleteSavedResponse: async (responseId: string): Promise<void> =>
+        fetchApi(`/api/archive/responses/${responseId}`, {
+            method: "DELETE",
+        }),
     // -----------------------
     // Visit Schedule Template
     // -----------------------
