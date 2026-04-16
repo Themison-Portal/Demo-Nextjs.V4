@@ -29,11 +29,11 @@ export function useSignup() {
                 throw new Error("Missing invitation token. Please use the link from your invitation email.");
             }
 
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+            const backendUrl = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 
             let response: Response;
             try {
-                response = await fetch(`${backendUrl}/signup/complete`, {
+                response = await fetch(`${backendUrl}/auth/signup/complete`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
