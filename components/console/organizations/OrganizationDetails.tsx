@@ -65,6 +65,7 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
     const [showAddMember, setShowAddMember] = useState(false);
     const [newMemberEmail, setNewMemberEmail] = useState("");
     const [newMemberRole, setNewMemberRole] = useState<OrgRole>("reader");
+    const [newMemberName, setNewMemberName] = useState("");
 
     const [formError, setFormError] = useState<string | null>(null);
 
@@ -121,10 +122,12 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
             await inviteMember({
                 email: newMemberEmail,
                 org_role: newMemberRole,
+                name: newMemberName,
             });
 
             setNewMemberEmail("");
             setNewMemberRole("reader");
+            setNewMemberName("");
             setShowAddMember(false);
         } catch (err) {
             setFormError(
@@ -260,6 +263,12 @@ export function OrganizationDetails({ id }: OrganizationDetailsProps) {
 
                     {showAddMember && (
                         <form onSubmit={handleInviteMember} className="mb-4 space-y-2">
+                            <Input
+                                type="text"
+                                placeholder="Full Name"
+                                value={newMemberName}
+                                onChange={(e) => setNewMemberName(e.target.value)}
+                            />
                             <Input
                                 type="email"
                                 placeholder="Email"

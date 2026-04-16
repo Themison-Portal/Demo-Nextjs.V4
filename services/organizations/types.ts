@@ -91,7 +91,8 @@ export interface UpdateOrganizationInput {
 
 export interface AddMemberInput {
     email: string;
-    org_role: 'superadmin' | 'admin' | 'editor' | 'reader';
+    org_role: OrgRole;
+    name?: string;
 }
 
 export type Member = {
