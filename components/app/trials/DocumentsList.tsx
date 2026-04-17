@@ -268,6 +268,7 @@ export function DocumentsList({ orgId, trialId }: DocumentsListProps) {
       <UploadDocumentModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
+        trialId={trialId}
         onSubmit={handleUpload}
         isLoading={isUploading}
       />
