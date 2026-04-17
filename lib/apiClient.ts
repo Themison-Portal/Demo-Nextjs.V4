@@ -155,7 +155,7 @@ export const apiClient = {
      * Invite member (uses invitation system)
      */
     inviteMemberToOrganization: async (
-        payload: { email: string; org_role: string }
+        payload: { email: string; org_role: string; name?: string }
     ): Promise<void> =>
         fetchApi<void>("/api/invitations/batch", {
             method: "POST",
@@ -164,6 +164,7 @@ export const apiClient = {
                     {
                         email: payload.email,
                         org_role: payload.org_role,
+                        name: payload.name
                     },
                 ],
             }),
