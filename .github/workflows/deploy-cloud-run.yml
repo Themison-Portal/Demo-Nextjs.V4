@@ -34,6 +34,7 @@ jobs:
             --build-arg NEXT_PUBLIC_AUTH0_DOMAIN=${{ secrets.NEXT_PUBLIC_AUTH0_DOMAIN }} \
             --build-arg NEXT_PUBLIC_AUTH0_CLIENT_ID=${{ secrets.NEXT_PUBLIC_AUTH0_CLIENT_ID }} \
             --build-arg NEXT_PUBLIC_AUTH0_AUDIENCE=${{ secrets.NEXT_PUBLIC_AUTH0_AUDIENCE }} \
+            --build-arg NEXT_PUBLIC_UPLOAD_API_KEY=${{ secrets.NEXT_PUBLIC_UPLOAD_API_KEY }} \
             -t "$IMAGE_PATH" .
 
           docker push "$IMAGE_PATH"
