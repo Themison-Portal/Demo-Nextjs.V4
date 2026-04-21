@@ -42,6 +42,7 @@ import type {
 } from "@/services/activities/types";
 import type { TrialDetails } from "@/services/trials/types";
 import { Organization } from "@/services/organizations/types";
+import { QueryDocumentResponse } from "@/services/rag/types";
 // import { getAuth0Client } from "@/lib/auth0";
 
 type MemberMeResponse = {
@@ -736,10 +737,12 @@ export const apiClient = {
         query: string;
         document_id: string;
         document_name: string;
-    }) => {
-        return fetchApi(`/query`, {
+    }): Promise<QueryDocumentResponse> =>
+        fetchApi<QueryDocumentResponse>(`/query`, {
             method: "POST",
+            headers: {
+                "x-api-key": process.env.NEXT_PUBLIC_UPLOAD_API_KEY || "",
+            },
             body: JSON.stringify(payload),
-        });
-    },
+        }),
 };
