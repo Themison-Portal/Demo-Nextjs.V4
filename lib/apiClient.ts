@@ -380,7 +380,10 @@ export const apiClient = {
     ): Promise<ChatMessage> =>
         fetchApi(`/api/chat-messages/`, {
             method: "POST",
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                session_id: payload.chat_session_id,
+                content: payload.content,
+            }),
         }),
 
     updateChatMessage: async (
