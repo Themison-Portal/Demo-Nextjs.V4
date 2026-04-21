@@ -404,22 +404,22 @@ export const apiClient = {
         fetchApi(`/api/trial-documents/?trial_id=${trialId}`),
     getTrialDocumentById: async (documentId: string) =>
         fetchApi(`/api/trial-documents/${documentId}`),
-    uploadTrialDocument: async (
-        file: File,
-        trialId: string,
-        documentName: string,
-        documentType = "other",
-        description = ""
-    ) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("trial_id", trialId);
-        formData.append("document_name", documentName);
-        formData.append("document_type", documentType);
-        formData.append("description", description);
+    // uploadTrialDocument: async (
+    //     file: File,
+    //     trialId: string,
+    //     documentName: string,
+    //     documentType = "other",
+    //     description = ""
+    // ) => {
+    //     const formData = new FormData();
+    //     formData.append("file", file);
+    //     formData.append("trial_id", trialId);
+    //     formData.append("document_name", documentName);
+    //     formData.append("document_type", documentType);
+    //     formData.append("description", description);
 
-        return fetchApi(`/upload/upload-pdf`, { method: "POST", body: formData });
-    },
+    //     return fetchApi(`/upload/upload-pdf`, { method: "POST", body: formData });
+    // },
     updateTrialDocument: async (documentId: string, payload: Record<string, any>) =>
         fetchApi(`/api/trial-documents/${documentId}`, { method: "PATCH", body: JSON.stringify(payload) }),
     deleteTrialDocument: async (documentId: string) =>

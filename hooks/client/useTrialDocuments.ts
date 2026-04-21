@@ -4,7 +4,6 @@ import { apiClient } from "@/lib/apiClient";
 import type { TrialDocument } from "@/services/documents/types";
 import type { DocumentStatus, DocumentProcessingStatus } from "@/services/documents/types";
 
-
 const POLLING_INTERVAL = 5000;
 
 export function useTrialDocuments(orgId: string, trialId: string) {
@@ -28,22 +27,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         []
     );
 
-    // // Helper to normalize backend status to frontend type
-    // function normalizeStatus(status: string): TrialDocument["status"] {
-    //     switch (status) {
-    //         case "queued":
-    //             return "pending";
-    //         case "processing":
-    //         case "completed":
-    //         case "failed":
-    //             return status;
-    //         default:
-    //             return "pending"; // fallback for unknown statuses
-    //     }
-    // }
-
-
-    // Explicitly type the query result as TrialDocument[]
     const { data, isLoading, error, refetch } = useQuery<TrialDocument[]>({
         queryKey,
         queryFn: async (): Promise<TrialDocument[]> => {
@@ -51,15 +34,22 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
             return (docs as any[]).map((doc) => ({
                 ...doc,
-                // normalize backend status to frontend DocumentStatus
+                file_name: doc.document_name,
+                file_type: doc.mime_type,
+                storage_path: doc.document_url,
+                storage_url: doc.document_url,
+                category: doc.document_type,
+                job_id: doc.id,
                 status:
                     doc.status === "queued"
                         ? "pending"
                         : doc.status === "completed"
                             ? "ready"
-                            : doc.status === "failed"
-                                ? "error"
-                                : (doc.status as DocumentStatus), // "uploading" | "processing"
+                            : doc.status === "active"
+                                ? "ready"
+                                : doc.status === "failed"
+                                    ? "error"
+                                    : (doc.status as DocumentStatus),
             })) as TrialDocument[];
         },
         enabled: !!orgId && !!trialId,
@@ -109,7 +99,6 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
             setProcessingStatuses(statusMap);
 
-            // Re-run poll if any documents still processing
             if ([...statusMap.values()].some((s) => s.status === "processing")) {
                 timeoutRef.current = setTimeout(poll, POLLING_INTERVAL);
             } else {
@@ -127,8 +116,15 @@ export function useTrialDocuments(orgId: string, trialId: string) {
 
     // Upload document
     const uploadMutation = useMutation({
-        mutationFn: ({ file, documentId }: { file: File; documentId: string }) =>
-            apiClient.uploadTrialDocument(file, trialId, documentId),
+        mutationFn: ({ file, category }: { file: File; category: string }) =>
+            apiClient.uploadTrialDocument(file, trialId, file.name, category),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+    });
+
+    // Update category
+    const updateCategoryMutation = useMutation({
+        mutationFn: ({ documentId, category }: { documentId: string; category: string }) =>
+            apiClient.updateTrialDocument(documentId, { document_type: category }),
         onSuccess: () => queryClient.invalidateQueries({ queryKey }),
     });
 
@@ -141,5 +137,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
         onProcessingStatusChange,
         uploadDocument: uploadMutation.mutateAsync,
         isUploading: uploadMutation.isPending,
+        updateCategory: updateCategoryMutation.mutateAsync,
+        isUpdatingCategory: updateCategoryMutation.isPending,
     };
 }
