@@ -35,6 +35,7 @@ interface TemplateBuilderProps {
 }
 
 export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
+    console.log('orgId:', orgId, 'trialId:', trialId);
     const [activeTab, setActiveTab] = useState<TabValue>("schedule");
     const [visits, setVisits] = useState<VisitTemplate[]>([]);
     const [assignees, setAssignees] = useState<Record<string, string>>({});
