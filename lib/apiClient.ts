@@ -7,6 +7,7 @@ import type {
     TrialWithAssignmentsCreate
 
 } from "./../services/trials/types";
+import type { VisitScheduleTemplate } from '@/services/visits/types';
 import type {
     ArchiveFolder,
     SavedResponse,
@@ -555,13 +556,13 @@ export const apiClient = {
 
     getVisitTemplate: async (
         trialId: string
-    ): Promise<VisitScheduleRow> =>
+    ): Promise<VisitScheduleTemplate> =>
         fetchApi(`/api/trials/${trialId}/template`),
 
     updateVisitTemplate: async (
         trialId: string,
         template: VisitScheduleRow
-    ): Promise<VisitScheduleRow> =>
+    ): Promise<VisitScheduleTemplate> =>
         fetchApi(`/api/trials/${trialId}/template`, {
             method: "PUT",
             body: JSON.stringify(template),

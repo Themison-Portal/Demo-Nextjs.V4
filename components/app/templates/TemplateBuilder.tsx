@@ -42,7 +42,7 @@ export function TemplateBuilder({ orgId, trialId }: TemplateBuilderProps) {
     const [hasChanges, setHasChanges] = useState(false);
 
     const { template, isLoading, updateTemplate, isUpdating } = useVisitTemplate(
-        orgId,
+
         trialId
     );
     const { activities } = useActivityTypes(trialId);
