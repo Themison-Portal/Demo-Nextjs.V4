@@ -561,7 +561,7 @@ export const apiClient = {
 
     updateVisitTemplate: async (
         trialId: string,
-        template: VisitScheduleRow
+        template: VisitScheduleTemplate
     ): Promise<VisitScheduleTemplate> =>
         fetchApi(`/api/trials/${trialId}/template`, {
             method: "PUT",
