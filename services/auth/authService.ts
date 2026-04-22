@@ -37,6 +37,7 @@ export const authService = {
     async getCurrentUser(): Promise<User | null> {
         try {
             const data = await apiClient.getCurrentUser();
+            if (!data) return null;
 
             const role =
                 data.member.default_role === "staff" ||
@@ -53,7 +54,7 @@ export const authService = {
                 organizationName: data.organization?.name,
                 role,
                 onboardingCompleted: data.member.onboarding_completed,
-                isStaff: role === "staff",
+                isStaff: role === "staff" || data.member.default_role === "admin",
             };
         } catch (err) {
             console.error("Failed to get current user:", err);
