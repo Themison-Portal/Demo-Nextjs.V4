@@ -447,14 +447,14 @@ export const apiClient = {
     getTrialActivityTypes: async (
         trialId: string
     ): Promise<TrialActivityListResponse> => {
-        return fetchApi(`/api/trials/${trialId}/activities`);
+        return fetchApi(`/api/trials/${trialId}/activities/`);
     },
 
     createTrialActivity: async (
         trialId: string,
         data: CreateTrialActivityInput
     ): Promise<TrialActivityType> => {
-        return fetchApi(`/api/trials/${trialId}/activities`, {
+        return fetchApi(`/api/trials/${trialId}/activities/`, {
             method: "POST",
             body: JSON.stringify(data),
         });
