@@ -50,7 +50,7 @@ export function useAuth() {
 
     return {
         user,
-        isLoading: !mounted || (isLoading && !!token),
+        isLoading: !mounted || (!!token && isLoading),
         isAuthenticated: !!user,
         error,
         signout: signoutMutation.mutateAsync,

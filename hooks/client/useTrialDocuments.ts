@@ -39,7 +39,7 @@ export function useTrialDocuments(orgId: string, trialId: string) {
                 storage_path: doc.document_url,
                 storage_url: doc.document_url,
                 category: doc.document_type,
-                job_id: doc.id,
+                job_id: doc.job_id || doc.id,
                 status:
                     doc.status === "queued"
                         ? "pending"

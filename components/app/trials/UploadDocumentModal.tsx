@@ -64,11 +64,11 @@ export function UploadDocumentModal({
                 category
             );
 
-            // STEP 2: trigger AI processing (RAG pipeline)
-            await apiClient.triggerPdfProcessing(
-                doc.document_url,
-                doc.id
-            );
+            // // STEP 2: trigger AI processing (RAG pipeline)
+            // await apiClient.triggerPdfProcessing(
+            //     doc.document_url,
+            //     doc.id
+            // );
 
             console.log("Upload + RAG processing started");
 
