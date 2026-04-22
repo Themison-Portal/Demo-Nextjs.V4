@@ -2,9 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
-import type { VisitScheduleTemplate } from '@/services/trials/types';
+import type { VisitScheduleTemplate } from '@/services/visits/types';
 
-export function useVisitTemplate(orgId: string, trialId: string) {
+export function useVisitTemplate(trialId: string) {
     const queryClient = useQueryClient();
     const queryKey = ['trial-template', trialId];
 

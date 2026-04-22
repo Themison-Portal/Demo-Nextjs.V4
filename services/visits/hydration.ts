@@ -7,8 +7,8 @@ import type {
 } from "@/services/patients/types";
 import { apiClient } from "@/lib/apiClient"; // FastAPI client
 import type { TrialDetails } from "@/services/trials/types";
-import { VisitScheduleTemplate, VisitScheduleTemplateExtended } from '@/services/trials/types';
-import type { VisitScheduleTemplateWithAssignees } from "@/services/trials/types";
+import { VisitScheduleRow, VisitScheduleRowExtended } from '@/services/trials/types';
+//import type { VisitScheduleTemplateWithAssignees } from "@/services/trials/types";
 
 // ============================================================================
 // Helpers
@@ -49,8 +49,8 @@ async function getTrialTemplate(trialId: string): Promise<VisitTemplate[]> {
         throw new Error(`Trial ${trialId} has no visit schedule template`);
     }
 
-    // Map VisitScheduleTemplate -> VisitTemplate
-    return (trial.visit_schedules as VisitScheduleTemplateExtended[]).map((v): VisitTemplate => ({
+    // Map VisitScheduleRow -> VisitTemplate
+    return (trial.visit_schedules as VisitScheduleRowExtended[]).map((v): VisitTemplate => ({
         name: v.name,
         order: v.order,
         is_day_zero: v.is_day_zero,

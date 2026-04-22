@@ -1,7 +1,7 @@
 import type {
     Trial,
     TrialTeamMember,
-    VisitScheduleTemplate,
+    VisitScheduleRow,
     TeamMembersResponse,
     UpdateTrialInput,
     TrialWithAssignmentsCreate
@@ -555,13 +555,13 @@ export const apiClient = {
 
     getVisitTemplate: async (
         trialId: string
-    ): Promise<VisitScheduleTemplate> =>
+    ): Promise<VisitScheduleRow> =>
         fetchApi(`/api/trials/${trialId}/template`),
 
     updateVisitTemplate: async (
         trialId: string,
-        template: VisitScheduleTemplate
-    ): Promise<VisitScheduleTemplate> =>
+        template: VisitScheduleRow
+    ): Promise<VisitScheduleRow> =>
         fetchApi(`/api/trials/${trialId}/template`, {
             method: "PUT",
             body: JSON.stringify(template),

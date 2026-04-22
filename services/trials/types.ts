@@ -97,7 +97,7 @@ export interface TrialTeamMember {
 // VISIT SCHEDULE TEMPLATE
 // ============================================================================
 
-export interface VisitScheduleTemplate {
+export interface VisitScheduleRow {  // ← renamed from VisitScheduleTemplate
     id: string;
     trial_id: string;
     visit_name: string;
@@ -111,7 +111,7 @@ export interface VisitScheduleTemplate {
     deleted_at?: string | null;
 }
 
-export interface VisitScheduleTemplateExtended extends VisitScheduleTemplate {
+export interface VisitScheduleRowExtended extends VisitScheduleRow {  // ← updated
     name: string;
     order: number;
     is_day_zero: boolean;
@@ -122,9 +122,21 @@ export interface VisitScheduleTemplateExtended extends VisitScheduleTemplate {
     description?: string;
 }
 
-
-export interface VisitScheduleTemplateWithAssignees extends VisitScheduleTemplate {
+export interface VisitScheduleRowWithAssignees extends VisitScheduleRow {  // ← updated
     assignees?: { role: string; user_id: string }[];
+}
+
+// ============================================================================
+// TRIAL DETAILS (Full object with relations)
+// ============================================================================
+
+export interface TrialDetails extends Trial {
+    team_members: TrialTeamMember[];
+    visit_schedules: VisitScheduleRow[];  // ← updated
+    patient_count: number;
+    active_patient_count: number;
+    task_count: number;
+    pending_task_count: number;
 }
 // ============================================================================
 // TRIAL DETAILS (Full object with relations)
@@ -132,7 +144,7 @@ export interface VisitScheduleTemplateWithAssignees extends VisitScheduleTemplat
 
 export interface TrialDetails extends Trial {
     team_members: TrialTeamMember[];
-    visit_schedules: VisitScheduleTemplate[];
+    visit_schedules: VisitScheduleRow[];
     // Stats
     patient_count: number;
     active_patient_count: number;
