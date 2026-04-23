@@ -27,8 +27,7 @@ export function DocumentsList({ orgId, trialId }: DocumentsListProps) {
   const {
     documents,
     isLoading,
-    uploadDocument,
-    isUploading,
+    refetch,
     updateCategory,
     isUpdatingCategory,
     processingStatuses,
@@ -68,9 +67,9 @@ export function DocumentsList({ orgId, trialId }: DocumentsListProps) {
     ? documents.find((d) => d.id === selectedDocumentId) || null
     : null;
 
-  const handleUpload = async (file: File, category: string) => {
-    await uploadDocument({ file, category });
+  const handleUploadSuccess = () => {
     setIsUploadModalOpen(false);
+    refetch();
     toast.success(
       "Document uploaded!",
       "Being analyzed by AI... This may take a few minutes.",
@@ -259,8 +258,8 @@ export function DocumentsList({ orgId, trialId }: DocumentsListProps) {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         trialId={trialId}
-        onSubmit={handleUpload}
-        isLoading={isUploading}
+        onSuccess={handleUploadSuccess}
+        isLoading={false}
       />
     </div>
   );
