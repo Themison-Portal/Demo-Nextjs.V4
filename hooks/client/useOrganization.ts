@@ -118,6 +118,8 @@ export function useOrganization(orgId?: string): UseOrganizationReturn {
         members: (membersData ?? []).map((m: any) => ({
             ...m,
             user_id: m.id,
+            org_role: m.default_role,
+            status: m.is_active ? 'active' : 'inactive',
             user: {
                 full_name: m.name,
                 email: m.email,
