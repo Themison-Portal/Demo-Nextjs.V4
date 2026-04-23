@@ -703,6 +703,33 @@ export const apiClient = {
     }> =>
         fetchApi(`/upload/status/${jobId}`),
 
+    /**
+     * Live RAG ingestion status for a single job_id.
+     *
+     * GET /upload/status/{job_id} on the upload service. The endpoint does
+     * NOT require the X-API-Key header (only POST /upload/upload-pdf does),
+     * so we go through the standard `fetchApi` helper without injecting a
+     * key. Used by the documents-table polling hook
+     * (`useDocumentIngestionStatus`) to drive the live progress badge.
+     *
+     * Note: distinct from the older `getUploadStatus` above — this one
+     * matches the new contract (`status: 'complete' | 'error' | ...`) used
+     * by the badge while ingestion is in flight.
+     */
+    getUploadJobStatus: async (
+        jobId: string
+    ): Promise<{
+        job_id: string;
+        document_id: string;
+        status: "queued" | "processing" | "complete" | "error";
+        progress_percent: number;
+        current_stage: string;
+        message: string;
+        result: unknown | null;
+        error: string | null;
+    }> =>
+        fetchApi(`/upload/status/${jobId}`),
+
     // -----------------------
     // Tasks
     // -----------------------

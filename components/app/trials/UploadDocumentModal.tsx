@@ -17,6 +17,8 @@ import { FileText, ChevronDown, Check } from "lucide-react";
 import { DOCUMENT_CATEGORY_OPTIONS } from "@/lib/constants/documents";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/apiClient";
+import { setIngestionJob } from "@/lib/ingestionJobStorage";
+import { toast } from "@/lib/toast";
 
 interface UploadDocumentModalProps {
     isOpen: boolean;
@@ -64,18 +66,32 @@ export function UploadDocumentModal({
                 category
             );
 
-            // // STEP 2: trigger AI processing (RAG pipeline)
-            // await apiClient.triggerPdfProcessing(
-            //     doc.document_url,
-            //     doc.id
-            // );
-
-            console.log("Upload + RAG processing started");
+            // STEP 2: trigger AI processing (RAG pipeline).
+            // The document row already exists at this point — if STEP 2 fails,
+            // we must surface that to the user so they know AI processing did
+            // not start (the row will sit without an ingestion job).
+            try {
+                const job = await apiClient.triggerPdfProcessing(
+                    doc.document_url,
+                    doc.id
+                );
+                setIngestionJob(doc.id, job.job_id);
+            } catch (err) {
+                console.error("RAG ingestion trigger failed:", err);
+                toast.error(
+                    "Document uploaded, but AI processing failed to start",
+                    err instanceof Error ? err.message : "Please try re-uploading the document."
+                );
+            }
 
             handleClose();
             onSuccess?.();
         } catch (err) {
             console.error("Upload failed:", err);
+            toast.error(
+                "Upload failed",
+                err instanceof Error ? err.message : "Please try again."
+            );
         } finally {
             setUploading(false);
         }

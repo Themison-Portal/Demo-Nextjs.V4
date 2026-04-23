@@ -23,6 +23,15 @@ export type DocumentCategory =
 
 export type DocumentStatus = "pending" | "uploading" | "processing" | "ready" | "error";
 
+// Backend-reported RAG ingestion status on the trial_document row.
+// `null` for legacy rows uploaded before this field existed.
+export type DocumentIngestionStatus =
+    | "queued"
+    | "processing"
+    | "ready"
+    | "failed"
+    | null;
+
 // ============================================================================
 // TRIAL DOCUMENT
 // ============================================================================
@@ -37,6 +46,12 @@ export interface TrialDocument {
     storage_path: string;
     storage_url: string;
     status: DocumentStatus;
+    /**
+     * Coarse ingestion state maintained by the backend, independent of the
+     * UI `status` column. Always present on new uploads; `null` for legacy
+     * rows created before RAG ingestion tracking existed.
+     */
+    ingestion_status?: DocumentIngestionStatus;
     category?: DocumentCategory | null;
     uploaded_by?: string | null;
     processing_error?: string | null;

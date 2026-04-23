@@ -5,16 +5,15 @@ import Link from "next/link";
 import { useTrialDocuments } from "@/hooks/client/useTrialDocuments";
 import { useTrialPermissions } from "@/hooks/useTrialPermissions";
 import { useTrialDetails } from "@/hooks/client/useTrialDetails";
-import { FileText, Plus, Bot, Loader2 } from "lucide-react";
+import { FileText, Plus, Bot } from "lucide-react";
 import { UploadDocumentModal } from "./UploadDocumentModal";
 import { DocumentSidebar } from "./DocumentSidebar";
+import { DocumentStatusBadge } from "./DocumentStatusBadge";
 import { formatDate } from "@/lib/date";
 import { toast } from "@/lib/toast";
 import {
   DOCUMENT_CATEGORY_OPTIONS,
   DOCUMENT_CATEGORY_STYLES,
-  DOCUMENT_STATUS_STYLES,
-  DOCUMENT_STATUS_LABELS,
 } from "@/lib/constants/documents";
 import { ROUTES } from "@/lib/routes";
 import type { TrialDocument } from "@/services/documents";
@@ -205,16 +204,7 @@ export function DocumentsList({ orgId, trialId }: DocumentsListProps) {
 
                   {/* Status */}
                   <div className="col-span-2">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        DOCUMENT_STATUS_STYLES[doc.status]
-                      } ${doc.status === "processing" ? "animate-pulse" : ""}`}
-                    >
-                      {doc.status === "processing" && (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      )}
-                      {DOCUMENT_STATUS_LABELS[doc.status]}
-                    </span>
+                    <DocumentStatusBadge document={doc} />
                     {doc.status === "processing" && processingStatus && (
                       <div className="mt-1 w-full bg-gray-200 rounded-full h-1">
                         <div
