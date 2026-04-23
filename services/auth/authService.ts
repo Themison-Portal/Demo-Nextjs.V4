@@ -27,6 +27,7 @@ export const authService = {
         await auth0.logout({
             logoutParams: {
                 returnTo: window.location.origin,
+                federated: true,
             },
         });
     },
