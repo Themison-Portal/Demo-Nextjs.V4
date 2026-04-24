@@ -409,6 +409,15 @@ export const apiClient = {
         fetchApi(`/api/trial-documents/?trial_id=${trialId}`),
     getTrialDocumentById: async (documentId: string) =>
         fetchApi(`/api/trial-documents/${documentId}`),
+    /**
+     * Fetch a fresh, short-lived (1h) signed HTTPS URL for opening/downloading
+     * a trial document's PDF. Sign-on-demand; do NOT cache the URL beyond the
+     * `expires_in_seconds` window.
+     */
+    getDocumentDownloadUrl: async (
+        documentId: string
+    ): Promise<{ url: string; expires_in_seconds: number }> =>
+        fetchApi(`/api/trial-documents/${documentId}/download-url`),
     // uploadTrialDocument: async (
     //     file: File,
     //     trialId: string,

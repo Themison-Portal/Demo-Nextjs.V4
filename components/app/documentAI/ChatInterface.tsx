@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import { useTrialDocuments } from "@/hooks/client/useTrialDocuments";
 import { useTasks } from "@/hooks/client/useTasks";
 import { useDocumentQuery } from "@/hooks/client/useDocumentQuery";
+import { useDocumentDownloadUrl } from "@/hooks/client/useDocumentDownloadUrl";
 import {
     useChatSession,
     useCreateChatSession,
@@ -118,6 +119,13 @@ export function ChatInterface({
 
     const document = documents.find((d) => d.id === documentId);
     const isDocumentReady = document?.status === "ready";
+
+    // Fresh signed URL for the PDF viewer. Only fetched when the document is
+    // actually viewable; the hook re-signs well before the 1h server expiry.
+    const { data: downloadUrl } = useDocumentDownloadUrl(
+        documentId,
+        isDocumentReady,
+    );
     const categoryLabel = document?.category
         ? DOCUMENT_CATEGORY_OPTIONS.find((c) => c.value === document.category)
             ?.label
@@ -312,10 +320,12 @@ export function ChatInterface({
         }
     };
 
-    // In development, use hardcoded PDF URL
+    // In development, use hardcoded PDF URL. In production, use the freshly
+    // signed download URL from the dedicated endpoint (NOT document.storage_url
+    // — that field is now a raw GCS path, not an HTTPS URL the browser can fetch).
     const pdfUrl = isDevelopment
         ? "https://npfouzkvpnyjusdozymu.supabase.co/storage/v1/object/public/trial-documents/trials/28b7ab97-e64f-43af-8610-9746d3f5a797/1769615995863_Protocol_Ulcerative-Colitis.pdf"
-        : document?.storage_url || "";
+        : downloadUrl?.url || "";
 
     return (
         <div

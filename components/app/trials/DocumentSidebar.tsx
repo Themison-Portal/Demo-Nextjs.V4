@@ -30,6 +30,7 @@ import { formatDate } from "@/lib/date";
 import { DOCUMENT_CATEGORY_OPTIONS } from "@/lib/constants/documents";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { useDocumentDownloadUrl } from "@/hooks/client/useDocumentDownloadUrl";
 import type { TrialDocument } from "@/services/documents";
 import type { DocumentProcessingStatus } from "@/services/documents";
 
@@ -56,6 +57,16 @@ export function DocumentSidebar({
   const [selectedCategory, setSelectedCategory] = useState(
     document.category || "",
   );
+
+  // Fetch a fresh signed URL for the View/Download buttons. Disabled until
+  // the document is in a viewable state (the buttons themselves only render
+  // when status === "ready", but the hook caches across mounts so loading
+  // here is essentially zero-cost).
+  const { data: downloadUrl, isLoading: isLoadingUrl } = useDocumentDownloadUrl(
+    document.id,
+    document.status === "ready",
+  );
+  const fileUrl = downloadUrl?.url;
 
   const categoryLabel =
     DOCUMENT_CATEGORY_OPTIONS.find((c) => c.value === document.category)
@@ -221,19 +232,50 @@ export function DocumentSidebar({
                 <span className="text-center">Ask AI Assistant</span>
               </Link>
             </Button>
-            <Button variant="outline" size="sm" className="w-full" asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              asChild
+              disabled={!fileUrl}
+            >
               <a
-                href={document.storage_url}
+                href={fileUrl ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-disabled={!fileUrl}
+                onClick={(e) => {
+                  if (!fileUrl) e.preventDefault();
+                }}
               >
-                <ExternalLink className="h-4 w-4" />
+                {isLoadingUrl ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-4 w-4" />
+                )}
                 View PDF
               </a>
             </Button>
-            <Button variant="outline" size="sm" className="w-full" asChild>
-              <a href={document.storage_url} download>
-                <Download className="h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              asChild
+              disabled={!fileUrl}
+            >
+              <a
+                href={fileUrl ?? "#"}
+                download
+                aria-disabled={!fileUrl}
+                onClick={(e) => {
+                  if (!fileUrl) e.preventDefault();
+                }}
+              >
+                {isLoadingUrl ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
                 Download
               </a>
             </Button>
