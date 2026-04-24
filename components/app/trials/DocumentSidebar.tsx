@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { DOCUMENT_CATEGORY_OPTIONS } from "@/lib/constants/documents";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useDocumentDownloadUrl } from "@/hooks/client/useDocumentDownloadUrl";
+import { toast } from "@/lib/toast";
 import type { TrialDocument } from "@/services/documents";
 import type { DocumentProcessingStatus } from "@/services/documents";
 
@@ -59,14 +60,28 @@ export function DocumentSidebar({
   );
 
   // Fetch a fresh signed URL for the View/Download buttons. Disabled until
-  // the document is in a viewable state (the buttons themselves only render
-  // when status === "ready", but the hook caches across mounts so loading
-  // here is essentially zero-cost).
-  const { data: downloadUrl, isLoading: isLoadingUrl } = useDocumentDownloadUrl(
-    document.id,
-    document.status === "ready",
-  );
+  // the document is in a viewable state. Errors are surfaced via toast and a
+  // visible "Retry" affordance so the user isn't staring at greyed-out buttons
+  // wondering what happened.
+  const {
+    data: downloadUrl,
+    isError: hasUrlError,
+    error: urlError,
+    refetch: refetchUrl,
+  } = useDocumentDownloadUrl(document.id, document.status === "ready");
   const fileUrl = downloadUrl?.url;
+
+  // One-shot toast when the URL fetch fails. The buttons themselves still
+  // render the retry control inline below.
+  useEffect(() => {
+    if (hasUrlError) {
+      const msg =
+        urlError instanceof Error ? urlError.message : "Could not generate download URL";
+      toast.error("Couldn't load file", msg);
+    }
+    // Intentionally only react to the boolean flip, not every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUrlError]);
 
   const categoryLabel =
     DOCUMENT_CATEGORY_OPTIONS.find((c) => c.value === document.category)
@@ -232,53 +247,49 @@ export function DocumentSidebar({
                 <span className="text-center">Ask AI Assistant</span>
               </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              asChild
-              disabled={!fileUrl}
-            >
-              <a
-                href={fileUrl ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-disabled={!fileUrl}
-                onClick={(e) => {
-                  if (!fileUrl) e.preventDefault();
-                }}
+            {hasUrlError ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => refetchUrl()}
               >
-                {isLoadingUrl ? (
+                <ExternalLink className="h-4 w-4" />
+                Retry loading file
+              </Button>
+            ) : fileUrl ? (
+              <>
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View PDF
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <a href={fileUrl} download>
+                    <Download className="h-4 w-4" />
+                    Download
+                  </a>
+                </Button>
+              </>
+            ) : (
+              // No URL yet — render plain disabled buttons (NOT <a> tags) so
+              // keyboard activation/screen readers can't navigate to "#".
+              <>
+                <Button variant="outline" size="sm" className="w-full" disabled>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ExternalLink className="h-4 w-4" />
-                )}
-                View PDF
-              </a>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              asChild
-              disabled={!fileUrl}
-            >
-              <a
-                href={fileUrl ?? "#"}
-                download
-                aria-disabled={!fileUrl}
-                onClick={(e) => {
-                  if (!fileUrl) e.preventDefault();
-                }}
-              >
-                {isLoadingUrl ? (
+                  View PDF
+                </Button>
+                <Button variant="outline" size="sm" className="w-full" disabled>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                Download
-              </a>
-            </Button>
+                  Download
+                </Button>
+              </>
+            )}
           </div>
         )}
       </CardContent>
