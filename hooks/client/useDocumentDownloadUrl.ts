@@ -4,22 +4,44 @@ import { apiClient } from "@/lib/apiClient";
 /**
  * Fetch a fresh signed download URL for a trial document.
  *
- * The URL expires after `expires_in_seconds` (currently 1 hour). React Query
- * caches it for slightly less than that to give the FE a small safety margin
- * before the URL goes stale; if a viewer stays open longer, the next remount
- * (or window-focus refetch) gets a fresh URL.
+ * The server signs URLs valid for 1 hour. We cache for half of that (30 min)
+ * so the URL handed to a downstream consumer (PDF viewer, download anchor)
+ * always has at least ~30 min of validity left — comfortably more than any
+ * single PDF download.
  *
- * Pass `enabled=false` (e.g., until the user actually opens the viewer) to
- * avoid signing URLs that nobody is going to use.
+ * Pass `enabled=false` until the user actually opens a viewer to avoid
+ * signing URLs nobody is going to use. Window-focus refetch keeps URLs fresh
+ * when the user tabs back after a long absence.
+ *
+ * 404 errors (deleted/missing doc) are not retried.
  */
-export function useDocumentDownloadUrl(documentId: string | null | undefined, enabled = true) {
+
+// Half the server's 1h TTL gives a safe re-sign margin before expiry.
+// If the server TTL ever changes, update this constant accordingly.
+const STALE_TIME_MS = 30 * 60 * 1000; // 30 minutes
+
+export function useDocumentDownloadUrl(
+    documentId: string | null | undefined,
+    enabled = true,
+) {
     return useQuery({
         queryKey: ["client", "document-download-url", documentId],
-        queryFn: () => apiClient.getDocumentDownloadUrl(documentId!),
+        queryFn: () => {
+            if (!documentId) {
+                // Defensive: react-query won't call queryFn when enabled=false,
+                // but keep this here so a future edit to `enabled` can't crash.
+                throw new Error("documentId is required");
+            }
+            return apiClient.getDocumentDownloadUrl(documentId);
+        },
         enabled: !!documentId && enabled,
-        // Re-sign well before the 1h server-side expiry to avoid 401/403 mid-view.
-        staleTime: 50 * 60 * 1000, // 50 minutes
-        gcTime: 55 * 60 * 1000, // 55 minutes
+        staleTime: STALE_TIME_MS,
+        gcTime: STALE_TIME_MS + 5 * 60 * 1000,
         refetchOnWindowFocus: true,
+        retry: (failureCount, error: any) => {
+            const status = error?.status ?? error?.response?.status;
+            if (status === 404) return false;
+            return failureCount < 2;
+        },
     });
 }

@@ -36,8 +36,11 @@ export function useTrialDocuments(orgId: string, trialId: string) {
                 ...doc,
                 file_name: doc.document_name,
                 file_type: doc.mime_type,
-                storage_path: doc.document_url,
-                storage_url: doc.document_url,
+                // NOTE: `storage_url`/`storage_path` are intentionally NOT
+                // populated. `doc.document_url` is now a raw GCS blob path
+                // (not an HTTPS URL the browser can load), so any consumer
+                // that wants to view/download the file must call
+                // `useDocumentDownloadUrl(doc.id)` for a freshly signed URL.
                 category: doc.document_type,
                 job_id: doc.job_id || doc.id,
                 status:

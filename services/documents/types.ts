@@ -43,8 +43,18 @@ export interface TrialDocument {
     file_name: string;
     file_size: number;
     file_type: string;
-    storage_path: string;
-    storage_url: string;
+    /**
+     * @deprecated Backend no longer returns a usable URL here; the field
+     * (when present at all) holds a raw GCS blob path. Use the
+     * `useDocumentDownloadUrl(documentId)` hook to obtain a freshly signed
+     * HTTPS URL right before opening a viewer or starting a download.
+     */
+    storage_path?: string;
+    /**
+     * @deprecated Same as `storage_path` — name is misleading; do not use.
+     * Call `useDocumentDownloadUrl(documentId)` instead.
+     */
+    storage_url?: string;
     status: DocumentStatus;
     /**
      * Coarse ingestion state maintained by the backend, independent of the

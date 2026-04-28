@@ -36,7 +36,6 @@ import {
     DOCUMENT_CATEGORY_OPTIONS,
     DOCUMENT_CATEGORY_STYLES,
 } from "@/lib/constants/documents";
-import { isDevelopment } from "@/lib/constants";
 import type { RagSource } from "@/services/rag/types";
 import { MessageContent } from "./MessageContent";
 
@@ -122,10 +121,11 @@ export function ChatInterface({
 
     // Fresh signed URL for the PDF viewer. Only fetched when the document is
     // actually viewable; the hook re-signs well before the 1h server expiry.
-    const { data: downloadUrl } = useDocumentDownloadUrl(
-        documentId,
-        isDocumentReady,
-    );
+    const {
+        data: downloadUrl,
+        isLoading: isLoadingPdfUrl,
+        isError: hasPdfUrlError,
+    } = useDocumentDownloadUrl(documentId, isDocumentReady);
     const categoryLabel = document?.category
         ? DOCUMENT_CATEGORY_OPTIONS.find((c) => c.value === document.category)
             ?.label
@@ -320,12 +320,16 @@ export function ChatInterface({
         }
     };
 
-    // In development, use hardcoded PDF URL. In production, use the freshly
-    // signed download URL from the dedicated endpoint (NOT document.storage_url
-    // — that field is now a raw GCS path, not an HTTPS URL the browser can fetch).
-    const pdfUrl = isDevelopment
-        ? "https://npfouzkvpnyjusdozymu.supabase.co/storage/v1/object/public/trial-documents/trials/28b7ab97-e64f-43af-8610-9746d3f5a797/1769615995863_Protocol_Ulcerative-Colitis.pdf"
-        : downloadUrl?.url || "";
+    // The signed download URL the PDF viewer should fetch. Empty string when
+    // not yet loaded — gate the viewer on `pdfUrl` truthiness below to avoid
+    // handing react-pdf an empty URL (which renders an error before our real
+    // URL arrives).
+    //
+    // Dev fallback: previously this branch hardcoded a Supabase URL, which
+    // meant dev never exercised the new sign-on-demand endpoint. Removed so
+    // dev mirrors prod; if you need a known-good PDF for offline development,
+    // upload one through the dev backend instead.
+    const pdfUrl = downloadUrl?.url ?? "";
 
     return (
         <div
@@ -621,18 +625,30 @@ export function ChatInterface({
             {/* PDF/Sources Panel - Right Side */}
             {isSourcesPanelOpen && (
                 <div className="w-[50%] h-full transition-all duration-400">
-                    <PdfViewer
-                        url={pdfUrl}
-                        sources={selectedSources}
-                        selectedSourceIndex={selectedSourceIndex}
-                        highlightAll={highlightAllBboxes}
-                        onClose={() => {
-                            setIsSourcesPanelOpen(false);
-                            setSelectedSourceIndex(undefined);
-                            setSelectedMessageId(null);
-                            setHighlightAllBboxes(false);
-                        }}
-                    />
+                    {pdfUrl ? (
+                        <PdfViewer
+                            url={pdfUrl}
+                            sources={selectedSources}
+                            selectedSourceIndex={selectedSourceIndex}
+                            highlightAll={highlightAllBboxes}
+                            onClose={() => {
+                                setIsSourcesPanelOpen(false);
+                                setSelectedSourceIndex(undefined);
+                                setSelectedMessageId(null);
+                                setHighlightAllBboxes(false);
+                            }}
+                        />
+                    ) : (
+                        <div className="flex h-full items-center justify-center bg-white rounded-xl border border-gray-200">
+                            <p className="text-sm text-gray-500">
+                                {hasPdfUrlError
+                                    ? "Couldn't load document. Please refresh and try again."
+                                    : isLoadingPdfUrl
+                                      ? "Loading document..."
+                                      : "Document is not ready for viewing yet."}
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 
