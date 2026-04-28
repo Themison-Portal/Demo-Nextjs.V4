@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSignup } from "@/hooks/useSignup";
+import { getAuth0Client } from "@/lib/auth0";
 import { AuthCard } from "./AuthCard";
 import { AuthForm } from "./AuthForm";
 
@@ -12,12 +14,27 @@ interface SignupFormViewProps {
 export function SignupFormView({ email, orgName }: SignupFormViewProps) {
     const { mutate: signup, isPending, isError, error, isSuccess } = useSignup();
 
+    // Auto signin after successful signup
+    useEffect(() => {
+        if (isSuccess) {
+            const timer = setTimeout(async () => {
+                const auth0 = await getAuth0Client();
+                await auth0.loginWithRedirect({
+                    authorizationParams: {
+                        redirect_uri: window.location.origin + "/auth/callback",
+                        login_hint: email,
+                    },
+                });
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [isSuccess, email]);
+
     const handleSubmit = (data: any) => {
-        // Transform camelCase form data to snake_case for backend
         signup({
             password: data.password,
-            first_name: data.firstName,  // ⭐ Transform here
-            last_name: data.lastName,     // ⭐ Transform here
+            first_name: data.firstName,
+            last_name: data.lastName,
         });
     };
 
@@ -29,7 +46,7 @@ export function SignupFormView({ email, orgName }: SignupFormViewProps) {
             >
                 <div className="text-center space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        Your account has been created. Redirecting you to sign in...
+                        Your account has been created. Signing you in...
                     </p>
                 </div>
             </AuthCard>
